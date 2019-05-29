@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="sout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n" />
+        </Console>
+        <RollingFile name="log-file" fileName="log/runtime.log" immediateFlush="false" append="false"
+                     filePattern="log/$${date:yyyy-MM}/runtime-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy /><!-- Rotated everyday -->
+                <SizeBasedTriggeringPolicy size="150 MB"/> <!-- Or every 100 MB -->
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="sout" level="WARN" />
+            <AppenderRef ref="log-file" level="DEBUG" />
+        </Root>
+    </Loggers>
+</Configuration>
