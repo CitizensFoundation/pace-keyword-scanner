@@ -1,4 +1,4 @@
-package com.me.cica;
+package org.cf.acks;
 
 public class DomainAttributes {
     public final boolean hasAds;

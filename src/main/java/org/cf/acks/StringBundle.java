@@ -1,4 +1,4 @@
-package com.me.cica;
+package org.cf.acks;
 
 class StringBundle {
     final static String WARC_VERSION = "WARC/1.0";

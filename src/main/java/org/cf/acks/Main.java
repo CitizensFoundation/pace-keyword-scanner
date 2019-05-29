@@ -1,4 +1,4 @@
-package com.me.cica;
+package org.cf.acks;
 
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;

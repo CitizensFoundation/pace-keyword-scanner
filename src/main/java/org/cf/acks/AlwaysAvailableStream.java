@@ -1,4 +1,4 @@
-package com.me.cica;
+package org.cf.acks;
 
 import java.io.IOException;
 import java.io.InputStream;

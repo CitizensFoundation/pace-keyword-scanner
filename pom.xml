@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.me.cica</groupId>
-    <artifactId>adtrender</artifactId>
+    <groupId>org.cf.acks</groupId>
+    <artifactId>ackeywordscanner</artifactId>
     <version>1.0</version>
 
     <properties>
@@ -43,7 +43,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.me.cica.Main</mainClass>
+                            <mainClass>org.cf.acks.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -64,7 +64,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>com.me.cica.Main</mainClass>
+                            <mainClass>org.cf.acks.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
