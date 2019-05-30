@@ -29,7 +29,7 @@ public class Main {
                 continue;
             }
 
-            Expression scanExpression = new Expression(pattern);
+            Expression scanExpression = new Expression("\\b"+pattern);
 
             expressions.add(scanExpression);
             Database.compile(scanExpression);
@@ -67,7 +67,9 @@ public class Main {
 
         final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
 
-        try (Writer matchingStats = new BufferedWriter(new FileWriter(new File("log/matching.stats")));
+        long startTime = System.currentTimeMillis();
+
+        try (Writer resultsStats = new BufferedWriter(new FileWriter(new File("log/results.stats")));
             Writer adServingDomains = new BufferedWriter(new FileWriter(new File("log/ad-serving.domains")));
             Writer adFreeDomains = new BufferedWriter(new FileWriter(new File("log/ad-free.domains")))) {
 
@@ -77,7 +79,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WarcArchiveProcessor(schedulingSemaphore, patternDB, archivePrefix + key, adServingDomains, adFreeDomains, matchingStats));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, patternDB, key, adServingDomains, adFreeDomains, resultsStats));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -87,6 +89,11 @@ public class Main {
             schedulingSemaphore.acquire(maxScheduled);
 
             executorService.shutdown();
+
+            long duration = System.currentTimeMillis() - startTime;
+            resultsStats.write("Duration\n");
+            resultsStats.write(duration + "\n");
+            resultsStats.close();
 
             logger.info("Analysis complete.");
         }

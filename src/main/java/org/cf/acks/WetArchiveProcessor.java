@@ -21,10 +21,10 @@ public class WetArchiveProcessor implements Runnable {
 
     private final Semaphore schedulingSemaphore;
     private final Database patternDB;
+    private boolean haveWrittenDomainLine = false;
     private final String archive;
     private final Writer domainsWithAds;
     private final Writer domainsWithoutAds;
-    private final Writer matchingStatistics;
 
     WetArchiveProcessor(Semaphore schedulingSemaphore, Database patternDB, String archive,
                          Writer domainsWithAds, Writer domainsWithoutAds, Writer matchingStatistics) {
@@ -33,12 +33,13 @@ public class WetArchiveProcessor implements Runnable {
         this.archive = archive;
         this.domainsWithAds = domainsWithAds;
         this.domainsWithoutAds = domainsWithoutAds;
-        this.matchingStatistics = matchingStatistics;
     }
 
     @Override
     public void run() {
-        try (final InputStream objectStream = new URL(archive).openStream();
+        String currentURL = null; // Should never be null in practice.
+        long startTime = System.currentTimeMillis();
+        try (final InputStream objectStream = new FileInputStream(new File(archive));
             final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
             final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
             final Scanner scanner = new Scanner()) {
@@ -50,62 +51,37 @@ public class WetArchiveProcessor implements Runnable {
             }
 
             boolean processingEntry = false;
-            String currentURL = null; // Should never be null in practice.
+
+            Writer resultsWriter = new BufferedWriter(new FileWriter(new File("log/"+getFilename(archive)+".scanned")));
 
             String line;
             while ((line = contentReader.readLine()) != null) {
                 if (line.startsWith(StringBundle.CONVERSION_MARKER)) {
                     processingEntry = true;
                     currentURL = null;
+                    this.haveWrittenDomainLine = false;
                 } else if (processingEntry && line.startsWith(StringBundle.TARGET_URI_MARKER)) {
-                    currentURL = getValue(line);
+                    currentURL = line;
                     currentURL = currentURL.replace(StringBundle.TARGET_URI_MARKER+" ", "");
-                } else if (processingEntry && currentURL != null && line.startsWith(StringBundle.HTTP_HEADER_RESPONSE_OK)) {
-                    // HTTP header found. Read lines until Content-Length and Content-Type are found.
-                    line = readUntilStartsWith(StringBundle.CONTENT_TYPE, contentReader);
+                } else if (processingEntry && currentURL != null && line.startsWith(StringBundle.CONTENT_LENGTH)) {
+                    line = contentReader.readLine();
 
-                    if (line == null) {
-                        logger.warn("WARC entry incomplete due to archive split for domain {}. Skipping.", currentURL);
-                        processingEntry = false;
-                        continue;
-                    }
-
-                    String contentType = getValue(line);
-
-                    if (! contentType.toLowerCase().startsWith(StringBundle.ENTITY_TYPE)) {
-                        logger.info("Unsupported entity {} found for {}. Skipping page.", contentType, currentURL);
-                        processingEntry = false;
-                        continue;
-                    }
-
-                    readUntilEmptyLine(contentReader);
-
-                    StringBuilder htmlContent = new StringBuilder();
-                    while ((line = contentReader.readLine()) != null && ! line.equals(StringBundle.WARC_VERSION)) {
-                        htmlContent.append(line);
-                    }
-
-                    // Now check for advertisements.
                     try {
-                        boolean servesAds = doesPageServeAds(scanner, currentURL, htmlContent.toString());
-
-                        if (servesAds) {
-                            logger.info("Domain {} serves ads.", currentURL);
-                            domainsWithAds.write(currentURL);
-                            domainsWithAds.write('\n');
-                        } else {
-                            logger.info("No ads served by {} domain.", currentURL);
-                            domainsWithoutAds.write(currentURL);
-                            domainsWithoutAds.write('\n');
+                        while ((line = contentReader.readLine()) != null && ! line.equals(StringBundle.WARC_VERSION)) {
+                            if (line.length()>100) {
+                                processLineForKeywords(scanner, currentURL, line.toLowerCase(), resultsWriter);
+                            }
                         }
                     } catch (Throwable t) {
-                        // This signifies a serious error that is likely to be environmental and cannot be handled.
                         throw new IOException(t);
                     }
-
                     processingEntry = false;
                 }
             }
+            long duration = System.currentTimeMillis() - startTime;
+            resultsWriter.write("Duration\n");
+            resultsWriter.write(duration + "\n");
+            resultsWriter.close();
         } catch (IOException io) {
             logger.catching(io);
         } finally {
@@ -115,26 +91,27 @@ public class WetArchiveProcessor implements Runnable {
         logger.info("Finished archive {}.", archive);
     }
 
-    private boolean doesPageServeAds(Scanner scanner, String domain, String pageContent) throws Throwable {
-        long startTime = System.currentTimeMillis();
-
-        final List<Match> matches = scanner.scan(patternDB, pageContent);
-
-        long duration = System.currentTimeMillis() - startTime;
-
-        logger.info("Found {} matches in {} m/s for domain {} page with length {}.", matches.size(), duration, domain, pageContent.length());
-        matchingStatistics.write(pageContent.length() + ":" + duration + "\n");
-        /*if (debugMode) {
+    private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter) throws Throwable {
+        final List<Match> matches = scanner.scan(patternDB, line);
+        if (matches.size()>1) {
+            if (!this.haveWrittenDomainLine) {
+                this.haveWrittenDomainLine = true;
+                resultsWriter.write("\n");
+                resultsWriter.write("URL: "+domain+ "\n");
+            }
+            resultsWriter.write("MATCH: "+line+ "\n");
+            resultsWriter.write("NUMBEROFMATCHES: "+matches.size()+ "\n");
+            logger.info("Found {} matches m/s for domain {} page with length {}.", matches.size(), domain, line.length());
             for (Match match : matches) {
                 logger.debug("{} - Pattern: {}", domain, match.getMatchedExpression().getExpression());
+                resultsWriter.write("KEYWORD: "+match.getMatchedExpression().getExpression().replace("\\b", "")+ "\n");
             }
-        }*/
-
-        return ! matches.isEmpty();
+       }
     }
 
-    private String getValue(String header) {
-        return header.split(":")[1].trim();
+    private String getFilename(String path) {
+        String[] paths = path.split("/");
+        return paths[paths.length-1];
     }
 
     private String readUntilEmptyLine(BufferedReader contentReader) throws IOException {
