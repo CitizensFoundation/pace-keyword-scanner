@@ -35,6 +35,8 @@ public class Main {
             Database.compile(scanExpression);
         }
 
+        reader.close();
+
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Time taken to load patterns (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
 
@@ -43,8 +45,6 @@ public class Main {
 
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
-        final String archivePrefix = args[2]; // Server and root directory to which all archive paths in file are relative.
-
         final List<String> s3KeyList = Files.readAllLines(Paths.get(args[0]));
 
         List<Expression> expressions = loadExpressions(new File(args[1]));
@@ -69,9 +69,7 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
-        try (Writer resultsStats = new BufferedWriter(new FileWriter(new File("log/results.stats")));
-            Writer adServingDomains = new BufferedWriter(new FileWriter(new File("log/ad-serving.domains")));
-            Writer adFreeDomains = new BufferedWriter(new FileWriter(new File("log/ad-free.domains")))) {
+        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/timingResults.stats")))) {
 
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
@@ -79,7 +77,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, patternDB, key, adServingDomains, adFreeDomains, resultsStats));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, patternDB, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -91,9 +89,9 @@ public class Main {
             executorService.shutdown();
 
             long duration = System.currentTimeMillis() - startTime;
-            resultsStats.write("Duration\n");
-            resultsStats.write(duration + "\n");
-            resultsStats.close();
+            timingResultsStats.write("Duration\n");
+            timingResultsStats.write(duration + "\n");
+            timingResultsStats.close();
 
             logger.info("Analysis complete.");
         }

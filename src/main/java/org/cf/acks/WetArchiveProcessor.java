@@ -23,16 +23,11 @@ public class WetArchiveProcessor implements Runnable {
     private final Database patternDB;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
-    private final Writer domainsWithAds;
-    private final Writer domainsWithoutAds;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, Database patternDB, String archive,
-                         Writer domainsWithAds, Writer domainsWithoutAds, Writer matchingStatistics) {
+    WetArchiveProcessor(Semaphore schedulingSemaphore, Database patternDB, String archive) {
         this.schedulingSemaphore = schedulingSemaphore;
         this.patternDB = patternDB;
         this.archive = archive;
-        this.domainsWithAds = domainsWithAds;
-        this.domainsWithoutAds = domainsWithoutAds;
     }
 
     @Override
@@ -112,23 +107,5 @@ public class WetArchiveProcessor implements Runnable {
     private String getFilename(String path) {
         String[] paths = path.split("/");
         return paths[paths.length-1];
-    }
-
-    private String readUntilEmptyLine(BufferedReader contentReader) throws IOException {
-        String line;
-        while ((line = contentReader.readLine()) != null && ! line.isEmpty()) {
-            // Intentionally blank.
-        }
-
-        return line;
-    }
-
-    private String readUntilStartsWith(String text, BufferedReader contentReader) throws IOException {
-        String line;
-        while ((line = contentReader.readLine()) != null && ! line.startsWith(text)) {
-            // Intentionally blank.
-        }
-
-        return line;
     }
 }
