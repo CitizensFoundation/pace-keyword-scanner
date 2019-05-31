@@ -29,7 +29,7 @@ public class Main {
                 continue;
             }
 
-            Expression scanExpression = new Expression("\\b"+pattern);
+            Expression scanExpression = new Expression("\\b"+pattern.toLowerCase());
 
             expressions.add(scanExpression);
             Database.compile(scanExpression);

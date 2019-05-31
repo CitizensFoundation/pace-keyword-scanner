@@ -50,21 +50,26 @@ public class WetArchiveProcessor implements Runnable {
             Writer resultsWriter = new BufferedWriter(new FileWriter(new File("log/"+getFilename(archive)+".scanned")));
 
             String line;
+            String currentDate = null;
             while ((line = contentReader.readLine()) != null) {
                 if (line.startsWith(StringBundle.CONVERSION_MARKER)) {
                     processingEntry = true;
                     currentURL = null;
+                    currentDate = null;
                     this.haveWrittenDomainLine = false;
                 } else if (processingEntry && line.startsWith(StringBundle.TARGET_URI_MARKER)) {
                     currentURL = line;
                     currentURL = currentURL.replace(StringBundle.TARGET_URI_MARKER+" ", "");
-                } else if (processingEntry && currentURL != null && line.startsWith(StringBundle.CONTENT_LENGTH)) {
+                } else if (processingEntry && line.startsWith(StringBundle.TARGET_DATE)) {
+                    currentDate = line;
+                    currentDate = currentDate.replace(StringBundle.TARGET_DATE+" ", "");
+                } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(StringBundle.CONTENT_LENGTH)) {
                     line = contentReader.readLine();
 
                     try {
                         while ((line = contentReader.readLine()) != null && ! line.equals(StringBundle.WARC_VERSION)) {
-                            if (line.length()>100) {
-                                processLineForKeywords(scanner, currentURL, line.toLowerCase(), resultsWriter);
+                            if (line.length()>100 && line.length()<750) {
+                                processLineForKeywords(scanner, currentURL, line.toLowerCase(), resultsWriter, currentDate);
                             }
                         }
                     } catch (Throwable t) {
@@ -86,20 +91,19 @@ public class WetArchiveProcessor implements Runnable {
         logger.info("Finished archive {}.", archive);
     }
 
-    private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter) throws Throwable {
+    private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         final List<Match> matches = scanner.scan(patternDB, line);
         if (matches.size()>1) {
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
-                resultsWriter.write("URL: "+domain+ "\n");
+                resultsWriter.write(domain+ "\n");
+                resultsWriter.write(currentDate+ "\n");
             }
-            resultsWriter.write("MATCH: "+line+ "\n");
-            resultsWriter.write("NUMBEROFMATCHES: "+matches.size()+ "\n");
-            logger.info("Found {} matches m/s for domain {} page with length {}.", matches.size(), domain, line.length());
+            resultsWriter.write(line+ "\n");
+
             for (Match match : matches) {
-                logger.debug("{} - Pattern: {}", domain, match.getMatchedExpression().getExpression());
-                resultsWriter.write("KEYWORD: "+match.getMatchedExpression().getExpression().replace("\\b", "")+ "\n");
+                resultsWriter.write("kw:"+match.getMatchedExpression().getExpression().replace("\\b", "")+ "\n");
             }
        }
     }
