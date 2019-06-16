@@ -1,4 +1,5 @@
 target/
 log/
+results/
 .vscode
 .factorypath

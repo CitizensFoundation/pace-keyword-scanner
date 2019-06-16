@@ -43,11 +43,10 @@ public class Main {
         return expressions;
     }
 
-    // Throwable originates from the JNI interface to Hyperscan.
-    public static void main(String[] args) throws Throwable {
-        final List<String> s3KeyList = Files.readAllLines(Paths.get(args[0]));
+    private static void scanFiles(String[] args) throws Throwable {
+        final List<String> s3KeyList = Files.readAllLines(Paths.get(args[1]));
 
-        List<Expression> expressions = loadExpressions(new File(args[1]));
+        List<Expression> expressions = loadExpressions(new File(args[2]));
 
         Database patternDB;
         try {
@@ -69,7 +68,7 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
-        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/timingResults.stats")))) {
+        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/scanningTimingResults.stats")))) {
 
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
@@ -93,7 +92,60 @@ public class Main {
             timingResultsStats.write(duration + "\n");
             timingResultsStats.close();
 
-            logger.info("Analysis complete.");
+            logger.info("Scanning complete.");
+        }
+    }
+
+    private static void importToEs(String[] args) throws Throwable {
+        final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(args[1]));
+
+        logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
+
+        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        final int maxScheduled = poolSize * 3;
+
+        logger.info("Allocating a thread pool of size {}.", poolSize);
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
+
+        long startTime = System.currentTimeMillis();
+
+        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/importToESTimingResults.stats")))) {
+
+            Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
+
+            for (String file : scannedResultsFilesList) {
+                schedulingSemaphore.acquire();
+
+                try {
+                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", args[2]));
+                } catch (RejectedExecutionException ree) {
+                    logger.catching(ree);
+                }
+            }
+
+            // If all permits can be acquired, it can be assumed no more callables are executing.
+            schedulingSemaphore.acquire(maxScheduled);
+
+            executorService.shutdown();
+
+            long duration = System.currentTimeMillis() - startTime;
+            timingResultsStats.write("Duration\n");
+            timingResultsStats.write(duration + "\n");
+            timingResultsStats.close();
+
+            logger.info("Scanning complete.");
+        }
+    }
+
+    // Throwable originates from the JNI interface to Hyperscan.
+    public static void main(String[] args) throws Throwable {
+        if (args[0].equals("scan")) {
+            scanFiles(args);
+        } else if (args[0].equals("importToES")) {
+            importToEs(args);
+        } else {
+            logger.error("Cant find function to run");
         }
     }
 }
