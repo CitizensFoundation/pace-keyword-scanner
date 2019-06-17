@@ -22,7 +22,7 @@ public class WetArchiveProcessor implements Runnable {
     public final int BUFFER_SIZE = 128_000;
     public final int MIN_LINE_LENGTH = 100;
     public final int MAX_LINE_LENGTH = 750;
-    public final int MIN_KEYWORDS_FOR_RECORDING = 1;
+    public final int MIN_KEYWORDS_FOR_RECORDING = 2;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -115,7 +115,7 @@ public class WetArchiveProcessor implements Runnable {
 
     private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         final List<Match> matches = scanner.scan(patternDB, line.toLowerCase());
-        if (matches.size()>MIN_KEYWORDS_FOR_RECORDING) {
+        if (matches.size()>=MIN_KEYWORDS_FOR_RECORDING) {
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");

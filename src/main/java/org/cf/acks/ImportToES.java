@@ -62,10 +62,11 @@ public class ImportToES implements Runnable {
     public void run() {
         String currentURL = null; // Should never be null in practice.
         long startTime = System.currentTimeMillis();
-
+        System.out.println("Importing: "+archive);
+        BufferedReader contentReader = null;
         try {
             final InputStream objectStream = new FileInputStream(new File(archive));
-            final BufferedReader contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
+            contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
             this.esClient = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(this.esHostname, 9200, "http"),
@@ -107,6 +108,7 @@ public class ImportToES implements Runnable {
                     processingEntry = false;
                 }
             }
+            contentReader.close();
             esClient.close();
             long duration = System.currentTimeMillis() - startTime;
             resultsWriter.write("Duration\n");
@@ -116,6 +118,12 @@ public class ImportToES implements Runnable {
             logger.catching(io);
         } finally {
             schedulingSemaphore.release();
+            try {
+                contentReader.close();
+                esClient.close();
+            } catch (IOException io) {
+                logger.catching(io);
+            }
         }
     }
 
@@ -152,7 +160,11 @@ public class ImportToES implements Runnable {
                     }
                     jsonString = jsonString.substring(0, jsonString.length() - 1);
 
-                    jsonString+="],\"pageRank\":"+pageRank+",\"domainName\":\""+domainName+"\"}";
+                    jsonString+="],";
+                    jsonString+="\"pageRank\":"+pageRank+",";
+                    jsonString+="\"domainName\":\""+domainName+"\"";
+                    jsonString+="\"kwLength\":\""+keyWordsmap.entrySet().size()+"\"";
+                    jsonString+="}";
 
                     UpdateRequest esRequest = new UpdateRequest("urls", url);
                     esRequest.doc(jsonString, XContentType.JSON);

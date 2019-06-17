@@ -162,6 +162,8 @@ public class Main {
 
             logger.info("importToEs complete.");
             System.out.println("importToEs complete");
+        } catch (Exception ex) {
+            System.out.println("importToEs error: "+ex.getMessage());
         }
     }
 
