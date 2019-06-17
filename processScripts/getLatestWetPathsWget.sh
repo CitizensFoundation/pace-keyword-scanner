@@ -11,12 +11,12 @@ mastergzfile=${url##*/}
 yes y | gunzip $mastergzfile
 masterfile="${mastergzfile::-3}"
 
-cp $masterfile $masterfile.bck
-
 if [ $startFile -gt 0 ]
 then
   tail -n +${startFile} ${masterfile} > ${masterfile}.btrunc
-  cp ${masterfile}.btrunc ${masterfile}.truncated
+  mv ${masterfile}.btrunc ${masterfile}.truncated
+else
+ mv ${masterfile} ${masterfile}.truncated
 fi
 
 truncOptions="-i ${numberOfFiles}q ${masterfile}.truncated"
@@ -45,7 +45,6 @@ do
   echo "LINE: $line"
   wget -O $downloadDocument $line
   mv $downloadDocument $masterDlDocument
-  sleep 5
   MOUNTP="."
   FREE=$(df -k --output=avail "$MOUNTP" | tail -n1) # df -k not df -h
 

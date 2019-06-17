@@ -78,20 +78,31 @@ public class ImportToES implements Runnable {
                 int n = rand.nextInt(2500);
                 n += 3500;
                 System.out.println("Waiting on file import: "+archive+" "+n/1000+"s");
-                Thread.sleep(n);
+                long retryDuration = System.currentTimeMillis() - startTime;
+		if (retryDuraction<60000) {
+       	  	  Thread.sleep(n);
+		}
             } catch (Exception ex) {
                 System.out.println("Error sleeping in thread: "+ex.getMessage());
             }
         }
 
+	if (file.exists()) {
+
+	} else {
+	  System.out.println("Timeout on file: "+archive);
+	}
+
+
         BufferedReader contentReader = null;
         try {
             final InputStream objectStream = new FileInputStream(new File(archive));
             contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-            this.esClient = new RestHighLevelClient(
+            System.out.println("esHostname: "+this.esHostname);
+	    this.esClient = new RestHighLevelClient(
                 RestClient.builder(
-                        new HttpHost(this.esHostname, 9200, "http"),
-                        new HttpHost(this.esHostname, 9201, "http")));
+                        new HttpHost(this.esHostname, 443, "https")
+                        ));
 
             GetIndexRequest request = new GetIndexRequest("urls");
             boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
@@ -210,7 +221,8 @@ public class ImportToES implements Runnable {
                                 occurrances+=1;
                                 String jsonStringUpdateOld = "{\"occurrenceCount\":"+Integer.toString(occurrances)+"}";
                                 UpdateRequest esRequest = new UpdateRequest("urls", "doc", foundId);
-                                esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
+                                esRequest.retryOnConflict(7);
+			    	esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
                                 this.esClient.update(esRequest, RequestOptions.DEFAULT);
                             } else {
                                 foundId = null;
@@ -252,6 +264,7 @@ public class ImportToES implements Runnable {
                     jsonString+="}";
 
                     UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
+		    esRequest.retryOnConflict(7);
                     esRequest.doc(jsonString, XContentType.JSON);
                     esRequest.docAsUpsert(true);
                     UpdateResponse updateResponse = this.esClient.update(esRequest, RequestOptions.DEFAULT);
