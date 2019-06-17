@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
@@ -73,11 +74,14 @@ public class ImportToES implements Runnable {
         File file = new File(archive);
         while (file.exists()==false) {
             try {
-                Thread.sleep(5);
+                Random rand = new Random();
+                int n = rand.nextInt(2500);
+                n += 3500;
+                System.out.println("Waiting on file import: "+archive+" "+n/1000+"s");
+                Thread.sleep(n);
             } catch (Exception ex) {
                 System.out.println("Error sleeping in thread: "+ex.getMessage());
             }
-            System.out.println("Waiting on file: "+archive);
         }
 
         BufferedReader contentReader = null;

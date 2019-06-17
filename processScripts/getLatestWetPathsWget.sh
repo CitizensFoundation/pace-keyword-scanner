@@ -24,12 +24,14 @@ echo $truncOptions
 sed $truncOptions
 
 touch "$masterfile.downloadList"
+truncate -s 0  "$masterfile.downloadList"
 while IFS= read -r line
 do
   echo "https://commoncrawl.s3.amazonaws.com/$line" >> $masterfile.downloadList
 done < "$masterfile.truncated"
 
 touch "$masterfile.importList"
+truncate -s 0 "$masterfile.importList"
 while IFS= read -r line
 do
   echo "$masterpath/${line##*/}" >> $masterfile.importList
@@ -40,8 +42,10 @@ while IFS= read -r line
 do
   downloadDocument="$masterpath/${line##*/}.downloading"
   masterDlDocument="$masterpath/${line##*/}"
-  echo "wget $line --output-document=$downloadDocument"
-  #mv $downloadDocumnet $masterDlDocument
+  echo "LINE: $line"
+  wget -O $downloadDocument $line
+  mv $downloadDocument $masterDlDocument
+  sleep 5
   MOUNTP="."
   FREE=$(df -k --output=avail "$MOUNTP" | tail -n1) # df -k not df -h
 
@@ -49,5 +53,5 @@ do
     sleep 5;
     echo "Waitin on free diskspace, free now $FREE"
   done
-done < "$masterfile.importList"
+done < "$masterfile.downloadList"
 

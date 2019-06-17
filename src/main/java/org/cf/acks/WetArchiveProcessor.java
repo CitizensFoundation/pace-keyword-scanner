@@ -11,6 +11,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
@@ -53,11 +54,14 @@ public class WetArchiveProcessor implements Runnable {
             File file = new File(archive);
             while (file.exists()==false) {
                 try {
-                    Thread.sleep(5);
+                    Random rand = new Random();
+                    int n = rand.nextInt(3500);
+                    n += 4500;
+                    System.out.println("Waiting on file to scan: "+archive+" "+n/1000+"s");
+                    Thread.sleep(n);
                 } catch (Exception ex) {
                     System.out.println("Error sleeping in thread: "+ex.getMessage());
                 }
-                System.out.println("Waiting on file to scan: "+archive);
             }
 
             String currentURL = null; // Should never be null in practice.
@@ -75,7 +79,8 @@ public class WetArchiveProcessor implements Runnable {
 
                 boolean processingEntry = false;
 
-                Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
+                String outPath = "results/"+getFilename(archive)+".scanned";
+                Writer resultsWriter = new BufferedWriter(new FileWriter(new File(outPath+".working")));
 
                 String line;
                 String currentDate = null;
@@ -118,6 +123,8 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write("Duration\n");
                 resultsWriter.write(duration + "\n");
                 resultsWriter.close();
+                File finalFile = new File(outPath+".working");
+                boolean renameResult = finalFile.renameTo(new File(outPath));
             } catch (IOException io) {
                 logger.catching(io);
                 System.out.println("Error for: "+archive);
