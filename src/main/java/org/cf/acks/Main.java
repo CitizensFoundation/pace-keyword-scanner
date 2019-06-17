@@ -7,14 +7,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.zip.GZIPInputStream;
 
 public class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
+    public static final int BUFFER_SIZE = 128_000;
 
     private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
         BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
@@ -96,6 +99,25 @@ public class Main {
         }
     }
 
+    private static HashMap<Long, Long> getPageRanks(String pageRanksFile) {
+        HashMap<Long, Long> pageRanks = new HashMap<Long, Long>();
+        try {
+            final InputStream objectStream = new FileInputStream(new File(pageRanksFile));
+            final GZIPInputStream gzipObjectStream = new GZIPInputStream(objectStream, BUFFER_SIZE);
+            final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
+
+            String line;
+            while ((line = contentReader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                pageRanks.put(Long.parseLong(parts[1]), Long.parseLong(parts[0]));
+            }
+            contentReader.close();
+        } catch (IOException io) {
+            logger.catching(io);
+        }
+        return pageRanks;
+    }
+
     private static void importToEs(String[] args) throws Throwable {
         final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(args[1]));
 
@@ -110,6 +132,8 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
+        HashMap<Long, Long> pageRanks = getPageRanks(args[3]);
+
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/importToESTimingResults.stats")))) {
 
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
@@ -118,7 +142,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", args[2]));
+                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", args[2], pageRanks));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -134,8 +158,24 @@ public class Main {
             timingResultsStats.write(duration + "\n");
             timingResultsStats.close();
 
-            logger.info("Scanning complete.");
+            logger.info("importToEs complete.");
         }
+    }
+
+    private static void processHostRanksFile(String[] args) throws Throwable {
+
+        long startTime = System.currentTimeMillis();
+
+        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/processHostRankFile.stats")))) {
+            ProcessHostRanksFile processor = new ProcessHostRanksFile(args[1]);
+            processor.run();
+            long duration = System.currentTimeMillis() - startTime;
+            timingResultsStats.write("Duration\n");
+            timingResultsStats.write(duration + "\n");
+            timingResultsStats.close();
+
+            logger.info("processHostRanksFile complete.");
+       }
     }
 
     // Throwable originates from the JNI interface to Hyperscan.
@@ -144,6 +184,8 @@ public class Main {
             scanFiles(args);
         } else if (args[0].equals("importToES")) {
             importToEs(args);
+        } else if (args[0].equals("processHostRanksFile")) {
+            processHostRanksFile(args);
         } else {
             logger.error("Cant find function to run");
         }
