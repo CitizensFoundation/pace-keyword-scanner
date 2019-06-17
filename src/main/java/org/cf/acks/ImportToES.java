@@ -140,14 +140,14 @@ public class ImportToES implements Runnable {
                 resultsWriter.write("Duration\n");
                 resultsWriter.write(duration + "\n");
                 resultsWriter.close();
-                if (file.delete())
+               /* if (file.delete())
                 {
                     System.out.println(archive+" deleted after ESImport");
                 }
                 else
                 {
                     System.out.println(archive+" FAILED! after ESImport");
-                }
+                }*/
             } catch (IOException io) {
                 logger.catching(io);
             } finally {
