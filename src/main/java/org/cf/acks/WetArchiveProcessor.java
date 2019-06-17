@@ -85,7 +85,7 @@ public class WetArchiveProcessor implements Runnable {
                     try {
                         while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                             if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                processLineForKeywords(scanner, currentURL, line.toLowerCase(), resultsWriter, currentDate);
+                                processLineForKeywords(scanner, currentURL, line, resultsWriter, currentDate);
                             }
                         }
                     } catch (Throwable t) {
@@ -108,7 +108,7 @@ public class WetArchiveProcessor implements Runnable {
     }
 
     private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
-        final List<Match> matches = scanner.scan(patternDB, line);
+        final List<Match> matches = scanner.scan(patternDB, line.toLowerCase());
         if (matches.size()>MIN_KEYWORDS_FOR_RECORDING) {
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;

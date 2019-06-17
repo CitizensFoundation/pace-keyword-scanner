@@ -101,6 +101,7 @@ public class Main {
 
     private static HashMap<Long, Long> getPageRanks(String pageRanksFile) {
         HashMap<Long, Long> pageRanks = new HashMap<Long, Long>();
+        System.out.println("Starting to read pageRanks file");
         try {
             final InputStream objectStream = new FileInputStream(new File(pageRanksFile));
             final GZIPInputStream gzipObjectStream = new GZIPInputStream(objectStream, BUFFER_SIZE);
@@ -112,6 +113,7 @@ public class Main {
                 pageRanks.put(Long.parseLong(parts[1]), Long.parseLong(parts[0]));
             }
             contentReader.close();
+            System.out.println("Have read pageRanks file");
         } catch (IOException io) {
             logger.catching(io);
         }
@@ -159,6 +161,7 @@ public class Main {
             timingResultsStats.close();
 
             logger.info("importToEs complete.");
+            System.out.println("importToEs complete");
         }
     }
 

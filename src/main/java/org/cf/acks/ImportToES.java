@@ -84,7 +84,7 @@ public class ImportToES implements Runnable {
 
             String line;
             String currentDate = null;
-            while ((line = contentReader.readLine()) != null) {
+            outerloop: while ((line = contentReader.readLine()) != null) {
                 if (line.length()==0) {
                     processingEntry = true;
                     currentURL = null;
@@ -96,7 +96,7 @@ public class ImportToES implements Runnable {
                     try {
                         while ((line = contentReader.readLine()) != null && line.length()!=0) {
                             if (line.startsWith("Duration")) {
-                                break;
+                                break outerloop;
                             } else {
                                 importLinesToES(currentURL, line, resultsWriter, currentDate);
                             }
@@ -122,45 +122,50 @@ public class ImportToES implements Runnable {
     private void importLinesToES(String url, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String splitLines[] = line.split("kd8x72dAx");
         url = url.substring(0, Math.min(512, url.length()));
-        URI uri = new URI(url);
+        URL uri = new URL(url);
         String domainName = uri.getHost();
-        Long domainHash = LongHashFunction.xx().hashChars(domainName);
-        Long pageRank = this.pageRanks.get(domainHash);
+        if (domainName!=null) {
+            domainName = domainName.replace("www.","");
+            Long domainHash = LongHashFunction.xx().hashChars(domainName);
+            Long pageRank = this.pageRanks.get(domainHash);
 
-        if (pageRank!=null) {
-            if (splitLines.length>1) {
-                String paragraph = splitLines[0].replaceAll("\"","");
-                JsonStringEncoder e = JsonStringEncoder.getInstance();
-                paragraph = new String(e.quoteAsString(paragraph));
-                String keywords[] = splitLines[1].split(":");
-                Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
+            if (pageRank!=null) {
+                if (splitLines.length>1) {
+                    String paragraph = splitLines[0].replaceAll("\"","");
+                    JsonStringEncoder e = JsonStringEncoder.getInstance();
+                    paragraph = new String(e.quoteAsString(paragraph));
+                    String keywords[] = splitLines[1].split(":");
+                    Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
-                for(String keyword:keywords){
-                    if (!keyWordsmap.containsKey(keyword)) {
-                        keyWordsmap.put(keyword,1);
-                    } else{
-                        keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                    for(String keyword:keywords){
+                        if (!keyWordsmap.containsKey(keyword)) {
+                            keyWordsmap.put(keyword,1);
+                        } else{
+                            keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                        }
                     }
+
+                    String jsonString = "{\"createdAt\":\""+currentDate+"\",\"paragraph\":\""+paragraph+"\",\"keywords\":[";
+
+                    for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
+                        jsonString += "{\"keyword\":\""+entry.getKey()+"\",\"count\":"+entry.getValue().toString()+"},";
+                    }
+                    jsonString = jsonString.substring(0, jsonString.length() - 1);
+
+                    jsonString+="],\"pageRank\":"+pageRank+",\"domainName\":\""+domainName+"\"}";
+
+                    UpdateRequest esRequest = new UpdateRequest("urls", url);
+                    esRequest.doc(jsonString, XContentType.JSON);
+                    esRequest.docAsUpsert(true);
+                    UpdateResponse updateResponse = this.esClient.update(esRequest, RequestOptions.DEFAULT);
+                } else {
+                    throw new Exception("Splitlines! "+line);
                 }
-
-                String jsonString = "{\"createdAt\":\""+currentDate+"\",\"paragraph\":\""+paragraph+"\",\"keywords\":[";
-
-                for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                    jsonString += "{\"keyword\":\""+entry.getKey()+"\",\"count\":"+entry.getValue().toString()+"},";
-                }
-                jsonString = jsonString.substring(0, jsonString.length() - 1);
-
-                jsonString+="],\"pageRank\":"+pageRank+"}";
-
-                UpdateRequest esRequest = new UpdateRequest("urls", url);
-                esRequest.doc(jsonString, XContentType.JSON);
-                esRequest.docAsUpsert(true);
-                UpdateResponse updateResponse = this.esClient.update(esRequest, RequestOptions.DEFAULT);
             } else {
-                throw new Exception("Splitlines! "+line);
+                String debugger = "go";
             }
         } else {
-            String go = "go";
+            String debugger = "go";
         }
     }
     private String getFilename(String path) {

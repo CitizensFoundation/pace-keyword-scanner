@@ -50,10 +50,11 @@ public class ProcessHostRanksFile implements Runnable {
                     final List<String> components = Arrays.asList(parts[4].split("\\."));
                     Collections.reverse(components);
                     String domainName = String.join(".", components);
+                    domainName = domainName.replace("www.","");
                     Long position = Long.valueOf(parts[0]);
                     Double score = Double.valueOf(parts[1]);
                     Long domainHash = LongHashFunction.xx().hashChars(domainName);
-                    if (score>0.0) {
+                    if (position<42_000_001) {
                         contentWriter.write(position.toString()+" "+domainHash.toString()+"\n");
                     } else {
                         break;
