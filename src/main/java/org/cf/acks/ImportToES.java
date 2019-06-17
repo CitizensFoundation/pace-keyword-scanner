@@ -70,6 +70,16 @@ public class ImportToES implements Runnable {
         String currentURL = null; // Should never be null in practice.
         long startTime = System.currentTimeMillis();
         System.out.println("Importing: "+archive);
+        File file = new File(archive);
+        while (file.exists()==false) {
+            try {
+                Thread.sleep(5);
+            } catch (Exception ex) {
+                System.out.println("Error sleeping in thread: "+ex.getMessage());
+            }
+            System.out.println("Waiting on file: "+archive);
+        }
+
         BufferedReader contentReader = null;
         try {
             final InputStream objectStream = new FileInputStream(new File(archive));
@@ -121,6 +131,14 @@ public class ImportToES implements Runnable {
             resultsWriter.write("Duration\n");
             resultsWriter.write(duration + "\n");
             resultsWriter.close();
+            if (file.delete())
+            {
+                System.out.println(archive+" deleted after ESImport");
+            }
+            else
+            {
+                System.out.println(archive+" FAILED! after ESImport");
+            }
         } catch (IOException io) {
             logger.catching(io);
         } finally {

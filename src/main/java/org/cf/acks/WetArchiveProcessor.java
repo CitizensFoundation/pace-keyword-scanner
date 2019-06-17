@@ -50,6 +50,16 @@ public class WetArchiveProcessor implements Runnable {
     public void run() {
         System.out.println("Scanning: "+archive);
         if (archive!=null & archive.length()>0) {
+            File file = new File(archive);
+            while (file.exists()==false) {
+                try {
+                    Thread.sleep(5);
+                } catch (Exception ex) {
+                    System.out.println("Error sleeping in thread: "+ex.getMessage());
+                }
+                System.out.println("Waiting on file to scan: "+archive);
+            }
+
             String currentURL = null; // Should never be null in practice.
             long startTime = System.currentTimeMillis();
             try (final InputStream objectStream = new FileInputStream(new File(archive));
@@ -95,6 +105,14 @@ public class WetArchiveProcessor implements Runnable {
                         }
                         processingEntry = false;
                     }
+                }
+                if (file.delete())
+                {
+                    System.out.println(archive+" deleted");
+                }
+                else
+                {
+                    System.out.println(archive+" FAILED!");
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 resultsWriter.write("Duration\n");
