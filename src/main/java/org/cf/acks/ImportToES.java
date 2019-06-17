@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -27,7 +29,12 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
+import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import net.openhft.hashing.LongHashFunction;
 
@@ -142,31 +149,87 @@ public class ImportToES implements Runnable {
                     String paragraph = splitLines[0].replaceAll("\"","");
                     JsonStringEncoder e = JsonStringEncoder.getInstance();
                     paragraph = new String(e.quoteAsString(paragraph));
-                    String keywords[] = splitLines[1].split(":");
-                    Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
+                    String strippedParagraph = paragraph.toLowerCase().replace(" ","").replace("'","").
+                    replace("`","").
+                    replace("´","").
+                    replace("‘","").
+                    replace("’","").
+                    replace("”","").
+                    replace(":","").
+                    replace("?","").
+                    replace(";","").
+                    replace("“","");
 
-                    for(String keyword:keywords){
-                        if (!keyWordsmap.containsKey(keyword)) {
-                            keyWordsmap.put(keyword,1);
-                        } else{
-                            keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                    Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
+                    String pHash = Long.toString(pHashLong);
+                    String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url+pHash));
+
+                    MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder("pHash", pHashLong);
+
+                    SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+                    sourceBuilder.fetchSource(true);
+                    SearchRequest searchRequest = new SearchRequest("urls");
+                    sourceBuilder.query(matchQueryBuilder);
+                    searchRequest.source(sourceBuilder);
+                    SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
+                    RestStatus status = searchResponse.status();
+
+                    String foundId = null;
+                    if (status.getStatus()==200) {
+                        SearchHits hits = searchResponse.getHits();
+                        if (hits.getTotalHits()>0 || (hits.getHits()!=null && hits.getHits().length>0)) {
+                            foundId = hits.getAt(0).getId();
+                            if (!foundId.equals(urlIdHash)) {
+                                Map<String, Object> fieldMap = hits.getAt(0).getSourceAsMap();
+                                Integer occurrances = 0;
+                                if (fieldMap.get("occurrenceCount")!=null) {
+                                    occurrances = (Integer) fieldMap.get("occurrenceCount");
+                                }
+                                occurrances+=1;
+                                String jsonStringUpdateOld = "{\"occurrenceCount\":"+Integer.toString(occurrances)+"}";
+                                UpdateRequest esRequest = new UpdateRequest("urls", "doc", foundId);
+                                esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
+                                this.esClient.update(esRequest, RequestOptions.DEFAULT);
+                            } else {
+                                foundId = null;
+                            }
                         }
                     }
 
-                    String jsonString = "{\"createdAt\":\""+currentDate+"\",\"paragraph\":\""+paragraph+"\",\"keywords\":[";
+                    String jsonString = "{\"createdAt\":\""+currentDate+"\",";
+                    if (foundId==null) {
+                        String keywords[] = splitLines[1].split(":");
+                        Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
-                    for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                        jsonString += "{\"keyword\":\""+entry.getKey()+"\",\"count\":"+entry.getValue().toString()+"},";
+                        for(String keyword:keywords){
+                            if (!keyWordsmap.containsKey(keyword)) {
+                                keyWordsmap.put(keyword,1);
+                            } else{
+                                keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                            }
+                        }
+
+                        jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
+
+                        for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
+                            jsonString += "{\"keyword\":\""+entry.getKey()+"\",\"count\":"+entry.getValue().toString()+"},";
+                        }
+                        jsonString = jsonString.substring(0, jsonString.length() - 1);
+
+                        jsonString+="],";
+                        jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
+                        jsonString+="\"occurrenceCount\": 1,";
+                        jsonString+="\"pHash\":"+pHash+",";
                     }
-                    jsonString = jsonString.substring(0, jsonString.length() - 1);
 
-                    jsonString+="],";
                     jsonString+="\"pageRank\":"+pageRank+",";
+                    if (foundId!=null) {
+                        jsonString+="\"masterParagraphUrlId\":\""+foundId+"\",";
+                    }
                     jsonString+="\"domainName\":\""+domainName+"\"";
-                    jsonString+="\"kwLength\":\""+keyWordsmap.entrySet().size()+"\"";
                     jsonString+="}";
 
-                    UpdateRequest esRequest = new UpdateRequest("urls", url);
+                    UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
                     esRequest.doc(jsonString, XContentType.JSON);
                     esRequest.docAsUpsert(true);
                     UpdateResponse updateResponse = this.esClient.update(esRequest, RequestOptions.DEFAULT);
