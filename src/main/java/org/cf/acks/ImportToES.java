@@ -79,91 +79,88 @@ public class ImportToES implements Runnable {
                 n += 3500;
                 System.out.println("Waiting on file import: "+archive+" "+n/1000+"s");
                 long retryDuration = System.currentTimeMillis() - startTime;
-		if (retryDuraction<60000) {
-       	  	  Thread.sleep(n);
-		}
+                if (retryDuration<60000) {
+                    Thread.sleep(n);
+                }
             } catch (Exception ex) {
                 System.out.println("Error sleeping in thread: "+ex.getMessage());
             }
         }
 
-	if (file.exists()) {
-
-	} else {
-	  System.out.println("Timeout on file: "+archive);
-	}
-
-
-        BufferedReader contentReader = null;
-        try {
-            final InputStream objectStream = new FileInputStream(new File(archive));
-            contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-            System.out.println("esHostname: "+this.esHostname);
-	    this.esClient = new RestHighLevelClient(
-                RestClient.builder(
-                        new HttpHost(this.esHostname, 443, "https")
-                        ));
-
-            GetIndexRequest request = new GetIndexRequest("urls");
-            boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
-            if (!exists) {
-                CreateIndexRequest createRequest = new CreateIndexRequest("urls");
-                CreateIndexResponse createIndexResponse = this.esClient.indices().create(createRequest, RequestOptions.DEFAULT);
-            }
-
-            boolean processingEntry = false;
-
-            Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
-
-            String line;
-            String currentDate = null;
-            outerloop: while ((line = contentReader.readLine()) != null) {
-                if (line.length()==0) {
-                    processingEntry = true;
-                    currentURL = null;
-                    currentDate = null;
-                } else if (processingEntry && !line.contains("kd8x72dAx") && (line.startsWith("http://") || line.startsWith("https://"))) {
-                    currentURL = line;
-                    currentDate = contentReader.readLine();
-                } else if (processingEntry && currentURL != null && currentDate != null) {
-                    try {
-                        while ((line = contentReader.readLine()) != null && line.length()!=0) {
-                            if (line.startsWith("Duration")) {
-                                break outerloop;
-                            } else {
-                                importLinesToES(currentURL, line, resultsWriter, currentDate);
-                            }
-                        }
-                    } catch (Throwable t) {
-                        throw new IOException(t);
-                    }
-                    processingEntry = false;
-                }
-            }
-            contentReader.close();
-            esClient.close();
-            long duration = System.currentTimeMillis() - startTime;
-            resultsWriter.write("Duration\n");
-            resultsWriter.write(duration + "\n");
-            resultsWriter.close();
-            if (file.delete())
-            {
-                System.out.println(archive+" deleted after ESImport");
-            }
-            else
-            {
-                System.out.println(archive+" FAILED! after ESImport");
-            }
-        } catch (IOException io) {
-            logger.catching(io);
-        } finally {
-            schedulingSemaphore.release();
+        if (file.exists()) {
+            BufferedReader contentReader = null;
             try {
+                final InputStream objectStream = new FileInputStream(new File(archive));
+                contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
+                System.out.println("esHostname: "+this.esHostname);
+            this.esClient = new RestHighLevelClient(
+                    RestClient.builder(
+                            new HttpHost(this.esHostname, 443, "https")
+                            ));
+
+                GetIndexRequest request = new GetIndexRequest("urls");
+                boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
+                if (!exists) {
+                    CreateIndexRequest createRequest = new CreateIndexRequest("urls");
+                    CreateIndexResponse createIndexResponse = this.esClient.indices().create(createRequest, RequestOptions.DEFAULT);
+                }
+
+                boolean processingEntry = false;
+
+                Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
+
+                String line;
+                String currentDate = null;
+                outerloop: while ((line = contentReader.readLine()) != null) {
+                    if (line.length()==0) {
+                        processingEntry = true;
+                        currentURL = null;
+                        currentDate = null;
+                    } else if (processingEntry && !line.contains("kd8x72dAx") && (line.startsWith("http://") || line.startsWith("https://"))) {
+                        currentURL = line;
+                        currentDate = contentReader.readLine();
+                    } else if (processingEntry && currentURL != null && currentDate != null) {
+                        try {
+                            while ((line = contentReader.readLine()) != null && line.length()!=0) {
+                                if (line.startsWith("Duration")) {
+                                    break outerloop;
+                                } else {
+                                    importLinesToES(currentURL, line, resultsWriter, currentDate);
+                                }
+                            }
+                        } catch (Throwable t) {
+                            throw new IOException(t);
+                        }
+                        processingEntry = false;
+                    }
+                }
                 contentReader.close();
                 esClient.close();
+                long duration = System.currentTimeMillis() - startTime;
+                resultsWriter.write("Duration\n");
+                resultsWriter.write(duration + "\n");
+                resultsWriter.close();
+                if (file.delete())
+                {
+                    System.out.println(archive+" deleted after ESImport");
+                }
+                else
+                {
+                    System.out.println(archive+" FAILED! after ESImport");
+                }
             } catch (IOException io) {
                 logger.catching(io);
+            } finally {
+                schedulingSemaphore.release();
+                try {
+                    contentReader.close();
+                    esClient.close();
+                } catch (IOException io) {
+                    logger.catching(io);
+                }
             }
+        } else {
+            System.out.println("Timeout on file: "+archive);
         }
     }
 
