@@ -48,60 +48,66 @@ public class WetArchiveProcessor implements Runnable {
 
     @Override
     public void run() {
-        String currentURL = null; // Should never be null in practice.
-        long startTime = System.currentTimeMillis();
-        try (final InputStream objectStream = new FileInputStream(new File(archive));
-            final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
-            final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-            final Scanner scanner = new Scanner()) {
+        System.out.println("Scanning: "+archive);
+        if (archive!=null & archive.length()>0) {
+            String currentURL = null; // Should never be null in practice.
+            long startTime = System.currentTimeMillis();
+            try (final InputStream objectStream = new FileInputStream(new File(archive));
+                final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
+                final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
+                final Scanner scanner = new Scanner()) {
 
-            try {
-                scanner.allocScratch(patternDB); // Memory allocation. Scanner#close() will de-allocate resources.
-            } catch (Throwable t) {
-                throw new IOException(t);
-            }
-
-            boolean processingEntry = false;
-
-            Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
-
-            String line;
-            String currentDate = null;
-            while ((line = contentReader.readLine()) != null) {
-                if (line.startsWith(CONVERSION_MARKER)) {
-                    processingEntry = true;
-                    currentURL = null;
-                    currentDate = null;
-                    this.haveWrittenDomainLine = false;
-                } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
-                    currentURL = line;
-                    currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
-                } else if (processingEntry && line.startsWith(TARGET_DATE)) {
-                    currentDate = line;
-                    currentDate = currentDate.replace(TARGET_DATE+" ", "");
-                } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
-                    line = contentReader.readLine();
-
-                    try {
-                        while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
-                            if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                processLineForKeywords(scanner, currentURL, line, resultsWriter, currentDate);
-                            }
-                        }
-                    } catch (Throwable t) {
-                        throw new IOException(t);
-                    }
-                    processingEntry = false;
+                try {
+                    scanner.allocScratch(patternDB); // Memory allocation. Scanner#close() will de-allocate resources.
+                } catch (Throwable t) {
+                    throw new IOException(t);
                 }
+
+                boolean processingEntry = false;
+
+                Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
+
+                String line;
+                String currentDate = null;
+                while ((line = contentReader.readLine()) != null) {
+                    if (line.startsWith(CONVERSION_MARKER)) {
+                        processingEntry = true;
+                        currentURL = null;
+                        currentDate = null;
+                        this.haveWrittenDomainLine = false;
+                    } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
+                        currentURL = line;
+                        currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
+                    } else if (processingEntry && line.startsWith(TARGET_DATE)) {
+                        currentDate = line;
+                        currentDate = currentDate.replace(TARGET_DATE+" ", "");
+                    } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
+                        line = contentReader.readLine();
+
+                        try {
+                            while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
+                                if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
+                                    processLineForKeywords(scanner, currentURL, line, resultsWriter, currentDate);
+                                }
+                            }
+                        } catch (Throwable t) {
+                            throw new IOException(t);
+                        }
+                        processingEntry = false;
+                    }
+                }
+                long duration = System.currentTimeMillis() - startTime;
+                resultsWriter.write("Duration\n");
+                resultsWriter.write(duration + "\n");
+                resultsWriter.close();
+            } catch (IOException io) {
+                logger.catching(io);
+                System.out.println("Error for: "+archive);
+            } finally {
+                schedulingSemaphore.release();
             }
-            long duration = System.currentTimeMillis() - startTime;
-            resultsWriter.write("Duration\n");
-            resultsWriter.write(duration + "\n");
-            resultsWriter.close();
-        } catch (IOException io) {
-            logger.catching(io);
-        } finally {
-            schedulingSemaphore.release();
+        } else {
+            System.out.println("Empty: "+archive);
         }
 
         logger.info("Finished archive {}.", archive);

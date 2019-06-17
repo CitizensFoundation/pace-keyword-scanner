@@ -12,13 +12,13 @@ masterfile="${mastergzfile::-3}"
 truncOptions="-i ${numberOfFiles}q ${masterfile}"
 echo $truncOptions
 sed $truncOptions
-echo "" > "$masterfile.downloadList"
+touch "$masterfile.downloadList"
 while IFS= read -r line
 do
   echo "https://commoncrawl.s3.amazonaws.com/$line" >> $masterfile.downloadList
 done < "$masterfile"
 
-echo "" > "$masterfile.importList"
+touch "$masterfile.importList"
 while IFS= read -r line
 do
   echo "$masterpath/${line##*/}" >> $masterfile.importList
