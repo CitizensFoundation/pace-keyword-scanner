@@ -244,10 +244,10 @@ public class ImportToES implements Runnable {
                                 String jsonStringUpdateOld;
                                 if (domainName.equals(otherDomainName)) {
                                     intRepostCount+=1;
-                                    jsonStringUpdateOld = "{\"internalRepost\":"+Integer.toString(intRepostCount)+"}";
+                                    jsonStringUpdateOld = "{\"intRepostCount\":"+Integer.toString(intRepostCount)+"}";
                                 } else {
                                     extRepostCount+=1;
-                                    jsonStringUpdateOld = "{\"externalRepost\":"+Integer.toString(extRepostCount)+"}";
+                                    jsonStringUpdateOld = "{\"extRepostCount\":"+Integer.toString(extRepostCount)+"}";
                                 }
 
                                 UpdateRequest esRequest = new UpdateRequest("urls", "doc", foundId);
