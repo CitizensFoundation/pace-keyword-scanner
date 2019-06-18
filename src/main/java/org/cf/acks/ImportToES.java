@@ -1,5 +1,6 @@
 package org.cf.acks;
 
+import com.amazonaws.transform.StaxUnmarshallerContext;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Match;
@@ -88,87 +89,106 @@ public class ImportToES implements Runnable {
         }
 
         if (file.exists()) {
-            BufferedReader contentReader = null;
-            try {
-                final InputStream objectStream = new FileInputStream(new File(archive));
-                contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-                System.out.println("esHostname: "+this.esHostname);
-            this.esClient = new RestHighLevelClient(
-                    RestClient.builder(
-                            new HttpHost(this.esHostname, 443, "https")
-                            ));
-
-                GetIndexRequest request = new GetIndexRequest("urls");
-                boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
-                if (!exists) {
-                    CreateIndexRequest createRequest = new CreateIndexRequest("urls");
-                    CreateIndexResponse createIndexResponse = this.esClient.indices().create(createRequest, RequestOptions.DEFAULT);
-                }
-
-                boolean processingEntry = false;
-
-                Writer resultsWriter = new BufferedWriter(new FileWriter(new File("results/"+getFilename(archive)+".scanned")));
-
-                String line;
-                String currentDate = null;
-                outerloop: while ((line = contentReader.readLine()) != null) {
-                    if (line.length()==0) {
-                        processingEntry = true;
-                        currentURL = null;
-                        currentDate = null;
-                    } else if (processingEntry && !line.contains("kd8x72dAx") && (line.startsWith("http://") || line.startsWith("https://"))) {
-                        currentURL = line;
-                        currentDate = contentReader.readLine();
-                    } else if (processingEntry && currentURL != null && currentDate != null) {
-                        try {
-                            while ((line = contentReader.readLine()) != null && line.length()!=0) {
-                                if (line.startsWith("Duration")) {
-                                    break outerloop;
-                                } else {
-                                    importLinesToES(currentURL, line, resultsWriter, currentDate);
-                                }
-                            }
-                        } catch (Throwable t) {
-                            throw new IOException(t);
-                        }
-                        processingEntry = false;
-                    }
-                }
-                contentReader.close();
-                esClient.close();
-                long duration = System.currentTimeMillis() - startTime;
-                resultsWriter.write("Duration\n");
-                resultsWriter.write(duration + "\n");
-                resultsWriter.close();
-               /* if (file.delete())
-                {
-                    System.out.println(archive+" deleted after ESImport");
-                }
-                else
-                {
-                    System.out.println(archive+" FAILED! after ESImport");
-                }*/
-            } catch (IOException io) {
-                logger.catching(io);
-            } finally {
-                schedulingSemaphore.release();
+            if (!hasBeenImported(archive)) {
+                BufferedReader contentReader = null;
                 try {
+                    final InputStream objectStream = new FileInputStream(new File(archive));
+                    contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
+                    System.out.println("esHostname: "+this.esHostname);
+                    this.esClient = new RestHighLevelClient(
+                        RestClient.builder(
+                                new HttpHost(this.esHostname, 443, "https")
+                                ));
+
+                    GetIndexRequest request = new GetIndexRequest("urls");
+                    boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
+                    if (!exists) {
+                        CreateIndexRequest createRequest = new CreateIndexRequest("urls");
+                        this.esClient.indices().create(createRequest, RequestOptions.DEFAULT);
+                    }
+
+                    boolean processingEntry = false;
+
+                    String line;
+                    String currentDate = null;
+                    outerloop: while ((line = contentReader.readLine()) != null) {
+                        if (line.length()==0) {
+                            processingEntry = true;
+                            currentURL = null;
+                            currentDate = null;
+                        } else if (processingEntry && !line.contains("kd8x72dAx") && (line.startsWith("http://") || line.startsWith("https://"))) {
+                            currentURL = line;
+                            currentDate = contentReader.readLine();
+                        } else if (processingEntry && currentURL != null && currentDate != null) {
+                            try {
+                                while ((line = contentReader.readLine()) != null && line.length()!=0) {
+                                    if (line.startsWith("Duration")) {
+                                        break outerloop;
+                                    } else {
+                                        importLinesToES(currentURL, line, currentDate);
+                                    }
+                                }
+                            } catch (Throwable t) {
+                                throw new IOException(t);
+                            }
+                            processingEntry = false;
+                        }
+                    }
                     contentReader.close();
                     esClient.close();
+                   /* if (file.delete())
+                    {
+                        System.out.println(archive+" deleted after ESImport");
+                    }
+                    else
+                    {
+                        System.out.println(archive+" FAILED! after ESImport");
+                    }*/
                 } catch (IOException io) {
                     logger.catching(io);
+                } finally {
+                    schedulingSemaphore.release();
+                    try {
+                        contentReader.close();
+                        esClient.close();
+                    } catch (IOException io) {
+                        logger.catching(io);
+                    }
                 }
+            } else {
+                System.out.println("File already imported: "+archive);
+                schedulingSemaphore.release();
             }
         } else {
             System.out.println("Timeout on file: "+archive);
+            schedulingSemaphore.release();
         }
     }
 
-    private void importLinesToES(String url, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private boolean hasBeenImported(String archive) {
+        String path = "state/"+getFilename(archive)+".importCompleted";
+        File file = new File(path);
+        return file.exists();
+    }
+
+    private void setState(String archive, String status) {
+        String outPath = "state/"+getFilename(archive)+".importCompleted";
+        try {
+            Writer stateWrite = new BufferedWriter(new FileWriter(new File(outPath)));
+            stateWrite.write(status);
+            stateWrite.close();
+            }
+        catch (IOException io) {
+            logger.catching(io);
+        }
+    }
+
+    private void importLinesToES(String url, String line, String currentDate) throws Throwable {
         String splitLines[] = line.split("kd8x72dAx");
         url = url.substring(0, Math.min(512, url.length()));
         URL uri = new URL(url);
         String domainName = uri.getHost();
+
         if (domainName!=null) {
             domainName = domainName.replace("www.","");
             Long domainHash = LongHashFunction.xx().hashChars(domainName);
@@ -211,15 +231,28 @@ public class ImportToES implements Runnable {
                             foundId = hits.getAt(0).getId();
                             if (!foundId.equals(urlIdHash)) {
                                 Map<String, Object> fieldMap = hits.getAt(0).getSourceAsMap();
-                                Integer occurrances = 0;
-                                if (fieldMap.get("occurrenceCount")!=null) {
-                                    occurrances = (Integer) fieldMap.get("occurrenceCount");
+                                Integer intRepostCount = 0;
+                                Integer extRepostCount = 0;
+                                if (fieldMap.get("intRepostCount")!=null) {
+                                    intRepostCount = (Integer) fieldMap.get("intRepostCount");
                                 }
-                                occurrances+=1;
-                                String jsonStringUpdateOld = "{\"occurrenceCount\":"+Integer.toString(occurrances)+"}";
+                                if (fieldMap.get("extRepostCount")!=null) {
+                                    extRepostCount = (Integer) fieldMap.get("extRepostCount");
+                                }
+
+                                String otherDomainName = (String) fieldMap.get("domainName");
+                                String jsonStringUpdateOld;
+                                if (domainName.equals(otherDomainName)) {
+                                    intRepostCount+=1;
+                                    jsonStringUpdateOld = "{\"internalRepost\":"+Integer.toString(intRepostCount)+"}";
+                                } else {
+                                    extRepostCount+=1;
+                                    jsonStringUpdateOld = "{\"externalRepost\":"+Integer.toString(extRepostCount)+"}";
+                                }
+
                                 UpdateRequest esRequest = new UpdateRequest("urls", "doc", foundId);
                                 esRequest.retryOnConflict(7);
-			    	esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
+                                esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
                                 this.esClient.update(esRequest, RequestOptions.DEFAULT);
                             } else {
                                 foundId = null;
@@ -249,7 +282,8 @@ public class ImportToES implements Runnable {
 
                         jsonString+="],";
                         jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
-                        jsonString+="\"occurrenceCount\": 1,";
+                        jsonString+="\"extRepostCount\": 0,";
+                        jsonString+="\"intRepostCount\": 0,";
                         jsonString+="\"pHash\":"+pHash+",";
                     }
 
@@ -261,18 +295,19 @@ public class ImportToES implements Runnable {
                     jsonString+="}";
 
                     UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
-		    esRequest.retryOnConflict(7);
+		            esRequest.retryOnConflict(7);
                     esRequest.doc(jsonString, XContentType.JSON);
                     esRequest.docAsUpsert(true);
-                    UpdateResponse updateResponse = this.esClient.update(esRequest, RequestOptions.DEFAULT);
+                    this.esClient.update(esRequest, RequestOptions.DEFAULT);
+                    setState(archive,"completed");
                 } else {
                     throw new Exception("Splitlines! "+line);
                 }
             } else {
-                String debugger = "go";
+                setState(archive,"belowPageRankLimit");
             }
         } else {
-            String debugger = "go";
+            setState(archive,"errorNoDomainFound");
         }
     }
     private String getFilename(String path) {
