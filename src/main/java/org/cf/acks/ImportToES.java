@@ -51,6 +51,8 @@ public class ImportToES implements Runnable {
     private final String esHostname;
     private Integer esPort=443;
     private String esProtocol="https";
+//    private Integer esPort=9200;
+//    private String esProtocol="http";
     final static String TARGET_URI_MARKER = "WARC-Target-URI:";
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
@@ -282,7 +284,7 @@ public class ImportToES implements Runnable {
                             String keyword = entry.getKey().replace("\\b", "");
                             String count = entry.getValue().toString();
                             boolean essential = false;
-                            if (keyword.substring(keyword.length()-1)=="E") {
+                            if (keyword.substring(keyword.length()-1).equals("E")) {
                                 essential=true;
                             }
                             keyword = keyword.substring(0, keyword.length() - 1);
