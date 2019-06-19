@@ -49,6 +49,8 @@ public class ImportToES implements Runnable {
     private final Semaphore schedulingSemaphore;
     private final String archive;
     private final String esHostname;
+    private Integer esPort=9200;
+    private String esProtocol="http";
     final static String TARGET_URI_MARKER = "WARC-Target-URI:";
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
@@ -80,8 +82,10 @@ public class ImportToES implements Runnable {
                 n += 3500;
                 System.out.println("Waiting on file import: "+archive+" "+n/1000+"s");
                 long retryDuration = System.currentTimeMillis() - startTime;
-                if (retryDuration<60000) {
+                if (retryDuration<5*60*1000) {
                     Thread.sleep(n);
+                } else {
+                    break;
                 }
             } catch (Exception ex) {
                 System.out.println("Error sleeping in thread: "+ex.getMessage());
@@ -94,10 +98,9 @@ public class ImportToES implements Runnable {
                 try {
                     final InputStream objectStream = new FileInputStream(new File(archive));
                     contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-                    System.out.println("esHostname: "+this.esHostname);
                     this.esClient = new RestHighLevelClient(
                         RestClient.builder(
-                                new HttpHost(this.esHostname, 443, "https")
+                                new HttpHost(this.esHostname, this.esPort, this.esProtocol)
                                 ));
 
                     GetIndexRequest request = new GetIndexRequest("urls");
@@ -276,7 +279,19 @@ public class ImportToES implements Runnable {
                         jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
 
                         for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                            jsonString += "{\"keyword\":\""+entry.getKey()+"\",\"count\":"+entry.getValue().toString()+"},";
+                            String keyword = entry.getKey().replace("\\b", "");
+                            String count = entry.getValue().toString();
+                            boolean essential = false;
+                            if (keyword.substring(keyword.length()-1)=="E") {
+                                essential=true;
+                            }
+                            keyword = keyword.substring(0, keyword.length() - 1);
+
+                            if (essential) {
+                                jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": true},";
+                            } else {
+                                jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": false},";
+                            }
                         }
                         jsonString = jsonString.substring(0, jsonString.length() - 1);
 

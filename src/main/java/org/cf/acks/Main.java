@@ -32,7 +32,7 @@ public class Main {
                 continue;
             }
 
-            Expression scanExpression = new Expression("\\b"+pattern.toLowerCase());
+            Expression scanExpression = new Expression(pattern.toLowerCase());
 
             expressions.add(scanExpression);
             Database.compile(scanExpression);
@@ -49,11 +49,13 @@ public class Main {
     private static void scanFiles(String[] args) throws Throwable {
         final List<String> s3KeyList = Files.readAllLines(Paths.get(args[1]));
 
-        List<Expression> expressions = loadExpressions(new File(args[2]));
+        List<Expression> essentialExpressions = loadExpressions(new File(args[2]));
+        List<Expression> additionalExpressions = loadExpressions(new File(args[3]));
 
-        Database patternDB;
+        Database essentialPatternDB, additionalPatternDB;
         try {
-             patternDB = Database.compile(expressions);
+            essentialPatternDB = Database.compile(essentialExpressions);
+            additionalPatternDB = Database.compile(additionalExpressions);
         } catch (CompileErrorException ce) {
             logger.catching(ce);
             Expression failedExpression = ce.getFailedExpression();
@@ -79,7 +81,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, patternDB, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, essentialPatternDB, additionalPatternDB, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -183,10 +185,28 @@ public class Main {
        }
     }
 
+    private static void testKeywords(String[] args) throws Throwable {
+        List<Expression> expressions = loadExpressions(new File(args[1]));
+
+        Database patternDB;
+        try {
+             patternDB = Database.compile(expressions);
+        } catch (CompileErrorException ce) {
+            logger.catching(ce);
+            Expression failedExpression = ce.getFailedExpression();
+            throw new IllegalStateException("The expression '" + failedExpression.getExpression() + "' failed to compile: " + failedExpression.getContext());
+        }
+
+        TestKeywords testKw = new TestKeywords(patternDB, args[2]);
+        testKw.run();
+    }
+
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
         if (args[0].equals("scan")) {
             scanFiles(args);
+        } else if (args[0].equals("testKeywords")) {
+            testKeywords(args);
         } else if (args[0].equals("importToES")) {
             importToEs(args);
         } else if (args[0].equals("processHostRanksFile")) {

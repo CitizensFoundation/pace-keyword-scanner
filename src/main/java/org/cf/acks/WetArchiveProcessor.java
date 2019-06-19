@@ -23,7 +23,7 @@ public class WetArchiveProcessor implements Runnable {
     public final int BUFFER_SIZE = 128_000;
     public final int MIN_LINE_LENGTH = 100;
     public final int MAX_LINE_LENGTH = 750;
-    public final int MIN_KEYWORDS_FOR_RECORDING = 2;
+    public final int MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING = 1;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -37,13 +37,15 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_HOST = "Host: ";
 
     private final Semaphore schedulingSemaphore;
-    private final Database patternDB;
+    private final Database essentialPatternDB;
+    private final Database additionalPatternDB;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, Database patternDB, String archive) {
+    WetArchiveProcessor(Semaphore schedulingSemaphore, Database essentialPatternDB, Database additionalPatternDB, String archive) {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.patternDB = patternDB;
+        this.essentialPatternDB = essentialPatternDB;
+        this.additionalPatternDB = additionalPatternDB;
         this.archive = archive;
     }
 
@@ -69,10 +71,12 @@ public class WetArchiveProcessor implements Runnable {
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
                 final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-                final Scanner scanner = new Scanner()) {
+                final Scanner essentialScanner = new Scanner();
+                final Scanner additionalScanner = new Scanner();) {
 
                 try {
-                    scanner.allocScratch(patternDB); // Memory allocation. Scanner#close() will de-allocate resources.
+                    essentialScanner.allocScratch(essentialPatternDB);
+                    additionalScanner.allocScratch(additionalPatternDB);
                 } catch (Throwable t) {
                     throw new IOException(t);
                 }
@@ -102,7 +106,7 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    processLineForKeywords(scanner, currentURL, line, resultsWriter, currentDate);
+                                    processLineForKeywords(essentialScanner, additionalScanner, currentURL, line, resultsWriter, currentDate);
                                 }
                             }
                         } catch (Throwable t) {
@@ -113,7 +117,7 @@ public class WetArchiveProcessor implements Runnable {
                 }
                 if (file.delete())
                 {
-                    System.out.println(archive+" deleted");
+                    //System.out.println(archive+" deleted");
                 }
                 else
                 {
@@ -125,6 +129,8 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.close();
                 File finalFile = new File(outPath+".working");
                 boolean renameResult = finalFile.renameTo(new File(outPath));
+                essentialScanner.close();
+                additionalScanner.close();
             } catch (IOException io) {
                 logger.catching(io);
                 System.out.println("Error for: "+archive);
@@ -134,13 +140,14 @@ public class WetArchiveProcessor implements Runnable {
         } else {
             System.out.println("Empty: "+archive);
         }
-
-        logger.info("Finished archive {}.", archive);
     }
 
-    private void processLineForKeywords(Scanner scanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
-        final List<Match> matches = scanner.scan(patternDB, line.toLowerCase());
-        if (matches.size()>=MIN_KEYWORDS_FOR_RECORDING) {
+    private void processLineForKeywords(Scanner essentialScanner, Scanner additionalScanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+        String lowerCaseLine = line.toLowerCase();
+        final List<Match> essentialMatches = essentialScanner.scan(essentialPatternDB, lowerCaseLine);
+        if (essentialMatches.size()>=MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING) {
+            final List<Match> additionalMatches = additionalScanner.scan(additionalPatternDB, lowerCaseLine);
+
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
@@ -148,8 +155,11 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write(currentDate+ "\n");
             }
             String keywords = "kd8x72dAx";
-            for (Match match : matches) {
-                keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ ":";
+            for (Match match : essentialMatches) {
+                keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ "E:";
+            }
+            for (Match match : additionalMatches) {
+                keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ "A:";
             }
             resultsWriter.write(line+keywords+"\n");
        }
