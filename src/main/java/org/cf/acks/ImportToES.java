@@ -49,8 +49,8 @@ public class ImportToES implements Runnable {
     private final Semaphore schedulingSemaphore;
     private final String archive;
     private final String esHostname;
-    private Integer esPort=9200;
-    private String esProtocol="http";
+    private Integer esPort=443;
+    private String esProtocol="https";
     final static String TARGET_URI_MARKER = "WARC-Target-URI:";
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
