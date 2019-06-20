@@ -314,6 +314,9 @@ public class Main {
             disableESIndexRefreshAndReplicas();
             importToEs(args);
             enableESIndexRefreshAndReplicas();
+            if (Main.esHostname!="127.0.0.1") {
+                Thread.sleep(4*60*1000);
+            }
             findReoccurringParagraphsES(args);
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
