@@ -185,13 +185,24 @@ public class ImportToES implements Runnable {
         return file.exists();
     }
 
-    private void pumpBulkUpdateQueue() throws Throwable {
+    private void pumpBulkUpdateQueue() {
         if (this.bulkUpdateQueue.size()>0) {
             BulkRequest request = new BulkRequest();
             for(UpdateRequest update:this.bulkUpdateQueue){
                 request.add(update);
             }
-            esClient.bulk(request, RequestOptions.DEFAULT);
+            try {
+                esClient.bulk(request, RequestOptions.DEFAULT);
+            } catch (IOException ioex) {
+                try {
+                    System.out.println("Sleeping because of IOException");
+                    Thread.sleep(5*1000);
+                    System.out.println("Retrying after IOException");
+                    esClient.bulk(request, RequestOptions.DEFAULT);
+                } catch (Exception ex) {
+                    System.out.println("ERROR: pumpBulkUpdateQueue: "+ex.getMessage());
+                }
+            }
             this.bulkUpdateQueue.clear();
         }
     }
