@@ -108,13 +108,6 @@ public class ImportToES implements Runnable {
                                 new HttpHost(this.esHostname, this.esPort, this.esProtocol)
                                 ));
 
-                    GetIndexRequest request = new GetIndexRequest("urls");
-                    boolean exists = this.esClient.indices().exists(request, RequestOptions.DEFAULT);
-                    if (!exists) {
-                        CreateIndexRequest createRequest = new CreateIndexRequest("urls");
-                        this.esClient.indices().create(createRequest, RequestOptions.DEFAULT);
-                    }
-
                     boolean processingEntry = false;
 
                     String line;
@@ -285,8 +278,8 @@ public class ImportToES implements Runnable {
                     jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
                     jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
                     jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
-                    jsonString+="\"extRepostCount\": 1,";
-                    jsonString+="\"intRepostCount\": 1,";
+                    jsonString+="\"extRepostCount\": 0,";
+                    jsonString+="\"intRepostCount\": 0,";
                     jsonString+="\"pHash\":"+pHash+",";
 
                     jsonString+="\"pageRank\":"+pageRank+",";

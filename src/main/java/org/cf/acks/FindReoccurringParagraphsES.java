@@ -38,10 +38,12 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.UpdateByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
@@ -127,6 +129,11 @@ public class FindReoccurringParagraphsES implements Runnable {
                 }
             }
         }
+        try {
+            this.esClient.close();
+        } catch (IOException ex) {
+            System.out.println("ES Error setIntRepostCount 1: "+ex.getMessage());
+        }
     }
 
     private void processHits(SearchHits hits) {
@@ -143,9 +150,10 @@ public class FindReoccurringParagraphsES implements Runnable {
         CountRequest countRequest = new CountRequest();
         countRequest.indices("urls");
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.boolQuery().
-            must(QueryBuilders.termQuery("phash", pHash)).
-            must(QueryBuilders.termQuery("domainName", domainName)));
+        BoolQueryBuilder bqb = QueryBuilders.boolQuery();
+        bqb.must(QueryBuilders.termQuery("pHash", pHash));
+        bqb.must(QueryBuilders.termQuery("domainName.keyword", domainName));
+        searchSourceBuilder.query(bqb);
         countRequest.source(searchSourceBuilder);
         CountResponse countResponse=null;
         try {
@@ -169,8 +177,10 @@ public class FindReoccurringParagraphsES implements Runnable {
         countRequest.indices("urls");
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.boolQuery().
-            must(QueryBuilders.termQuery("phash", pHash)).
-            mustNot(QueryBuilders.termQuery("domainName", domainName)));
+                 mustNot(QueryBuilders.termQuery("domainName.keyword", domainName)).
+                 must(QueryBuilders.termQuery("pHash", pHash)));
+        String s = searchSourceBuilder.toString();
+
         countRequest.source(searchSourceBuilder);
         CountResponse countResponse=null;
         try {
@@ -187,22 +197,23 @@ public class FindReoccurringParagraphsES implements Runnable {
     }
 
     private void updateCounts(long pHash, String domainName, boolean external, long count) {
-        String domainComparison = external ? "!=" : "==";
         String paramName = external ? "extRepostCount" : "intRepostCount";
         UpdateByQueryRequest request = new UpdateByQueryRequest("urls");
-        request.setQuery(new TermQueryBuilder("phash", pHash));
-        request.setConflicts("proceed");
+        request.setQuery(new TermQueryBuilder("pHash", pHash));
+//        request.setConflicts("proceed");
+        String scriptString = "ctx._source."+paramName+"="+Long.toString(count-1);
         request.setScript(
             new Script(
-                ScriptType.INLINE, "painless",
-                "if (ctx._source.domainName "+domainComparison+" '"+domainName+"') {ctx._source."+paramName+"="+Long.toString(count)+";}",
+                ScriptType.INLINE,
+                "painless",
+                scriptString,
                 Collections.emptyMap()));
+        System.out.println("UpdateCounts ("+scriptString+") "+count);
         try {
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);
         } catch (IOException ex) {
             System.out.println("ES Error updateCounts: "+ex.getMessage());
             return;
         }
-
     }
 }

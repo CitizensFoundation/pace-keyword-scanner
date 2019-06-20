@@ -7,10 +7,12 @@ import com.gliwka.hyperscan.wrapper.Expression;
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.*;
@@ -25,10 +27,14 @@ public class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
     public static final int BUFFER_SIZE = 128_000;
-    private static final String esHostname;
-    private static final Integer esPort;
-    private static final String esProtocol;
-
+    /*
+    private static final String esHostname="127.0.0.1";
+    private static final Integer esPort=9200;
+    private static final String esProtocol="http";
+    */
+    private static final String esHostname="127.0.0.1";
+    private static final Integer esPort=9200;
+    private static final String esProtocol="http";
     private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
         BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
 
@@ -56,7 +62,7 @@ public class Main {
         return expressions;
     }
 
-    private static void setESIndexRefreshAndReplicas(Integer refreshInterval, Integer numberOfReplicas) {
+    private static void setESIndexRefreshAndReplicas(String refreshInterval, Integer numberOfReplicas) {
         RestHighLevelClient esClient = new RestHighLevelClient(
             RestClient.builder(
                     new HttpHost(Main.esHostname, Main.esPort, Main.esProtocol)
@@ -70,16 +76,35 @@ public class Main {
             esClient.indices().putSettings(request, RequestOptions.DEFAULT);
             esClient.close();
         } catch (IOException ex) {
-            System.out.println("esError: "+ex.getMessage());
+            System.out.println("esError setESIndexRefreshAndReplicas: "+ex.getMessage());
         }
     }
 
     private static void disableESIndexRefreshAndReplicas() {
-        setESIndexRefreshAndReplicas(-1, 0);
+        setESIndexRefreshAndReplicas("-1", 0);
     }
 
     private static void enableESIndexRefreshAndReplicas() {
-        setESIndexRefreshAndReplicas(1, 1);
+        setESIndexRefreshAndReplicas("1s", 1);
+    }
+
+    private static void ensureIndexIsCreated() {
+        RestHighLevelClient esClient = new RestHighLevelClient(
+            RestClient.builder(
+                    new HttpHost(Main.esHostname, Main.esPort, Main.esProtocol)
+                    ));
+
+        GetIndexRequest request = new GetIndexRequest("urls");
+        try {
+            boolean exists = esClient.indices().exists(request, RequestOptions.DEFAULT);
+            if (!exists) {
+                CreateIndexRequest createRequest = new CreateIndexRequest("urls");
+                    esClient.indices().create(createRequest, RequestOptions.DEFAULT);
+                    esClient.close();
+            }
+        } catch (IOException ex) {
+            System.out.println("esError ensureIndexIsCreated: "+ex.getMessage());
+        }
     }
 
     private static void scanFiles(String[] args) throws Throwable {
@@ -223,7 +248,7 @@ public class Main {
 
             for (int i = 0; i < maxScheduled; ++i) {
                 try {
-                    executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, maxScheduled, Main.esHostname, Main.esPort, Main.esProtocol);
+                    executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, maxScheduled, Main.esHostname, Main.esPort, Main.esProtocol));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -285,9 +310,11 @@ public class Main {
         } else if (args[0].equals("testKeywords")) {
             testKeywords(args);
         } else if (args[0].equals("importToES")) {
+            ensureIndexIsCreated();
             disableESIndexRefreshAndReplicas();
             importToEs(args);
             enableESIndexRefreshAndReplicas();
+            findReoccurringParagraphsES(args);
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
         } else {
