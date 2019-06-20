@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
 
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -45,13 +46,16 @@ public class ImportToES implements Runnable {
     private static final Logger logger = LogManager.getLogger(ImportToES.class);
 
     public final int BUFFER_SIZE = 128_000;
+    public final int ES_BULK_MAX_SIZE = 150;
 
     private final Semaphore schedulingSemaphore;
     private final String archive;
     private final String esHostname;
-    private Integer esPort=443;
-    private String esProtocol="https";
-//    private Integer esPort=9200;
+    private final Integer esPort;
+    private final String esProtocol;
+    private List<UpdateRequest> bulkUpdateQueue;
+
+    //    private Integer esPort=9200;
 //    private String esProtocol="http";
     final static String TARGET_URI_MARKER = "WARC-Target-URI:";
     final static String TARGET_DATE = "WARC-Date:";
@@ -59,16 +63,15 @@ public class ImportToES implements Runnable {
     private RestHighLevelClient esClient;
     private final HashMap<Long, Long> pageRanks;
 
-    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, HashMap<Long, Long> pageRanks) {
+    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, HashMap<Long, Long> pageRanks) {
         this.schedulingSemaphore = schedulingSemaphore;
         String[] archiveParts = archive.split("/");
         this.archive = "results/"+archiveParts[archiveParts.length-1];
-        if (esHostname!=null) {
-            this.esHostname = esHostname;
-        } else {
-            this.esHostname = "127.0.0.1";
-        }
+        this.esHostname = esHostname;
+        this.esPort = esPort;
+        this.esProtocol = esProtocol;
         this.pageRanks = pageRanks;
+        this.bulkUpdateQueue = new ArrayList<UpdateRequest>();
     }
 
     @Override
@@ -116,6 +119,7 @@ public class ImportToES implements Runnable {
 
                     String line;
                     String currentDate = null;
+                    int bulkCounter = 0;
                     outerloop: while ((line = contentReader.readLine()) != null) {
                         if (line.length()==0) {
                             processingEntry = true;
@@ -131,6 +135,11 @@ public class ImportToES implements Runnable {
                                         break outerloop;
                                     } else {
                                         importLinesToES(currentURL, line, currentDate);
+                                        bulkCounter+=1;
+                                        if (bulkCounter>ES_BULK_MAX_SIZE) {
+                                            pumpBulkUpdateQueue();
+                                            bulkCounter=0;
+                                        }
                                     }
                                 }
                             } catch (Throwable t) {
@@ -139,8 +148,14 @@ public class ImportToES implements Runnable {
                             processingEntry = false;
                         }
                     }
+                    try {
+                        pumpBulkUpdateQueue();
+                    } catch (Throwable t) {
+                        throw new IOException(t);
+                    }
                     contentReader.close();
                     esClient.close();
+                    setState(archive, "completed");
                    /* if (file.delete())
                     {
                         System.out.println(archive+" deleted after ESImport");
@@ -151,14 +166,15 @@ public class ImportToES implements Runnable {
                     }*/
                 } catch (IOException io) {
                     logger.catching(io);
+                    setState(archive, io.getMessage());
                 } finally {
-                    schedulingSemaphore.release();
                     try {
                         contentReader.close();
                         esClient.close();
                     } catch (IOException io) {
                         logger.catching(io);
                     }
+                    schedulingSemaphore.release();
                 }
             } else {
                 System.out.println("File already imported: "+archive);
@@ -174,6 +190,15 @@ public class ImportToES implements Runnable {
         String path = "state/"+getFilename(archive)+".importCompleted";
         File file = new File(path);
         return file.exists();
+    }
+
+    private void pumpBulkUpdateQueue() throws Throwable {
+        BulkRequest request = new BulkRequest();
+        for(UpdateRequest update:this.bulkUpdateQueue){
+            request.add(update);
+        }
+        esClient.bulk(request, RequestOptions.DEFAULT);
+        this.bulkUpdateQueue.clear();
     }
 
     private void setState(String archive, String status) {
@@ -219,112 +244,65 @@ public class ImportToES implements Runnable {
                     String pHash = Long.toString(pHashLong);
                     String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url+pHash));
 
-                    MatchQueryBuilder matchQueryBuilder = new MatchQueryBuilder("pHash", pHashLong);
-
-                    SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-                    sourceBuilder.fetchSource(true);
-                    SearchRequest searchRequest = new SearchRequest("urls");
-                    sourceBuilder.query(matchQueryBuilder);
-                    searchRequest.source(sourceBuilder);
-                    SearchResponse searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
-                    RestStatus status = searchResponse.status();
-
-                    String foundId = null;
-                    if (status.getStatus()==200) {
-                        SearchHits hits = searchResponse.getHits();
-                        if (hits.getTotalHits()>0 || (hits.getHits()!=null && hits.getHits().length>0)) {
-                            foundId = hits.getAt(0).getId();
-                            if (!foundId.equals(urlIdHash)) {
-                                Map<String, Object> fieldMap = hits.getAt(0).getSourceAsMap();
-                                Integer intRepostCount = 0;
-                                Integer extRepostCount = 0;
-                                if (fieldMap.get("intRepostCount")!=null) {
-                                    intRepostCount = (Integer) fieldMap.get("intRepostCount");
-                                }
-                                if (fieldMap.get("extRepostCount")!=null) {
-                                    extRepostCount = (Integer) fieldMap.get("extRepostCount");
-                                }
-
-                                String otherDomainName = (String) fieldMap.get("domainName");
-                                String jsonStringUpdateOld;
-                                if (domainName.equals(otherDomainName)) {
-                                    intRepostCount+=1;
-                                    jsonStringUpdateOld = "{\"intRepostCount\":"+Integer.toString(intRepostCount)+"}";
-                                } else {
-                                    extRepostCount+=1;
-                                    jsonStringUpdateOld = "{\"extRepostCount\":"+Integer.toString(extRepostCount)+"}";
-                                }
-
-                                UpdateRequest esRequest = new UpdateRequest("urls", "doc", foundId);
-                                esRequest.retryOnConflict(7);
-                                esRequest.doc(jsonStringUpdateOld, XContentType.JSON);
-                                this.esClient.update(esRequest, RequestOptions.DEFAULT);
-                            } else {
-                                foundId = null;
-                            }
-                        }
-                    }
-
                     String jsonString = "{\"createdAt\":\""+currentDate+"\",";
-                    if (foundId==null) {
-                        String keywords[] = splitLines[1].split(":");
-                        Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
+                    String keywords[] = splitLines[1].split(":");
+                    Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
-                        for(String keyword:keywords){
-                            if (!keyWordsmap.containsKey(keyword)) {
-                                keyWordsmap.put(keyword,1);
-                            } else{
-                                keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
-                            }
+                    for(String keyword:keywords){
+                        if (!keyWordsmap.containsKey(keyword)) {
+                            keyWordsmap.put(keyword,1);
+                        } else{
+                            keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
                         }
-
-                        jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
-
-                        for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                            String keyword = entry.getKey().replace("\\b", "");
-                            String count = entry.getValue().toString();
-                            boolean essential = false;
-                            if (keyword.substring(keyword.length()-1).equals("E")) {
-                                essential=true;
-                            }
-                            keyword = keyword.substring(0, keyword.length() - 1);
-
-                            if (essential) {
-                                jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": true},";
-                            } else {
-                                jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": false},";
-                            }
-                        }
-                        jsonString = jsonString.substring(0, jsonString.length() - 1);
-
-                        jsonString+="],";
-                        jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
-                        jsonString+="\"extRepostCount\": 0,";
-                        jsonString+="\"intRepostCount\": 0,";
-                        jsonString+="\"pHash\":"+pHash+",";
                     }
+
+                    jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
+
+                    int essentialKeywordsCount=0;
+                    int additionalKeywordsCount=0;
+
+                    for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
+                        String keyword = entry.getKey().replace("\\b", "");
+                        String count = entry.getValue().toString();
+                        boolean essential = false;
+                        if (keyword.substring(keyword.length()-1).equals("E")) {
+                            essential=true;
+                            essentialKeywordsCount+=1;
+                        } else {
+                            additionalKeywordsCount+=1;
+                        }
+                        keyword = keyword.substring(0, keyword.length() - 1);
+
+                        if (essential) {
+                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": true},";
+                        } else {
+                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": false},";
+                        }
+                    }
+                    jsonString = jsonString.substring(0, jsonString.length() - 1);
+
+                    jsonString+="],";
+                    jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
+                    jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
+                    jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
+                    jsonString+="\"extRepostCount\": 1,";
+                    jsonString+="\"intRepostCount\": 1,";
+                    jsonString+="\"pHash\":"+pHash+",";
 
                     jsonString+="\"pageRank\":"+pageRank+",";
-                    if (foundId!=null) {
-                        jsonString+="\"masterParagraphUrlId\":\""+foundId+"\",";
-                    }
                     jsonString+="\"domainName\":\""+domainName+"\"";
                     jsonString+="}";
 
                     UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
-		            esRequest.retryOnConflict(7);
                     esRequest.doc(jsonString, XContentType.JSON);
                     esRequest.docAsUpsert(true);
-                    this.esClient.update(esRequest, RequestOptions.DEFAULT);
-                    setState(archive,"completed");
+                    this.bulkUpdateQueue.add(esRequest);
                 } else {
                     throw new Exception("Splitlines! "+line);
                 }
             } else {
-                setState(archive,"belowPageRankLimit");
             }
         } else {
-            setState(archive,"errorNoDomainFound");
         }
     }
     private String getFilename(String path) {

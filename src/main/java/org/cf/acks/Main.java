@@ -3,8 +3,15 @@ package org.cf.acks;
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Expression;
+
+import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.settings.Settings;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -18,6 +25,9 @@ public class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
     public static final int BUFFER_SIZE = 128_000;
+    private static final String esHostname;
+    private static final Integer esPort;
+    private static final String esProtocol;
 
     private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
         BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
@@ -44,6 +54,32 @@ public class Main {
         logger.info("Time taken to load patterns (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
 
         return expressions;
+    }
+
+    private static void setESIndexRefreshAndReplicas(Integer refreshInterval, Integer numberOfReplicas) {
+        RestHighLevelClient esClient = new RestHighLevelClient(
+            RestClient.builder(
+                    new HttpHost(Main.esHostname, Main.esPort, Main.esProtocol)
+                    ));
+        UpdateSettingsRequest request = new UpdateSettingsRequest("urls");
+        Map<String, Object> map = new HashMap<>();
+        map.put("index.refresh_interval", refreshInterval);
+        map.put("index.number_of_replicas", numberOfReplicas);
+        request.settings(map);
+        try {
+            esClient.indices().putSettings(request, RequestOptions.DEFAULT);
+            esClient.close();
+        } catch (IOException ex) {
+            System.out.println("esError: "+ex.getMessage());
+        }
+    }
+
+    private static void disableESIndexRefreshAndReplicas() {
+        setESIndexRefreshAndReplicas(-1, 0);
+    }
+
+    private static void enableESIndexRefreshAndReplicas() {
+        setESIndexRefreshAndReplicas(1, 1);
     }
 
     private static void scanFiles(String[] args) throws Throwable {
@@ -146,7 +182,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", args[2], pageRanks));
+                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", Main.esHostname, Main.esPort, Main.esProtocol, pageRanks));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -166,6 +202,47 @@ public class Main {
             System.out.println("importToEs complete");
         } catch (Exception ex) {
             System.out.println("importToEs error: "+ex.getMessage());
+        }
+    }
+
+    private static void findReoccurringParagraphsES(String[] args) throws Throwable {
+        logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
+
+        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        final int maxScheduled = poolSize * 3;
+
+        logger.info("Allocating a thread pool of size {}.", poolSize);
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
+
+        long startTime = System.currentTimeMillis();
+
+        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/findReoccurringParagraphsES.stats")))) {
+
+            Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
+
+            for (int i = 0; i < maxScheduled; ++i) {
+                try {
+                    executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, maxScheduled, Main.esHostname, Main.esPort, Main.esProtocol);
+                } catch (RejectedExecutionException ree) {
+                    logger.catching(ree);
+                }
+            }
+
+            // If all permits can be acquired, it can be assumed no more callables are executing.
+            schedulingSemaphore.acquire(maxScheduled);
+
+            executorService.shutdown();
+
+            long duration = System.currentTimeMillis() - startTime;
+            timingResultsStats.write("Duration\n");
+            timingResultsStats.write(duration + "\n");
+            timingResultsStats.close();
+
+            logger.info("findReoccurringParagraphsES complete.");
+            System.out.println("findReoccurringParagraphsES complete");
+        } catch (Exception ex) {
+            System.out.println("findReoccurringParagraphsES error: "+ex.getMessage());
         }
     }
 
@@ -208,7 +285,9 @@ public class Main {
         } else if (args[0].equals("testKeywords")) {
             testKeywords(args);
         } else if (args[0].equals("importToES")) {
+            disableESIndexRefreshAndReplicas();
             importToEs(args);
+            enableESIndexRefreshAndReplicas();
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
         } else {

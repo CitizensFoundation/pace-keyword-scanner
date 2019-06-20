@@ -4,6 +4,7 @@ import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Match;
 import com.gliwka.hyperscan.wrapper.Scanner;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -106,7 +107,9 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    processLineForKeywords(essentialScanner, additionalScanner, currentURL, line, resultsWriter, currentDate);
+                                    if (!hasTooManyCommas(line)) {
+                                        processLineForKeywords(essentialScanner, additionalScanner, currentURL, line, resultsWriter, currentDate);
+                                    }
                                 }
                             }
                         } catch (Throwable t) {
@@ -139,6 +142,18 @@ public class WetArchiveProcessor implements Runnable {
             }
         } else {
             System.out.println("Empty: "+archive);
+        }
+    }
+
+    private boolean hasTooManyCommas(String text) {
+        Double count = Double.valueOf(StringUtils.countMatches(text, ","));
+        Double textLength = Double.valueOf(text.length());
+        Double ratio = count/textLength;
+        if (ratio>0.05) {
+            //System.out.println("Skipping ("+ratio+"): "+text);
+            return true;
+        } else {
+            return false;
         }
     }
 
