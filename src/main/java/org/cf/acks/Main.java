@@ -32,9 +32,9 @@ public class Main {
     private static final Integer esPort=9200;
     private static final String esProtocol="http";
     */
-    private static final String esHostname="127.0.0.1";
-    private static final Integer esPort=9200;
-    private static final String esProtocol="http";
+    private static final String esHostname="search-ec-ac-pace-dev-wyysxnkri3j5ohunwbd4lb6zju.us-east-1.es.amazonaws.com";
+    private static final Integer esPort=443;
+    private static final String esProtocol="https";
     private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
         BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
 
