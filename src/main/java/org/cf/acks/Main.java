@@ -310,14 +310,21 @@ public class Main {
         } else if (args[0].equals("testKeywords")) {
             testKeywords(args);
         } else if (args[0].equals("importToES")) {
+            System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();
+            System.out.println("ImportES: disableESIndexRefreshAndReplicas");
             disableESIndexRefreshAndReplicas();
+            System.out.println("ImportES: importToEs");
             importToEs(args);
+            System.out.println("ImportES: enableESIndexRefreshAndReplicas");
             enableESIndexRefreshAndReplicas();
             if (Main.esHostname!="127.0.0.1") {
+                System.out.println("ImportES: sleep for 4 minutes to give the index time to refresh");
                 Thread.sleep(4*60*1000);
             }
+            System.out.println("ImportES: findReoccurringParagraphsES");
             findReoccurringParagraphsES(args);
+            System.out.println("ImportES Completed");
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
         } else {
