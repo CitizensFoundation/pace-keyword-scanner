@@ -186,12 +186,14 @@ public class ImportToES implements Runnable {
     }
 
     private void pumpBulkUpdateQueue() throws Throwable {
-        BulkRequest request = new BulkRequest();
-        for(UpdateRequest update:this.bulkUpdateQueue){
-            request.add(update);
+        if (this.bulkUpdateQueue.size()>0) {
+            BulkRequest request = new BulkRequest();
+            for(UpdateRequest update:this.bulkUpdateQueue){
+                request.add(update);
+            }
+            esClient.bulk(request, RequestOptions.DEFAULT);
+            this.bulkUpdateQueue.clear();
         }
-        esClient.bulk(request, RequestOptions.DEFAULT);
-        this.bulkUpdateQueue.clear();
     }
 
     private void setState(String archive, String status) {
