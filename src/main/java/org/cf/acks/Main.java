@@ -249,7 +249,7 @@ public class Main {
 
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
-            for (int i = 0; i < maxScheduled; ++i) {
+            for (int i = 0; i < 1; ++i) {
                 schedulingSemaphore.acquire();
 
                 try {
@@ -315,6 +315,7 @@ public class Main {
         } else if (args[0].equals("testKeywords")) {
             testKeywords(args);
         } else if (args[0].equals("importToES")) {
+            /*
             System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();
             System.out.println("ImportES: disableESIndexRefreshAndReplicas");
@@ -330,6 +331,7 @@ public class Main {
                 System.out.println("ImportES: sleep for 30 sec to give the index time to refresh");
                 Thread.sleep(30*1000);
             }
+            */
             System.out.println("ImportES: findReoccurringParagraphsES");
             findReoccurringParagraphsES(args);
             System.out.println("ImportES Completed");
