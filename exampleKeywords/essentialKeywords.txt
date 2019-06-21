@@ -1,47 +1,44 @@
 \banti.democratic\b
 \banti.democratically\b
-\banti.grass.root
-\baristocra
-\bautocra
-\bcensor
-\beurocra
+\banti.grass.root.
+\bautocra.
+\bcensor.
+\beurocra.
 \bexpense of the public\b
-\bfacist
-\binternationalis
-\bivory tower
-\bleftist media
+\bfacist.
+\binternationalis.
+\bivory tower.
+\bleftist media.
 \blobbying\b
 \blobbyism\b
 \bmainstream media\b
 \bmainstream party\b
-\bmarxis
-\bmonopol
-\bnepotism
-\bnomenclature\b
+\bmainstream parties\b
+\bmarxis.
+\bmonopol.
+\bnepotism.
 \bobsessed with power\b
 \bout of touch\b
 \bparty interests\b
-\bphony
-\bplutocra
-\bpolitical class
+\bplutocra.
+\bpolitical class.
 \bpolitically correct\b
-\bpower monger
+\bpower monger.
 \bpower.hungry\b
-\bpropagand
-\bquisling
-\brobber baron
-\bruling class
-\bself.serving
-\btechnocrat
-\bthe rich\b
+\bpropagand.
+\bquisling.
+\brobber baron.
+\bruling class.
+\btechnocrat.
 \btreason\b
-\bunconstitutional
-\bundemocratic
+\bunconstitutional\b
+\bundemocratic.
 \bunelected\b
-\bvassal state
-\bwannabe expert
-\bwrongspeak
+\bvassal state.
+\bwannabe expert.
+\bwrongspeak\b
 \bconstitution\b
+\bconstitutions\b
 \bconstitutional crisis\b
 \bdeliver brexit\b
 \bbrexit betray
@@ -52,88 +49,77 @@
 \bdemocratically\b
 \bfreedom of expression
 \bfreedom.of.speech\b
+\bfree speech\b
 \bindependence\b
-\bracist
-\bantifa
-\bjustice
+\bracist.
+\bantifa\b
 \blaw and order\b
-\bpopular vote
-\bpopular will of
-\bpublic interest
-\breferendum
-\bvox populi
-\bpopulist
+\bpopular vote.
+\bpopular will of.
+\bpublic interest.
+\breferendum.
+\bvox populi.
+\bpopulist.
 \bpopulism\b
-\bwill of the people
+\bwill of the people.
 \bthe 99 percent\b
 \bthe 1 percent\b
-\baverage citizen
-\bbin the licence fee
+\baverage citizen.
 \bcitizen\b
+\bcitizens\b
 \bcitizenship\b
-\bhonest citizen
-\bmiddle class
-\bordinary citizen
-\bscrap the licence fee
-\bsilent majority
+\bhonest citizen.
+\bmiddle class.
+\bordinary citizen.
+\bsilent majority\b
 \bpeoples solidarity
 \bworker solidarity\b
 \bworkers solidarity\b
 \bsovereignty\b
 \btake.back.control\b
-\btaxpayer
-\bvoting\b
-\bworking class
+\bworking class.
 \bland of hope and glory\b
-\bmulticultural
-\bour nation
-\btheir nation
-\bour country
-\bborder control
-\bdeportation
-\bethnic cleansing\b
+\bmulticultural.
+\bour nation\b
+\btheir nation.
+\bour country.
+\bborder control.
+\bdeportation.
 \bfamily first\b
-\bstrong famil
-\bnative people
-\bnative populatio
-\bthe natives
-\bnativist
-\bpatriot
+\bstrong famil.
+\bnativist.
+\bpatriot.
 \bright of blood\b
-\bmigrant
+\bmigrant.
 \basylum\b
 \benemy of the people\b
-\bgrooming gang
-\bheadscarf
-\bislamis
-\bmass immigration
-\bminorities
-\bopen border
-\brefugee
+\bgrooming gang.
+\bheadscarf.
+\bislamis.
+\bmass immigration\b
+\bminorities\b
+\bopen border.
+\brefugee.
 \bthe people.s enemy\b
 \bthe peoples enemy\b
 \bacab\b
-\bapparatchik
-\bdeep state
-\bpluralis.
-\brepression
-\bsubserv
-\bterrorist
-\btyrant
-\bwhite genocide
-\barya
-\bcivil defense
-\bclass struggle
-\bdoomsday
-\bno surrender\b
-\boverthrow\b
-\brebellion\b
-\brevolution
-\briot
-\buprising
-\bvigilante
-\bwhite power
-\banarchy
-\bpolice state
-\bcivic
-\bliberal
+\bapparatchik.
+\bdeep state.
+\bpluralist.
+\bpluarlism\b
+\bwhite genocide.
+\baryan.
+\bcivil defense.
+\bclass struggle.
+\bwhite power.
+\banarchy\b
+\bpolice state.
+\bcivic.
+\bliberal.
+\bbureaucracy\b
+\bbureaucratic\b
+\bthe establishment\b
+\belitist\b
+\bcorrupt\b
+\bcorruption\b
+\bpolitical correct.

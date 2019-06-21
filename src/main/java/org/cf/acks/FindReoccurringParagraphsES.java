@@ -80,6 +80,7 @@ public class FindReoccurringParagraphsES implements Runnable {
 
     @Override
     public void run() {
+        System.out.println("Reoccurring START: ("+this.sliceId+"/"+this.maxSlices+")");
         this.esClient = new RestHighLevelClient(
             RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
 
@@ -125,6 +126,7 @@ public class FindReoccurringParagraphsES implements Runnable {
                 if (scrollId!=null && hits!=null && hits.getHits().length>0) {
                     processHits(hits);
                 } else {
+                    System.out.println("Reoccurring NO MORE HITS: ("+this.sliceId+"/"+this.maxSlices+")");
                     hasHits=false;
                 }
             }
@@ -134,6 +136,13 @@ public class FindReoccurringParagraphsES implements Runnable {
         } catch (IOException ex) {
             System.out.println("ES Error setIntRepostCount 1: "+ex.getMessage());
         }
+        System.out.println("Reoccurring SLEEEPING: ("+this.sliceId+"/"+this.maxSlices+")");
+        try {
+            Thread.sleep(1*60*1000);
+        } catch (Exception ex) {
+        }
+        System.out.println("Reoccurring END: ("+this.sliceId+"/"+this.maxSlices+")");
+        schedulingSemaphore.release();
     }
 
     private void processHits(SearchHits hits) {
@@ -208,7 +217,9 @@ public class FindReoccurringParagraphsES implements Runnable {
                 "painless",
                 scriptString,
                 Collections.emptyMap()));
-        System.out.println("UpdateCounts ("+scriptString+") "+count);
+                System.out.println("Reoccurring UpdateCounts ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
+
+        System.out.println();
         try {
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);
         } catch (IOException ex) {

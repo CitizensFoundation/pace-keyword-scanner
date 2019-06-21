@@ -27,14 +27,16 @@ public class Main {
 
     private static final Logger logger = LogManager.getLogger(Main.class);
     public static final int BUFFER_SIZE = 128_000;
-    /*
+
     private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
     private static final String esProtocol="http";
-    */
+
+    /*
     private static final String esHostname="search-ec-ac-pace-dev-wyysxnkri3j5ohunwbd4lb6zju.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
     private static final String esProtocol="https";
+    */
     private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
         BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
 
@@ -234,7 +236,7 @@ public class Main {
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
         final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
-        final int maxScheduled = poolSize * 3;
+        final int maxScheduled = poolSize;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
 
@@ -318,9 +320,12 @@ public class Main {
             importToEs(args);
             System.out.println("ImportES: enableESIndexRefreshAndReplicas");
             enableESIndexRefreshAndReplicas();
-            if (Main.esHostname!="127.0.0.1") {
+            if (!Main.esHostname.equals("127.0.0.1")) {
                 System.out.println("ImportES: sleep for 4 minutes to give the index time to refresh");
                 Thread.sleep(4*60*1000);
+            } else {
+                System.out.println("ImportES: sleep for 1 minute to give the index time to refresh");
+                Thread.sleep(1*60*1000);
             }
             System.out.println("ImportES: findReoccurringParagraphsES");
             findReoccurringParagraphsES(args);

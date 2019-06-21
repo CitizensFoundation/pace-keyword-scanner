@@ -1,53 +1,75 @@
 \b1984\b
-\bbig companies\b
-\bbig corporation\b
+\bphony\b
+\blarge corporation
 \bbig money\b
 \bbigwig\b
 \bbrainwash
+\baristocra.
 \bbreach of trust\b
+\bterrorist.
+\btyrant.
 \bbroken promis
 \bcahoots\b
-\bcapitalist
-\bcapitalism
+\bcapitalist.
+\bcapitalism\b
 \bcaste
+\buprising.
+\bvigilante.
+\belection pledge\b
 \bcurrupt
 \bconspiracy\b
 \bconspirator\b
 \bcronies\b
 \bcronyism\b
 \bcunning
-\bdamage
+\briot.
 \bdeceit
 \bdeceive
 \bdeceptive\b
+\bdeception\b
 \bdishonest
 \bdomination\b
-\belite
+\belite\b
 \bdictator
 \bbestablishm
 \bexploit
 \bget.rich
-\bgreed
-\bhijacked\b
-\bhypocri
-\bimperialis
+\bgreed\b
+\bgreedy\b
+\bhijack.
+\bhypocri.
+\bimperialis.
 \bloss.of.control\b
-\bmisappropriat
-\bmiscreant
+\blose control\b
+\blost control\b
+\bmisappropriat.
+\bmiscreant.
 \bold parties\b
-\boligarch
-\boppressive
-\borwell
-\bparasite
+\boligarch.
+\boppress.\b
+\boppressor\b
+\boppressed\b
+\borwell.
+\bparasite.
+\btaxpayer.
+\bvoting\b
+\brepression.
+\bsubserv.
+\bvoter\b
 \bplunder
 \bpriviledged
 \bred tape\b
 \bruling party
-\btraitor
-\btreach
+\btraitor.
+\bself.serving.
+\btreach.
 \bcommon good\b
-\bcommon.sense
+\bcommon.sense\b
 \bdemocratic\b
+\bnative people.
+\bnative populatio.
+\bthe natives.
+\bdemocrat\b
 \bparticipation\b
 \bgeneral will\b
 \bgive voice\b
@@ -61,16 +83,19 @@
 \bput people first\b
 \bsystem change\b
 \bthe truth\b
-\btheir lies\b
+\blies\b
+\blie\b
 \bour truth\b
 \baverage people\b
-\bdecent people\b
-\bempowerment
+\bdecent\b
+\bempowerment\b
+\bempower\b
 \bhonest people
 \brepatriation
 \bthe majority\b
 \bthe minority\b
 \bordinary people\b
+\bnomenclature\b
 \bsovereign\b
 \bstand up for\b
 \bdeprivation\b
@@ -102,3 +127,54 @@
 \brebuild
 \bprogressive
 \bpolitical\b
+\bjustice
+\bno surrender\b
+\boverthrow\b
+\brebellion\b
+\brevolution
+\bbrexit\b
+\bclaim\b
+\bcompany\b
+\bcompanies\b
+\bdamage\b
+\bimpose\b
+\bforce\b
+\babuse.
+\baccountable\b
+\baccountability\b
+\briducul\b
+\bcheat\b
+\barrogant\b
+\barrogance\b
+\bbetray\b
+\bbetrayal\b
+\bmanipulat.
+\bguilty\b
+\bcaptur.
+\bmock\b
+\bfraud\b
+\bscam\b
+\bdefy\b
+\bcareless\b
+\bfault\b
+\bbroken promis.
+\bcaptive\b
+\bmuzzle\b
+\blooter\b
+\bempire\b
+\bethnic cleansing\b
+\bpeople.
+\bcommunity\b
+\bcommunities\b
+\bthe rich\b
+\bhard-working\b
+\bhardworkding\b
+\bour people\b
+\bfed up\b
+\bnormal people\b
+\bhostage\b
+\bcrisis\b
+\bconsensus\b
+\bdisgrace\b
+\bsafety net\b
+\bthe swamp\b
