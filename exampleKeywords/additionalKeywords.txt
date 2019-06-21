@@ -126,7 +126,6 @@
 \brenew
 \brebuild
 \bprogressive
-\bpolitical\b
 \bjustice
 \bno surrender\b
 \boverthrow\b
@@ -163,7 +162,6 @@
 \blooter\b
 \bempire\b
 \bethnic cleansing\b
-\bpeople.
 \bcommunity\b
 \bcommunities\b
 \bthe rich\b
