@@ -176,6 +176,7 @@ public class WetArchiveProcessor implements Runnable {
             for (Match match : additionalMatches) {
                 keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ "A:";
             }
+            line = line.replace("","");
             resultsWriter.write(line+keywords+"\n");
        }
     }

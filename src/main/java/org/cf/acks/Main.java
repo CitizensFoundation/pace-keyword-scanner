@@ -249,6 +249,8 @@ public class Main {
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
             for (int i = 0; i < maxScheduled; ++i) {
+                schedulingSemaphore.acquire();
+
                 try {
                     executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, maxScheduled, Main.esHostname, Main.esPort, Main.esProtocol));
                 } catch (RejectedExecutionException ree) {
@@ -313,11 +315,11 @@ public class Main {
             testKeywords(args);
         } else if (args[0].equals("importToES")) {
             System.out.println("ImportES: ensureIndexIsCreated");
-            ensureIndexIsCreated();
+            //ensureIndexIsCreated();
             System.out.println("ImportES: disableESIndexRefreshAndReplicas");
-            disableESIndexRefreshAndReplicas();
+            //disableESIndexRefreshAndReplicas();
             System.out.println("ImportES: importToEs");
-            importToEs(args);
+            //importToEs(args);
             System.out.println("ImportES: enableESIndexRefreshAndReplicas");
             enableESIndexRefreshAndReplicas();
             if (!Main.esHostname.equals("127.0.0.1")) {
@@ -325,7 +327,7 @@ public class Main {
                 Thread.sleep(4*60*1000);
             } else {
                 System.out.println("ImportES: sleep for 1 minute to give the index time to refresh");
-                Thread.sleep(1*60*1000);
+            //    Thread.sleep(1*60*1000);
             }
             System.out.println("ImportES: findReoccurringParagraphsES");
             findReoccurringParagraphsES(args);

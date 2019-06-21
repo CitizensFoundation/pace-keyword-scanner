@@ -80,10 +80,9 @@ public class FindReoccurringParagraphsES implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Reoccurring START: ("+this.sliceId+"/"+this.maxSlices+")");
+        System.out.println("Reoccurring START0: ("+this.sliceId+"/"+this.maxSlices+")");
         this.esClient = new RestHighLevelClient(
             RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
-
         String scrollId = null;
         boolean hasHits = true;
 
@@ -96,7 +95,7 @@ public class FindReoccurringParagraphsES implements Runnable {
                 searchSourceBuilder.query(new MatchAllQueryBuilder());
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(1L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(5L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -135,11 +134,6 @@ public class FindReoccurringParagraphsES implements Runnable {
             this.esClient.close();
         } catch (IOException ex) {
             System.out.println("ES Error setIntRepostCount 1: "+ex.getMessage());
-        }
-        System.out.println("Reoccurring SLEEEPING: ("+this.sliceId+"/"+this.maxSlices+")");
-        try {
-            Thread.sleep(1*60*1000);
-        } catch (Exception ex) {
         }
         System.out.println("Reoccurring END: ("+this.sliceId+"/"+this.maxSlices+")");
         schedulingSemaphore.release();
@@ -209,17 +203,15 @@ public class FindReoccurringParagraphsES implements Runnable {
         String paramName = external ? "extRepostCount" : "intRepostCount";
         UpdateByQueryRequest request = new UpdateByQueryRequest("urls");
         request.setQuery(new TermQueryBuilder("pHash", pHash));
-//        request.setConflicts("proceed");
-        String scriptString = "ctx._source."+paramName+"="+Long.toString(count-1);
+        request.setConflicts("proceed");
+        String scriptString = "ctx._source."+paramName+"="+Long.toString(count);
         request.setScript(
             new Script(
                 ScriptType.INLINE,
                 "painless",
                 scriptString,
                 Collections.emptyMap()));
-                System.out.println("Reoccurring UpdateCounts ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
-
-        System.out.println();
+        System.out.println("Reoccurring UpdateCounts "+pHash+" ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
         try {
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);
         } catch (IOException ex) {
