@@ -22,8 +22,8 @@ public class WetArchiveProcessor implements Runnable {
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
     public final int BUFFER_SIZE = 128_000;
-    public final int MIN_LINE_LENGTH = 175;
-    public final int MAX_LINE_LENGTH = 1200;
+    public final int MIN_LINE_LENGTH = 300;
+    public final int MAX_LINE_LENGTH = 1250;
     public final int MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING = 1;
 
     final static String WARC_VERSION = "WARC/1.0";

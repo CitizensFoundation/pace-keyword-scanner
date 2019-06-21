@@ -2,8 +2,7 @@
 \banti.democratically\b
 \banti.grass.root.
 \bautocra.
-\bcensor.
-\beurocra.
+\bcensorship\b
 \bexpense of the public\b
 \bfacist.
 \binternationalis.
@@ -62,8 +61,6 @@
 \bpopulist.
 \bpopulism\b
 \bwill of the people.
-\bthe 99 percent\b
-\bthe 1 percent\b
 \baverage citizen.
 \bcitizen\b
 \bcitizens\b
@@ -80,15 +77,11 @@
 \bworking class.
 \bland of hope and glory\b
 \bmulticultural.
-\bour nation\b
-\btheir nation.
-\bour country.
 \bborder control.
 \bdeportation.
-\bfamily first\b
-\bstrong famil.
 \bnativist.
-\bpatriot.
+\bpatriot\b
+\bpatriotism\b
 \bright of blood\b
 \bmigrant.
 \basylum\b
@@ -118,8 +111,8 @@
 \bliberal.
 \bbureaucracy\b
 \bbureaucratic\b
-\bthe establishment\b
 \belitist\b
 \bcorrupt\b
 \bcorruption\b
 \bpolitical correct.
+\beurocra.
