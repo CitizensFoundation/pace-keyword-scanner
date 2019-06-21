@@ -85,8 +85,11 @@ public class FindReoccurringParagraphsES implements Runnable {
             RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
         String scrollId = null;
         boolean hasHits = true;
+        int testCount=0;
 
         while (hasHits) {
+            testCount+=1;
+            System.out.println("Nr: "+testCount);
             if (scrollId==null) {
                 SearchRequest searchRequest = new SearchRequest("urls");
                 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
