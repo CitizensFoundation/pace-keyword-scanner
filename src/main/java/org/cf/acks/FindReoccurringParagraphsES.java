@@ -216,6 +216,7 @@ public class FindReoccurringParagraphsES implements Runnable {
                 scriptString,
                 Collections.emptyMap()));
         System.out.println("Reoccurring UpdateCounts "+pHash+" ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
+        request.setTimeout(TimeValue.timeValueSeconds(3));
         try {
             System.out.println("R2");
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);
