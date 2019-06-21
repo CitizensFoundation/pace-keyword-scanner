@@ -208,6 +208,7 @@ public class FindReoccurringParagraphsES implements Runnable {
         request.setQuery(new TermQueryBuilder("pHash", pHash));
         request.setConflicts("proceed");
         String scriptString = "ctx._source."+paramName+"="+Long.toString(count);
+        System.out.println("R1");
         request.setScript(
             new Script(
                 ScriptType.INLINE,
@@ -216,10 +217,13 @@ public class FindReoccurringParagraphsES implements Runnable {
                 Collections.emptyMap()));
         System.out.println("Reoccurring UpdateCounts "+pHash+" ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
         try {
+            System.out.println("R2");
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);
+            System.out.println("R3");
         } catch (IOException ex) {
             System.out.println("ES Error updateCounts: "+ex.getMessage());
             return;
         }
+        System.out.println("R4");
     }
 }
