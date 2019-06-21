@@ -93,8 +93,8 @@ public class FindReoccurringParagraphsES implements Runnable {
             if (scrollId==null) {
                 SearchRequest searchRequest = new SearchRequest("urls");
                 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-                SliceBuilder sliceBuilder = new SliceBuilder(this.sliceId, this.maxSlices);
-                searchSourceBuilder.slice(sliceBuilder);
+                //SliceBuilder sliceBuilder = new SliceBuilder(this.sliceId, this.maxSlices);
+                //searchSourceBuilder.slice(sliceBuilder);
                 searchSourceBuilder.query(new MatchAllQueryBuilder());
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
