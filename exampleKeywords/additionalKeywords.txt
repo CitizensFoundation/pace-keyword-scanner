@@ -185,3 +185,5 @@
 \b1 percent\b
 \bstrong famil.
 \bcensor.
+\bliberal.
+\bconservative.

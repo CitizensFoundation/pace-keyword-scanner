@@ -55,7 +55,22 @@ import org.elasticsearch.search.slice.SliceBuilder;
 
 import net.openhft.hashing.LongHashFunction;
 
+
 public class FindReoccurringParagraphsES implements Runnable {
+
+    class UpdateData {
+        public final Long pHash;
+        public final String domainName;
+        public boolean ext;
+        public long count;
+
+        UpdateData(Long pHash, String domainName, boolean ext, long count) {
+            this.pHash = pHash;
+            this.domainName = domainName;
+            this.ext = ext;
+            this.count = count;
+        }
+    }
 
     private static final Logger logger = LogManager.getLogger(FindReoccurringParagraphsES.class);
 
@@ -65,6 +80,8 @@ public class FindReoccurringParagraphsES implements Runnable {
     private final String esProtocol;
     private final Integer sliceId;
     private final Integer maxSlices;
+
+    private List<UpdateData> stateResultsList;
 
     final static int MAX_DOCUMENT_RESULTS=200;
     private RestHighLevelClient esClient;
@@ -86,6 +103,7 @@ public class FindReoccurringParagraphsES implements Runnable {
         String scrollId = null;
         boolean hasHits = true;
         int testCount=0;
+        this.stateResultsList = new ArrayList<UpdateData>();
 
         while (hasHits) {
             testCount+=1;
@@ -133,6 +151,12 @@ public class FindReoccurringParagraphsES implements Runnable {
                 }
             }
         }
+
+        System.out.println("Updating number: "+this.stateResultsList.size());
+        for (UpdateData update:this.stateResultsList) {
+            updateCounts(update.pHash, update.domainName, update.ext, update.count);
+        }
+
         try {
             this.esClient.close();
         } catch (IOException ex) {
@@ -171,7 +195,7 @@ public class FindReoccurringParagraphsES implements Runnable {
 
         long count = countResponse.getCount();
         if (count>1) {
-            updateCounts(pHash, domainName, false, count);
+            this.stateResultsList.add(new UpdateData(pHash, domainName, false, count));
         }
     }
 
@@ -198,7 +222,7 @@ public class FindReoccurringParagraphsES implements Runnable {
 
         long count = countResponse.getCount();
         if (count>1) {
-            updateCounts(pHash, domainName, true, count);
+            this.stateResultsList.add(new UpdateData(pHash, domainName, true, count));
         }
     }
 
@@ -216,7 +240,10 @@ public class FindReoccurringParagraphsES implements Runnable {
                 scriptString,
                 Collections.emptyMap()));
         System.out.println("Reoccurring UpdateCounts "+pHash+" ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
-        request.setTimeout(TimeValue.timeValueSeconds(3));
+        if (count>1000) {
+            request.setSlices(2);
+        }
+        request.setRefresh(true);
         try {
             System.out.println("R2");
             this.esClient.updateByQuery(request, RequestOptions.DEFAULT);

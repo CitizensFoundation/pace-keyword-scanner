@@ -108,7 +108,6 @@
 \banarchy\b
 \bpolice state.
 \bcivic.
-\bliberal.
 \bbureaucracy\b
 \bbureaucratic\b
 \belitist\b
