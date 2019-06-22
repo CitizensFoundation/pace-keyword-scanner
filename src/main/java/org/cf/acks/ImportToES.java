@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -61,9 +62,9 @@ public class ImportToES implements Runnable {
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
     private RestHighLevelClient esClient;
-    private final HashMap<Long, Long> pageRanks;
+    private final Hashtable<Long, Long> pageRanks;
 
-    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, HashMap<Long, Long> pageRanks) {
+    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, Hashtable<Long, Long> pageRanks) {
         this.schedulingSemaphore = schedulingSemaphore;
         String[] archiveParts = archive.split("/");
         this.archive = "results/"+archiveParts[archiveParts.length-1];
@@ -292,7 +293,7 @@ public class ImportToES implements Runnable {
                     jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
                     jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
                     jsonString+="\"extRepostCount\": 0,";
-                    jsonString+="\"intRepostCount\": 0,";
+                    jsonString+="\"intRepostCount\": 1,";
                     jsonString+="\"pHash\":"+pHash+",";
 
                     jsonString+="\"pageRank\":"+pageRank+",";

@@ -165,8 +165,8 @@ public class Main {
         }
     }
 
-    private static HashMap<Long, Long> getPageRanks(String pageRanksFile) {
-        HashMap<Long, Long> pageRanks = new HashMap<Long, Long>();
+    private static Hashtable<Long, Long> getPageRanks(String pageRanksFile) {
+        Hashtable<Long, Long> pageRanks = new Hashtable<Long, Long>();
         System.out.println("Starting to read pageRanks file");
         try {
             final InputStream objectStream = new FileInputStream(new File(pageRanksFile));
@@ -200,7 +200,7 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
-        HashMap<Long, Long> pageRanks = getPageRanks(args[3]);
+        Hashtable<Long, Long> pageRanks = getPageRanks(args[3]);
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/importToESTimingResults.stats")))) {
 
@@ -249,11 +249,11 @@ public class Main {
 
             Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
-            for (int i = 0; i < 1; ++i) {
+            for (int i = 0; i < 2; ++i) {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, maxScheduled, Main.esHostname, Main.esPort, Main.esProtocol));
+                    executorService.submit(new FindReoccurringParagraphsES(schedulingSemaphore, i, 2, Main.esHostname, Main.esPort, Main.esProtocol));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -323,6 +323,7 @@ public class Main {
             importToEs(args);
             System.out.println("ImportES: enableESIndexRefreshAndReplicas");
             enableESIndexRefreshAndReplicas();
+            /*
             if (!Main.esHostname.equals("127.0.0.1")) {
                 System.out.println("ImportES: sleep for 4 minutes to give the index time to refresh");
                 Thread.sleep(4*60*1000);
@@ -332,6 +333,7 @@ public class Main {
             }
             System.out.println("ImportES: findReoccurringParagraphsES");
             findReoccurringParagraphsES(args);
+            */
             System.out.println("ImportES Completed");
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);

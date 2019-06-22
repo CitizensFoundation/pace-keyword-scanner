@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -80,6 +81,8 @@ public class FindReoccurringParagraphsES implements Runnable {
     private final String esProtocol;
     private final Integer sliceId;
     private final Integer maxSlices;
+ //   private Hashtable<Long, Boolean> isUpdatingInt;
+ //   private Hashtable<Long, Boolean> isUpdatingExt;
 
     private List<UpdateData> stateResultsList;
 
@@ -93,6 +96,8 @@ public class FindReoccurringParagraphsES implements Runnable {
         this.esProtocol = esProtocol;
         this.sliceId = sliceId;
         this.maxSlices = maxSlices;
+       // Hashtable<Long, Boolean> isUpdatingInt = new Hashtable<Long, Boolean>();
+       // Hashtable<Long, Boolean> isUpdatingExt = new Hashtable<Long, Boolean>();
     }
 
     @Override
@@ -105,18 +110,17 @@ public class FindReoccurringParagraphsES implements Runnable {
         int testCount=0;
         this.stateResultsList = new ArrayList<UpdateData>();
 
-        while (hasHits) {
+        while (hasHits && testCount<3) {
             testCount+=1;
             System.out.println("Nr: "+testCount);
             if (scrollId==null) {
                 SearchRequest searchRequest = new SearchRequest("urls");
-                SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-                //SliceBuilder sliceBuilder = new SliceBuilder(this.sliceId, this.maxSlices);
-                //searchSourceBuilder.slice(sliceBuilder);
+                SliceBuilder sliceBuilder = new SliceBuilder(this.sliceId, this.maxSlices);
+                SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().slice(sliceBuilder);
                 searchSourceBuilder.query(new MatchAllQueryBuilder());
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(5L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(60L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -133,7 +137,7 @@ public class FindReoccurringParagraphsES implements Runnable {
                 }
             } else {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                scrollRequest.scroll(TimeValue.timeValueSeconds(30));
+                scrollRequest.scroll(TimeValue.timeValueMinutes(60L));
                 SearchResponse searchScrollResponse;
                 try {
                     searchScrollResponse = this.esClient.scroll(scrollRequest, RequestOptions.DEFAULT);
@@ -167,36 +171,57 @@ public class FindReoccurringParagraphsES implements Runnable {
     }
 
     private void processHits(SearchHits hits) {
+        System.out.println("SearchHits:"+hits.getHits().length);
+        long counter = 0;
         for (SearchHit hit : hits.getHits()) {
-            setIntRepostCount(hit);
+            counter+=1;
+            System.out.println(counter);
+            //System.out.println("Hits IN");
+            //setIntRepostCount(hit);
             setExtRepostCount(hit);
+            //System.out.println("Hits OUT");
         }
     }
 
     private void setIntRepostCount(SearchHit hit) {
+        System.out.println("IN setInt...");
         Map<String, Object> fieldMap = hit.getSourceAsMap();
         long pHash = (long) fieldMap.get("pHash");
         String domainName = (String) fieldMap.get("domainName");
-        CountRequest countRequest = new CountRequest();
-        countRequest.indices("urls");
+        CountRequest countRequest = new CountRequest("urls");
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         BoolQueryBuilder bqb = QueryBuilders.boolQuery();
         bqb.must(QueryBuilders.termQuery("pHash", pHash));
         bqb.must(QueryBuilders.termQuery("domainName.keyword", domainName));
         searchSourceBuilder.query(bqb);
+        String s = searchSourceBuilder.toString();
+        System.out.println(s);
+        //searchSourceBuilder.timeout(TimeValue.timeValueSeconds(2L));
         countRequest.source(searchSourceBuilder);
         CountResponse countResponse=null;
         try {
+            System.out.println("countReqeustIn");
             countResponse = this.esClient.count(countRequest, RequestOptions.DEFAULT);
+            System.out.println("countReqeustOut");
         } catch (IOException ex) {
             System.out.println("ES Error setIntRepostCount 1: "+ex.getMessage());
             return;
         }
 
         long count = countResponse.getCount();
+        System.out.println("Int count: "+count);
         if (count>1) {
-            this.stateResultsList.add(new UpdateData(pHash, domainName, false, count));
+            System.out.println("Int 1");
+            if (true) { // this.isUpdatingInt.get(pHash)!=null
+                System.out.println("Int 1a");
+                this.stateResultsList.add(new UpdateData(pHash, domainName, false, count));
+                System.out.println("Int 2");
+                //this.isUpdatingInt.put(pHash, true);
+                System.out.println("Int 3");
+                System.out.println(this.stateResultsList.size());
+            }
         }
+        System.out.println("OUT setInt...");
     }
 
     private void setExtRepostCount(SearchHit hit) {
@@ -209,9 +234,11 @@ public class FindReoccurringParagraphsES implements Runnable {
         searchSourceBuilder.query(QueryBuilders.boolQuery().
                  mustNot(QueryBuilders.termQuery("domainName.keyword", domainName)).
                  must(QueryBuilders.termQuery("pHash", pHash)));
-        String s = searchSourceBuilder.toString();
+        //String s = searchSourceBuilder.toString();
+        //System.out.println(s);
 
         countRequest.source(searchSourceBuilder);
+        searchSourceBuilder.timeout();
         CountResponse countResponse=null;
         try {
             countResponse = this.esClient.count(countRequest, RequestOptions.DEFAULT);
@@ -221,8 +248,12 @@ public class FindReoccurringParagraphsES implements Runnable {
         }
 
         long count = countResponse.getCount();
-        if (count>1) {
+        //System.out.println("Ext count: "+count);
+        if (count>0) { //  && this.isUpdatingExt.get(pHash)!=null
+            System.out.println("Ext count: "+count);
             this.stateResultsList.add(new UpdateData(pHash, domainName, true, count));
+           // this.isUpdatingExt.put(pHash, true);
+           // System.out.println(this.stateResultsList.size());
         }
     }
 
@@ -240,9 +271,14 @@ public class FindReoccurringParagraphsES implements Runnable {
                 scriptString,
                 Collections.emptyMap()));
         System.out.println("Reoccurring UpdateCounts "+pHash+" ("+scriptString+") "+count+": ("+this.sliceId+"/"+this.maxSlices+")");
-        if (count>1000) {
+
+        /*if (count>1000) {
             request.setSlices(2);
-        }
+        } else if (count>2000) {
+            request.setSlices(3);
+        } else if (count>3000) {
+            request.setSlices(3);
+        }*/
         request.setRefresh(true);
         try {
             System.out.println("R2");
