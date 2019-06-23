@@ -165,8 +165,8 @@ public class Main {
         }
     }
 
-    private static Hashtable<Long, Long> getPageRanks(String pageRanksFile) {
-        Hashtable<Long, Long> pageRanks = new Hashtable<Long, Long>();
+    private static HashMap<Long, Long> getPageRanks(String pageRanksFile) {
+        HashMap<Long, Long> pageRanks = new HashMap<Long, Long>();
         System.out.println("Starting to read pageRanks file");
         try {
             final InputStream objectStream = new FileInputStream(new File(pageRanksFile));
@@ -200,7 +200,7 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
-        Hashtable<Long, Long> pageRanks = getPageRanks(args[3]);
+        HashMap<Long, Long> pageRanks = getPageRanks(args[3]);
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/importToESTimingResults.stats")))) {
 

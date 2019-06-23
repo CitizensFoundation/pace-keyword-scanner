@@ -63,6 +63,7 @@
 \bwill of the people.
 \baverage citizen.
 \bcitizen\b
+\bcitizens’\b
 \bcitizens\b
 \bcitizenship\b
 \bhonest citizen.
@@ -96,6 +97,7 @@
 \bthe people.s enemy\b
 \bthe peoples enemy\b
 \bacab\b
+\bopen government\b
 \bapparatchik.
 \bdeep state.
 \bpluralist.
@@ -112,6 +114,7 @@
 \bbureaucratic\b
 \belitist\b
 \bcorrupt\b
+\be-democracy\b
 \bcorruption\b
 \bpolitical correct.
 \beurocra.

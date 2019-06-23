@@ -28,6 +28,7 @@
 \bdeceptive\b
 \bdeception\b
 \bdishonest
+\bdebate.
 \bdomination\b
 \belite\b
 \bdictator
@@ -121,12 +122,12 @@
 \breplacement agenda
 \btrafficing\b
 \bresist
-\bengagement
-\bparticipation
-\brenew
+\bengagement.
+\bparticipation.
+\brenew\b
 \brebuild
 \bprogressive
-\bjustice
+\bjustice.
 \bno surrender\b
 \boverthrow\b
 \brebellion\b

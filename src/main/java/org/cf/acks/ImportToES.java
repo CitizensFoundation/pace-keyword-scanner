@@ -62,9 +62,9 @@ public class ImportToES implements Runnable {
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
     private RestHighLevelClient esClient;
-    private final Hashtable<Long, Long> pageRanks;
+    private final HashMap<Long, Long> pageRanks;
 
-    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, Hashtable<Long, Long> pageRanks) {
+    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, HashMap<Long, Long> pageRanks) {
         this.schedulingSemaphore = schedulingSemaphore;
         String[] archiveParts = archive.split("/");
         this.archive = "results/"+archiveParts[archiveParts.length-1];
