@@ -1,0 +1,330 @@
+\b1984\b
+\b99 percent\b
+\babuse.
+\baccomplice.
+\baccountab.
+\banti grassroot\b
+\banti grass-root\b
+\banti-democratic\b
+\bantidemoratic\b
+\banti-grassroot\b
+\banti-grass-root\b
+\baristocra.
+\barrogan.
+\bautocra.
+\baverage citizen.
+\baverage people\b
+\bbackstabbing\b
+\bbandit.
+\bbetray.
+\bbig compan.
+\bbig corporation.
+\bbig money\b
+\bbigwig\b
+\bbin the licence fee\b
+\bbrainwash.
+\bbreach. of trust\b
+\bbroken promis.
+\bbureaucra.
+\bcahoot.
+\bcampaign pledge.
+\bcampaign promise.
+\bcapitalis.
+\bcaptiv.
+\bcaptur.
+\bcareless.
+\bcaste\b
+\bcensorship\b
+\bcheat.
+\bcitizen\b
+\bcitizens\b
+\bcitizenship\b
+\bclaim\b
+\bcommon good\b
+\bcommon sense\b
+\bcommunities\b
+\bcommunity\b
+\bcompanies\b
+\bcompany\b
+\bconceit\b
+\bconcerned citizen.
+\bconsensus\b
+\bconspirac.
+\bconstitution.
+\bcorporation.
+\bcorrupt.
+\bcrisis\b
+\bcronies\b
+\bcrony\b
+\bcronyism\b
+\bcunning\b
+\bdamag.
+\bdeceit.
+\bdeceiv.
+\bdecent\b
+\bdecent citizen.
+\bdecent people\b
+\bdecept.
+\bdefy\b
+\bdeliver the brexit\b
+\bdemocracies\b
+\bdemocracy\b
+\bdemocrat\b
+\bdemocratic\b
+\bdemocrats\b
+\bdesaster\b
+\bdevious\b
+\bdictator.
+\bdisgrace\b
+\bdishonest.
+\belection pledge.
+\belection promise.
+\belite\b
+\belites\b
+\belitist\b
+\bempire.
+\bempower.
+\bestablishment\b
+\beurocrat.
+\bexpense. of the public\b
+\bexploit.
+\bfacis.
+\bfake media\b
+\bfake news\b
+\bfault\b
+\bfed up\b
+\bfilthy\b
+\bforce\b
+\bforeign domination\b
+\bfraud\b
+\bfree speech\b
+\bfreedom of expression\b
+\bfreedom of speech\b
+\bfreeloader\b
+\bgeneral will\b
+\bgive voice\b
+\bgreater good\b
+\bgreed.
+\bguilty\b
+\bhardworking\b
+\bhard-working\b
+\bhighway robbery\b
+\bhighwaym.
+\bhijack\b
+\bhonest citizen.
+\bhonest people\b
+\bhostage\b
+\bhypocrit.
+\bimperialis.
+\bimpose.
+\bindependen.
+\binsincere\b
+\binternationalis.
+\bivory tower\b
+\bjustice\b
+\blackey\b
+\blarge compan.
+\blarge corporation.
+\blaw and order\b
+\bleftist fascism\b
+\bleftist media\b
+\bliar\b
+\bliblab\b
+\blib-lab\b
+\blie\b
+\blie. to\b
+\blies\b
+\blobby.
+\blooter\b
+\blose control\b
+\bloss of control\b
+\blost control\b
+\blying media\b
+\bmainstream media\b
+\bmainstream part.
+\bmajority\b
+\bmanipulat.
+\bmarauder\b
+\bmarxis.
+\bmiddle class\b
+\bmisappropriat.
+\bmiscreant.
+\bmock\b
+\bmonopol\b
+\bmouthpiece.
+\bmuzzle\b
+\bnegligent\b
+\bnepotism\b
+\bnomenclature\b
+\bnormal people\b
+\bobsessed with power\b
+\bobsession with power\b
+\bodinary people\b
+\boligarch.
+\boppress.
+\bordinary citizen.
+\bordinary people\b
+\borwell.
+\bour people.
+\bour values\b
+\bout of touch\b
+\bparasit.
+\bparty interest.
+\bpeople demand\b
+\bpeople know\b
+\bpeople want\b
+\bpeople wish\b
+\bpeople.
+\bphony\b
+\bplot.
+\bplunder.
+\bplutocra.
+\bpolitical class\b
+\bpolitical correct.
+\bpopular sovereignity\b
+\bpopular vote\b
+\bpopular will\b
+\bpower\b
+\bpower hungry\b
+\bpower monger\b
+\bpower-hungry\b
+\bpride\b
+\bpriviledged\b
+\bpropaganda\b
+\bproud\b
+\bpseudo expert.
+\bpseudo-expert.
+\bpublic interest\b
+\bput people first\b
+\bputting people first\b
+\bquisling.
+\breckless\b
+\bred tape\b
+\breferendum\b
+\bregime\b
+\brepressive\b
+\bresponsibility\b
+\bresponsible\b
+\bridicul.
+\brobber baron\b
+\bruined\b
+\brule over\b
+\bruling\b
+\bruling class\b
+\bruling group\b
+\brun down\b
+\brun-down\b
+\bscam.
+\bscrap the licence fee\b
+\bself interest.
+\bself-interest.
+\bselfish\b
+\bselfishness\b
+\bself-serving\b
+\bshame\b
+\bsilent majority\b
+\bsnooty\b
+\bso-called expert.
+\bsolidar.
+\bsovereign\b
+\bsovereignty\b
+\bstate media\b
+\bstuck-up\b
+\bsubdue.
+\bsubmission\b
+\bsubservience\b
+\bsubservient\b
+\btake back control\b
+\btaking back control\b
+\btaxpayer.
+\btechnocra.
+\bthe rich\b
+\btraitor.
+\btreason\b
+\btreason against the people\b
+\btruth\b
+\bunconstitutional.
+\bundemocratic\b
+\bunelected\b
+\bvassal state\b
+\bvoter.
+\bvox populi\b
+\bwannabe expert.
+\bwithstand.
+\bworking class.
+\bwrongspeak\b
+\bancest.
+\basylum chaos\b
+\basylum industry\b
+\bband. of migrants\b
+\bclean out\b
+\bcleaning out\b
+\bdeportation\b
+\bdestiny\b
+\bdomestic\b
+\bfatherland\b
+\bfatherlands\b
+\bfolklore\b
+\bforefather.
+\bheadscarf.
+\bhomeland\b
+\bidentity\b
+\bintegrat.
+\bislamis.
+\blineage\b
+\bmass immigration\b
+\bmass migration\b
+\bmigrant.
+\bmigration\b
+\bnation\b
+\bnational tradition\b
+\bnations\b
+\bnative.
+\bopen border.
+\bour country\b
+\bour custom.
+\bour tradition.
+\bour way of life\b
+\bpatriot.
+\breconquista\b
+\brepatriation\b
+\breplacement agenda\b
+\bright of blood\b
+\btrafficker\b
+\btrafficking\b
+\bwave of refugees\b
+\bwestern world\b
+\balien.
+\bbarbar.
+\bborder control\b
+\bbritain\b
+\bbritains\b
+\bbritish\b
+\bcatastroph.
+\bcontrol the border\b
+\bcontrolling the border\b
+\bdecline\b
+\bdemise\b
+\bdestruction\b
+\bdiversity\b
+\bdoom\b
+\bfloodgate.
+\bforeigner.
+\bgreat britain\b
+\bheritage\b
+\binherit.
+\bjus sanguinis\b
+\bland of hope and glory\b
+\bloss\b
+\bminorit.
+\bmulti-cultural.
+\bmulticultural.
+\bnational\b
+\bnationalism\b
+\bnationalist.
+\brape.
+\brapist.
+\brefugee.
+\bsavage.
+\bstranger.
+\buk\b

@@ -25,6 +25,7 @@ public class WetArchiveProcessor implements Runnable {
     public final int MIN_LINE_LENGTH = 220;
     public final int MAX_LINE_LENGTH = 1250;
     public final int MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING = 1;
+    public final int MIN_ADDITION_KEYWORDS_FOR_RECORDING = 3;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -160,8 +161,9 @@ public class WetArchiveProcessor implements Runnable {
     private void processLineForKeywords(Scanner essentialScanner, Scanner additionalScanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
         final List<Match> essentialMatches = essentialScanner.scan(essentialPatternDB, lowerCaseLine);
-        if (essentialMatches.size()>=MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING) {
-            final List<Match> additionalMatches = additionalScanner.scan(additionalPatternDB, lowerCaseLine);
+        final List<Match> additionalMatches = additionalScanner.scan(additionalPatternDB, lowerCaseLine);
+        if (essentialMatches.size()>=MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING ||
+            additionalMatches.size()>=MIN_ADDITION_KEYWORDS_FOR_RECORDING) {
 
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;

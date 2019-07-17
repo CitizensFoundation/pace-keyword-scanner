@@ -281,16 +281,16 @@ public class ImportToES implements Runnable {
                         keyword = keyword.substring(0, keyword.length() - 1);
 
                         if (essential) {
-                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": true},";
+                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": true},";
                         } else {
-                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": false},";
+                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": false},";
                         }
                     }
                     jsonString = jsonString.substring(0, jsonString.length() - 1);
 
                     jsonString+="],";
-                    jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
-                    jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
+                    jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
+                    jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
                     jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
                     jsonString+="\"extRepostCount\": 0,";
                     jsonString+="\"intRepostCount\": 1,";
