@@ -227,88 +227,97 @@ public class ImportToES implements Runnable {
         String domainName = uri.getHost();
 
         if (domainName!=null) {
-            domainName = domainName.replace("www.","");
-            Long domainHash = LongHashFunction.xx().hashChars(domainName);
-            Long pageRank = this.pageRanks.get(domainHash);
+            if (domainName.contains(".com") ||
+                domainName.contains(".uk") ||
+                domainName.contains(".org") ||
+                domainName.contains(".net") ||
+                domainName.contains(".eu")
+                ) {
+                    domainName = domainName.replace("www.","");
+                    Long domainHash = LongHashFunction.xx().hashChars(domainName);
+                    Long pageRank = this.pageRanks.get(domainHash);
 
-            if (pageRank!=null) {
-                if (splitLines.length>1) {
-                    String paragraph = splitLines[0].replaceAll("\"","");
-                    JsonStringEncoder e = JsonStringEncoder.getInstance();
-                    paragraph = new String(e.quoteAsString(paragraph));
-                    String strippedParagraph = paragraph.toLowerCase().replace(" ","").replace("'","").
-                    replace("`","").
-                    replace("´","").
-                    replace("‘","").
-                    replace("’","").
-                    replace("”","").
-                    replace(":","").
-                    replace("?","").
-                    replace(";","").
-                    replace("“","");
+                    if (pageRank!=null) {
+                        if (splitLines.length>1) {
+                            String paragraph = splitLines[0].replaceAll("\"","");
+                            JsonStringEncoder e = JsonStringEncoder.getInstance();
+                            paragraph = new String(e.quoteAsString(paragraph));
+                            String strippedParagraph = paragraph.toLowerCase().replace(" ","").replace("'","").
+                            replace("`","").
+                            replace("´","").
+                            replace("‘","").
+                            replace("’","").
+                            replace("”","").
+                            replace(":","").
+                            replace("?","").
+                            replace(";","").
+                            replace("“","");
 
-                    Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
-                    String pHash = Long.toString(pHashLong);
-                    String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url+pHash));
+                            Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
+                            String pHash = Long.toString(pHashLong);
+                            String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url+pHash));
 
-                    String jsonString = "{\"createdAt\":\""+currentDate+"\",";
-                    String keywords[] = splitLines[1].split(":");
-                    Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
+                            String jsonString = "{\"createdAt\":\""+currentDate+"\",";
+                            String keywords[] = splitLines[1].split(":");
+                            Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
-                    for(String keyword:keywords){
-                        if (!keyWordsmap.containsKey(keyword)) {
-                            keyWordsmap.put(keyword,1);
-                        } else{
-                            keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
-                        }
-                    }
+                            for(String keyword:keywords){
+                                if (!keyWordsmap.containsKey(keyword)) {
+                                    keyWordsmap.put(keyword,1);
+                                } else{
+                                    keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                                }
+                            }
 
-                    jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
+                            jsonString+="\"paragraph\":\""+paragraph+"\",\"keywords\":[";
 
-                    int essentialKeywordsCount=0;
-                    int additionalKeywordsCount=0;
+                            int essentialKeywordsCount=0;
+                            int additionalKeywordsCount=0;
 
-                    for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                        String keyword = entry.getKey().replace("\\b", "");
-                        String count = entry.getValue().toString();
-                        boolean essential = false;
-                        if (keyword.substring(keyword.length()-1).equals("E")) {
-                            essential=true;
-                            essentialKeywordsCount+=1;
+                            for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
+                                String keyword = entry.getKey().replace("\\b", "");
+                                String count = entry.getValue().toString();
+                                boolean essential = false;
+                                if (keyword.substring(keyword.length()-1).equals("E")) {
+                                    essential=true;
+                                    essentialKeywordsCount+=1;
+                                } else {
+                                    additionalKeywordsCount+=1;
+                                }
+                                keyword = keyword.substring(0, keyword.length() - 1);
+
+                                if (essential) {
+                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": true},";
+                                } else {
+                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": false},";
+                                }
+                            }
+                            jsonString = jsonString.substring(0, jsonString.length() - 1);
+
+                            jsonString+="],";
+                            jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
+                            jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
+                            jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
+                            jsonString+="\"extRepostCount\": 0,";
+                            jsonString+="\"intRepostCount\": 1,";
+                            jsonString+="\"pHash\":"+pHash+",";
+
+                            jsonString+="\"pageRank\":"+pageRank+",";
+                            jsonString+="\"domainName\":\""+domainName+"\"";
+                            jsonString+="}";
+
+                            UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
+                            esRequest.doc(jsonString, XContentType.JSON);
+                            esRequest.docAsUpsert(true);
+                            this.bulkUpdateQueue.add(esRequest);
                         } else {
-                            additionalKeywordsCount+=1;
+                            throw new Exception("Splitlines! "+line);
                         }
-                        keyword = keyword.substring(0, keyword.length() - 1);
-
-                        if (essential) {
-                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": true},";
-                        } else {
-                            jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": false},";
-                        }
+                    } else {
                     }
-                    jsonString = jsonString.substring(0, jsonString.length() - 1);
-
-                    jsonString+="],";
-                    jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
-                    jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
-                    jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
-                    jsonString+="\"extRepostCount\": 0,";
-                    jsonString+="\"intRepostCount\": 1,";
-                    jsonString+="\"pHash\":"+pHash+",";
-
-                    jsonString+="\"pageRank\":"+pageRank+",";
-                    jsonString+="\"domainName\":\""+domainName+"\"";
-                    jsonString+="}";
-
-                    UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
-                    esRequest.doc(jsonString, XContentType.JSON);
-                    esRequest.docAsUpsert(true);
-                    this.bulkUpdateQueue.add(esRequest);
                 } else {
-                    throw new Exception("Splitlines! "+line);
+
                 }
-            } else {
-            }
         } else {
         }
     }
