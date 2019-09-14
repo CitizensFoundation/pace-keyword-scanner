@@ -62,7 +62,8 @@ public class ImportToES implements Runnable {
     final static String TARGET_DATE = "WARC-Date:";
     final static String CONTENT_LENGTH = "Content-Length";
     private RestHighLevelClient esClient;
-    private final HashMap<Long, Long> pageRanks;
+    private HashMap<Long, Long> pageRanks;
+    private final HashMap<String, String> kwCategories;
 
     ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, HashMap<Long, Long> pageRanks) {
         this.schedulingSemaphore = schedulingSemaphore;
@@ -73,6 +74,10 @@ public class ImportToES implements Runnable {
         this.esProtocol = esProtocol;
         this.pageRanks = pageRanks;
         this.bulkUpdateQueue = new ArrayList<UpdateRequest>();
+        this.kwCategories = new HashMap<String,String>();
+        for (int i=0; i<kwArray.length; i+=2) {
+            this.kwCategories.put(kwArray[i+1], kwArray[i]);
+        }
     }
 
     @Override
@@ -80,6 +85,7 @@ public class ImportToES implements Runnable {
         String currentURL = null; // Should never be null in practice.
         long startTime = System.currentTimeMillis();
         System.out.println("Importing: "+archive);
+
         File file = new File(archive);
         while (file.exists()==false) {
             try {
@@ -186,6 +192,11 @@ public class ImportToES implements Runnable {
         return file.exists();
     }
 
+    private String getFilename(String path) {
+        String[] paths = path.split("/");
+        return paths[paths.length-1];
+    }
+
     private void pumpBulkUpdateQueue() {
         if (this.bulkUpdateQueue.size()>0) {
             BulkRequest request = new BulkRequest();
@@ -261,11 +272,23 @@ public class ImportToES implements Runnable {
                             String keywords[] = splitLines[1].split(":");
                             Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
+                            int populismKwCount=0;
+                            int nativismKwCount=0;
+                            int libarismKwCount=0;
+
                             for(String keyword:keywords){
                                 if (!keyWordsmap.containsKey(keyword)) {
                                     keyWordsmap.put(keyword,1);
                                 } else{
                                     keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
+                                }
+
+                                if (kwCategories.get(keyword)=="Populism") {
+                                    populismKwCount+=1;
+                                } else if (kwCategories.get(keyword)=="Nativism") {
+                                    nativismKwCount+=1;
+                                } else if (kwCategories.get(keyword)=="Liberalism") {
+                                    libarismKwCount+=1;
                                 }
                             }
 
@@ -295,8 +318,13 @@ public class ImportToES implements Runnable {
                             jsonString = jsonString.substring(0, jsonString.length() - 1);
 
                             jsonString+="],";
+
+                            // For 3 categories
                             jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
                             jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
+                            jsonString+="\"populismKwCount\":"+populismKwCount+",";
+                            jsonString+="\"nativismKwCount\":"+nativismKwCount+",";
+                            jsonString+="\"libarismKwCount\":"+libarismKwCount+",";
                             jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
                             jsonString+="\"extRepostCount\": 0,";
                             jsonString+="\"intRepostCount\": 1,";
@@ -321,8 +349,147 @@ public class ImportToES implements Runnable {
         } else {
         }
     }
-    private String getFilename(String path) {
-        String[] paths = path.split("/");
-        return paths[paths.length-1];
-    }
+
+
+    private  String[] kwArray = { "Populism","imperialis.",
+     "Populism","large corporation.",
+     "Populism","looter",
+     "Populism","muzzle",
+     "Populism","parasit.",
+     "Populism","put people first",
+     "Populism","technocra.",
+     "Populism","dictator.",
+     "Populism","decent people",
+     "Populism","plunder.",
+     "Populism","traitor.",
+     "Populism","big compan.",
+     "Populism","bigwig",
+     "Populism","lose control",
+     "Populism","defy",
+     "Populism","oligarch.",
+     "Populism","undemocratic",
+     "Populism","our values",
+     "Populism","anti-democratic",
+     "Populism","average citizen.",
+     "Populism","big money",
+     "Populism","captiv.",
+     "Populism","careless.",
+     "Populism","deceiv.",
+     "Populism","free speech",
+     "Populism","mainstream part.",
+     "Populism","normal people",
+     "Populism","oppress.",
+     "Populism","orwell.",
+     "Nativism","ancest.",
+     "Nativism","asylum chaos",
+     "Nativism","asylum industry",
+     "Nativism","band. of migrants",
+     "Nativism","clean out",
+     "Nativism","cleaning out",
+     "Nativism","deportation",
+     "Nativism","destiny",
+     "Nativism","domestic",
+     "Nativism","fatherland",
+     "Nativism","fatherlands",
+     "Nativism","folklore",
+     "Nativism","forefather.",
+     "Nativism","headscarf.",
+     "Nativism","homeland",
+     "Nativism","identity",
+     "Nativism","integrat.",
+     "Nativism","islamis.",
+     "Nativism","lineage",
+     "Nativism","mass immigration",
+     "Nativism","mass migration",
+     "Nativism","migrant.",
+     "Nativism","migration",
+     "Nativism","nation",
+     "Nativism","national tradition",
+     "Nativism","nations",
+     "Nativism","native.",
+     "Nativism","open border.",
+     "Nativism","our country",
+     "Nativism","our custom.",
+     "Nativism","our tradition.",
+     "Nativism","our way of life",
+     "Nativism","patriot.",
+     "Nativism","reconquista",
+     "Nativism","repatriation",
+     "Nativism","replacement agenda",
+     "Nativism","right of blood",
+     "Nativism","trafficker",
+     "Nativism","trafficking",
+     "Nativism","wave of refugees",
+     "Nativism","western world",
+     "Liberalism","basic right.",
+     "Liberalism","Branch. of Government ",
+     "Liberalism","Checks and Balances",
+     "Liberalism","Civil Liberties",
+     "Liberalism","Civil Right.",
+     "Liberalism","civility",
+     "Liberalism","Colorful",
+     "Liberalism","Cooperat.",
+     "Liberalism","cosmopolitan.",
+     "Liberalism","deliberation",
+     "Liberalism","demilitarization",
+     "Liberalism","democratic right.",
+     "Liberalism","disarmament.",
+     "Liberalism","discriminat.",
+     "Liberalism","diverse",
+     "Liberalism","equal.",
+     "Liberalism","ethni.",
+     "Liberalism","fair.",
+     "Liberalism","freedom",
+     "Liberalism","freedom of expression",
+     "Liberalism","freedom of opinion",
+     "Liberalism","freedom of speech",
+     "Liberalism","freedom . press",
+     "Liberalism","Future",
+     "Liberalism","gay.",
+     "Liberalism","Gender",
+     "Liberalism","handicapped",
+     "Liberalism","harmon.",
+     "Liberalism","heterogen.",
+     "Liberalism","Human Right.",
+     "Liberalism","inclusion",
+     "Liberalism","inclusiv.",
+     "Liberalism","individual right.",
+     "Liberalism","injustice.",
+     "Liberalism","interfaith",
+     "Liberalism","interreligious",
+     "Liberalism","intoleran.",
+     "Liberalism","justice",
+     "Liberalism","lesbian.",
+     "Liberalism","lgbt.",
+     "Liberalism","Liberal Democrac.",
+     "Liberalism","liberal right.",
+     "Liberalism","liberal value.",
+     "Liberalism","liberal",
+     "Liberalism","liberalism",
+     "Liberalism","marginaliz.",
+     "Liberalism","media diversity",
+     "Liberalism","minorit.",
+     "Liberalism","multicult.",
+     "Liberalism","multiethnic",
+     "Liberalism","negotiat.",
+     "Liberalism","Open Societ.",
+     "Liberalism","Parity",
+     "Liberalism","pillars of democracy",
+     "Liberalism","pluralis.",
+     "Liberalism","Political Freedom.",
+     "Liberalism","Prejudice.",
+     "Liberalism","public institution.",
+     "Liberalism","queer.",
+     "Liberalism","referendum",
+     "Liberalism","rights",
+     "Liberalism","Rule of Law",
+     "Liberalism","Separation of Power.",
+     "Liberalism","suppression",
+     "Liberalism","Tenets of Democracy",
+     "Liberalism","Toleran.",
+     "Liberalism","transgender.",
+     "Liberalism","transparen.",
+     "Liberalism","Universal Suffrage",
+     "Liberalism","violat."
+    };
 }
