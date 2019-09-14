@@ -284,6 +284,8 @@ public class ImportToES implements Runnable {
                                 }
 
                                 String keywordMinusOne = keyword.substring(0, keyword.length() - 1);
+                                keywordMinusOne = keywordMinusOne.toLowerCase();
+
                                 System.out.println(keywordMinusOne+" "+kwCategories.get(keywordMinusOne));
 
                                 if (kwCategories.get(keywordMinusOne)=="Populism") {
