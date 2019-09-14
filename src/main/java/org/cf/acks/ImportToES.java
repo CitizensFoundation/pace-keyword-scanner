@@ -310,9 +310,9 @@ public class ImportToES implements Runnable {
                                 keyword = keyword.substring(0, keyword.length() - 1);
 
                                 if (essential) {
-                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": true},";
+                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": true},";
                                 } else {
-                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"list1\": false},";
+                                    jsonString += "{\"keyword\":\""+keyword+"\",\"count\":"+count+",\"essential\": false},";
                                 }
                             }
                             jsonString = jsonString.substring(0, jsonString.length() - 1);
@@ -322,6 +322,8 @@ public class ImportToES implements Runnable {
                             // For 3 categories
                             jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
                             jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
+                            jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
+                            jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
                             jsonString+="\"populismKwCount\":"+populismKwCount+",";
                             jsonString+="\"nativismKwCount\":"+nativismKwCount+",";
                             jsonString+="\"libarismKwCount\":"+libarismKwCount+",";
