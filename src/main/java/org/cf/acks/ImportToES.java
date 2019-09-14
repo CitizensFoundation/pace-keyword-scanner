@@ -63,7 +63,8 @@ public class ImportToES implements Runnable {
     final static String CONTENT_LENGTH = "Content-Length";
     private RestHighLevelClient esClient;
     private HashMap<Long, Long> pageRanks;
-    private final HashMap<String, String> kwCategories;
+    private final HashMap<String, String> kwCategoriesList1;
+    private final HashMap<String, String> kwCategoriesList2;
 
     ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol, HashMap<Long, Long> pageRanks) {
         this.schedulingSemaphore = schedulingSemaphore;
@@ -74,11 +75,17 @@ public class ImportToES implements Runnable {
         this.esProtocol = esProtocol;
         this.pageRanks = pageRanks;
         this.bulkUpdateQueue = new ArrayList<UpdateRequest>();
-        this.kwCategories = new HashMap<String,String>();
-        for (int i=0; i<kwArray.length; i+=2) {
-            String keyword = kwArray[i+1];
+        this.kwCategoriesList1 = new HashMap<String,String>();
+        for (int i=0; i<kwList1Array.length; i+=2) {
+            String keyword = kwList1Array[i+1];
             keyword = keyword.toLowerCase();
-            this.kwCategories.put(keyword, kwArray[i]);
+            this.kwCategoriesList1.put(keyword, kwList1Array[i]);
+        }
+        this.kwCategoriesList2 = new HashMap<String,String>();
+        for (int i=0; i<kwListTwoArray.length; i+=2) {
+            String keyword = kwListTwoArray[i+1];
+            keyword = keyword.toLowerCase();
+            this.kwCategoriesList2.put(keyword, kwListTwoArray[i]);
         }
     }
 
@@ -274,9 +281,15 @@ public class ImportToES implements Runnable {
                             String keywords[] = splitLines[1].split(":");
                             Map<String,Integer> keyWordsmap = new HashMap<String,Integer>();
 
-                            int populismKwCount=0;
-                            int nativismKwCount=0;
-                            int libarismKwCount=0;
+                            int populismList1KwCount=0;
+                            int nativismList1KwCount=0;
+                            int libarismList1KwCount=0;
+                            int populismList2KwCount=0;
+                            int nativismList2KwCount=0;
+                            int libarismList2KwCount=0;
+                            int populismTotalKwCount=0;
+                            int nativismTotalKwCount=0;
+                            int libarismTotalKwCount=0;
 
                             for(String keyword:keywords){
                                 if (!keyWordsmap.containsKey(keyword)) {
@@ -288,14 +301,26 @@ public class ImportToES implements Runnable {
                                 String keywordMinusOne = keyword.substring(0, keyword.length() - 1);
                                 keywordMinusOne = keywordMinusOne.toLowerCase();
 
-                                System.out.println(keywordMinusOne+" "+kwCategories.get(keywordMinusOne));
+                                if (kwCategoriesList1.get(keywordMinusOne)=="Populism") {
+                                    populismList1KwCount+=1;
+                                    populismTotalKwCount+=1;
+                                } else if (kwCategoriesList1.get(keywordMinusOne)=="Nativism") {
+                                    nativismList1KwCount+=1;
+                                    nativismTotalKwCount+=1;
+                                } else if (kwCategoriesList1.get(keywordMinusOne)=="Liberalism") {
+                                    libarismList1KwCount+=1;
+                                    libarismTotalKwCount+=1;
+                                }
 
-                                if (kwCategories.get(keywordMinusOne)=="Populism") {
-                                    populismKwCount+=1;
-                                } else if (kwCategories.get(keywordMinusOne)=="Nativism") {
-                                    nativismKwCount+=1;
-                                } else if (kwCategories.get(keywordMinusOne)=="Liberalism") {
-                                    libarismKwCount+=1;
+                                if (kwCategoriesList2.get(keywordMinusOne)=="Populism") {
+                                    populismList2KwCount+=1;
+                                    populismTotalKwCount+=1;
+                                } else if (kwCategoriesList2.get(keywordMinusOne)=="Nativism") {
+                                    nativismList2KwCount+=1;
+                                    nativismTotalKwCount+=1;
+                                } else if (kwCategoriesList2.get(keywordMinusOne)=="Liberalism") {
+                                    libarismList2KwCount+=1;
+                                    libarismTotalKwCount+=1;
                                 }
                             }
 
@@ -326,14 +351,36 @@ public class ImportToES implements Runnable {
 
                             jsonString+="],";
 
+                            System.out.println("\"populismList1KwCount\":"+populismList1KwCount);
+                            System.out.println("\"nativismList1KwCount\":"+nativismList1KwCount);
+                            System.out.println("\"libarismList1KwCount\":"+libarismList1KwCount);
+
+                            System.out.println("\"populismList2KwCount\":"+populismList2KwCount);
+                            System.out.println("\"nativismList2KwCount\":"+nativismList2KwCount);
+                            System.out.println("\"libarismList2KwCount\":"+libarismList2KwCount);
+
+                            System.out.println("\"populismTotalKwCount\":"+populismTotalKwCount);
+                            System.out.println("\"nativismTotalKwCount\":"+nativismTotalKwCount);
+                            System.out.println("\"libarismTotalKwCount\":"+libarismTotalKwCount);
+
                             // For 3 categories
                             jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
                             jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
                             jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
                             jsonString+="\"additionalKwCount\":"+additionalKeywordsCount+",";
-                            jsonString+="\"populismKwCount\":"+populismKwCount+",";
-                            jsonString+="\"nativismKwCount\":"+nativismKwCount+",";
-                            jsonString+="\"libarismKwCount\":"+libarismKwCount+",";
+
+                            jsonString+="\"populismList1KwCount\":"+populismList1KwCount+",";
+                            jsonString+="\"nativismList1KwCount\":"+nativismList1KwCount+",";
+                            jsonString+="\"libarismList1KwCount\":"+libarismList1KwCount+",";
+
+                            jsonString+="\"populismList2KwCount\":"+populismList2KwCount+",";
+                            jsonString+="\"nativismList2KwCount\":"+nativismList2KwCount+",";
+                            jsonString+="\"libarismList2KwCount\":"+libarismList2KwCount+",";
+
+                            jsonString+="\"populismTotalKwCount\":"+populismTotalKwCount+",";
+                            jsonString+="\"nativismTotalKwCount\":"+nativismTotalKwCount+",";
+                            jsonString+="\"libarismTotalKwCount\":"+libarismTotalKwCount+",";
+
                             jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
                             jsonString+="\"extRepostCount\": 0,";
                             jsonString+="\"intRepostCount\": 1,";
@@ -360,7 +407,8 @@ public class ImportToES implements Runnable {
     }
 
 
-    private  String[] kwArray = { "Populism","imperialis.",
+    private  String[] kwList1Array = {
+     "Populism","imperialis.",
      "Populism","large corporation.",
      "Populism","looter",
      "Populism","muzzle",
@@ -500,5 +548,338 @@ public class ImportToES implements Runnable {
      "Liberalism","transparen.",
      "Liberalism","Universal Suffrage",
      "Liberalism","violat."
+    };
+
+    private String[] kwListTwoArray = {
+        "Populism","1984",
+        "Populism","99 percent",
+        "Populism","abuse.",
+        "Populism","accomplice.",
+        "Populism","accountab.",
+        "Populism","anti grassroot",
+        "Populism","anti grass-root",
+        "Populism","anti-democratic",
+        "Populism","antidemoratic",
+        "Populism","anti-grassroot",
+        "Populism","anti-grass-root",
+        "Populism","aristocra.",
+        "Populism","arrogan.",
+        "Populism","autocra.",
+        "Populism","average citizen.",
+        "Populism","average people",
+        "Populism","backstabbing",
+        "Populism","bandit.",
+        "Populism","betray.",
+        "Populism","big compan.",
+        "Populism","big corporation.",
+        "Populism","big money",
+        "Populism","bigwig",
+        "Populism","bin the licence fee",
+        "Populism","brainwash.",
+        "Populism","breach. of trust",
+        "Populism","broken promis.",
+        "Populism","bureaucra.",
+        "Populism","cahoot.",
+        "Populism","campaign pledge.",
+        "Populism","campaign promise.",
+        "Populism","capitalis.",
+        "Populism","captiv.",
+        "Populism","captur.",
+        "Populism","careless.",
+        "Populism","caste",
+        "Populism","censorship",
+        "Populism","cheat.",
+        "Populism","citizen",
+        "Populism","citizens",
+        "Populism","citizenship",
+        "Populism","claim",
+        "Populism","common good",
+        "Populism","common sense",
+        "Populism","communities",
+        "Populism","community",
+        "Populism","companies",
+        "Populism","company",
+        "Populism","conceit",
+        "Populism","concerned citizen.",
+        "Populism","consensus",
+        "Populism","conspirac.",
+        "Populism","constitution.",
+        "Populism","corporation.",
+        "Populism","corrupt.",
+        "Populism","crisis",
+        "Populism","cronies",
+        "Populism","crony",
+        "Populism","cronyism",
+        "Populism","cunning",
+        "Populism","damag.",
+        "Populism","deceit.",
+        "Populism","deceiv.",
+        "Populism","decent",
+        "Populism","decent citizen.",
+        "Populism","decent people",
+        "Populism","decept.",
+        "Populism","defy",
+        "Populism","deliver the Brexit",
+        "Populism ","democracies",
+        "Populism","democracy",
+        "Populism","democrat",
+        "Populism","democratic",
+        "Populism","democrats",
+        "Populism","desaster",
+        "Populism","devious",
+        "Populism","dictator.",
+        "Populism","disgrace",
+        "Populism","dishonest.",
+        "Populism","election pledge.",
+        "Populism","election promise.",
+        "Populism","elite",
+        "Populism","elites",
+        "Populism","elitist",
+        "Populism","empire.",
+        "Populism","empower.",
+        "Populism","establishment",
+        "Populism","eurocrat.",
+        "Populism","expense. of the public",
+        "Populism","exploit.",
+        "Populism","facis.",
+        "Populism","fake media",
+        "Populism","fake news",
+        "Populism","fault",
+        "Populism","fed up",
+        "Populism","filthy",
+        "Populism","force",
+        "Populism","foreign domination",
+        "Populism","fraud",
+        "Populism","free speech",
+        "Populism","freedom of expression",
+        "Populism","freedom of speech",
+        "Populism","freeloader",
+        "Populism","general will",
+        "Populism","give voice",
+        "Populism","greater good",
+        "Populism","greed.",
+        "Populism","guilty",
+        "Populism","hardworking",
+        "Populism","hard-working",
+        "Populism","highway robbery",
+        "Populism","highwaym.",
+        "Populism","hijack",
+        "Populism","honest citizen.",
+        "Populism","honest people",
+        "Populism","hostage",
+        "Populism","hypocrit.",
+        "Populism","imperialis.",
+        "Populism","impose.",
+        "Populism","independen.",
+        "Populism","insincere",
+        "Populism","internationalis.",
+        "Populism","ivory tower",
+        "Populism","justice",
+        "Populism","lackey",
+        "Populism","large compan.",
+        "Populism","large corporation.",
+        "Populism","law and order",
+        "Populism","leftist fascism",
+        "Populism","leftist media",
+        "Populism","liar",
+        "Populism","LibLab",
+        "Populism","Lib-Lab",
+        "Populism","lie",
+        "Populism","lie. to",
+        "Populism","lies",
+        "Populism","lobby.",
+        "Populism","looter",
+        "Populism","lose control",
+        "Populism","loss of control",
+        "Populism","lost control",
+        "Populism","lying media",
+        "Populism","mainstream media",
+        "Populism","mainstream part.",
+        "Populism","majority",
+        "Populism","manipulat.",
+        "Populism","marauder",
+        "Populism","marxis.",
+        "Populism","middle class",
+        "Populism","misappropriat.",
+        "Populism","miscreant.",
+        "Populism","mock",
+        "Populism","monopol",
+        "Populism","mouthpiece.",
+        "Populism","muzzle",
+        "Populism","negligent",
+        "Populism","nepotism",
+        "Populism","nomenclature",
+        "Populism","normal people",
+        "Populism","obsessed with power",
+        "Populism","obsession with power",
+        "Populism","odinary people",
+        "Populism","oligarch.",
+        "Populism","oppress.",
+        "Populism","ordinary citizen.",
+        "Populism","ordinary people",
+        "Populism","orwell.",
+        "Populism","our people.",
+        "Populism","our values",
+        "Populism","out of touch",
+        "Populism","parasit.",
+        "Populism","party interest.",
+        "Populism","people demand",
+        "Populism","people know",
+        "Populism","people want",
+        "Populism ","people wish",
+        "Populism","people.",
+        "Populism","phony",
+        "Populism","plot.",
+        "Populism","plunder.",
+        "Populism","plutocra.",
+        "Populism","political class",
+        "Populism","political correct.",
+        "Populism","popular sovereignity",
+        "Populism","popular vote",
+        "Populism","popular will",
+        "Populism","power",
+        "Populism","power hungry",
+        "Populism","power monger",
+        "Populism","power-hungry",
+        "Populism","pride",
+        "Populism","priviledged",
+        "Populism","propaganda",
+        "Populism","proud",
+        "Populism","pseudo expert.",
+        "Populism","pseudo-expert.",
+        "Populism","public interest",
+        "Populism","put people first",
+        "Populism","putting people first",
+        "Populism","quisling.",
+        "Populism","reckless",
+        "Populism","red tape",
+        "Populism","referendum",
+        "Populism","regime",
+        "Populism","repressive",
+        "Populism","responsibility",
+        "Populism","responsible",
+        "Populism","ridicul.",
+        "Populism","robber baron",
+        "Populism","ruined",
+        "Populism","rule over",
+        "Populism","ruling",
+        "Populism","ruling class",
+        "Populism","ruling group",
+        "Populism","run down",
+        "Populism","run-down",
+        "Populism","scam.",
+        "Populism","scrap the licence fee",
+        "Populism","self interest.",
+        "Populism","self-interest.",
+        "Populism","selfish",
+        "Populism","selfishness",
+        "Populism","self-serving",
+        "Populism","shame",
+        "Populism","silent majority",
+        "Populism","snooty",
+        "Populism","so-called expert.",
+        "Populism","solidar.",
+        "Populism","sovereign",
+        "Populism","sovereignty",
+        "Populism","state media",
+        "Populism","stuck-up",
+        "Populism","subdue.",
+        "Populism","submission",
+        "Populism","subservience",
+        "Populism/Populism","subservient",
+        "Populism","take back control",
+        "Populism","taking back control",
+        "Populism","taxpayer.",
+        "Populism","technocra.",
+        "Populism","the rich",
+        "Populism","traitor.",
+        "Populism","treason",
+        "Populism","treason against the people",
+        "Populism","truth",
+        "Populism","unconstitutional.",
+        "Populism","undemocratic",
+        "Populism","unelected",
+        "Populism","vassal state",
+        "Populism","voter.",
+        "Populism","vox populi",
+        "Populism","wannabe expert.",
+        "Populism","withstand.",
+        "Populism","working class.",
+        "Populism","wrongspeak",
+        "Nativism","ancest.",
+        "Nativism","asylum chaos",
+        "Nativism","asylum industry",
+        "Nativism","band. of migrants",
+        "Nativism","clean out",
+        "Nativism","cleaning out",
+        "Nativism","deportation",
+        "Nativism","destiny",
+        "Nativism","domestic",
+        "Nativism","fatherland",
+        "Nativism","fatherlands",
+        "Nativism","folklore",
+        "Nativism","forefather.",
+        "Nativism","headscarf.",
+        "Nativism","homeland",
+        "Nativism","identity",
+        "Nativism","integrat.",
+        "Nativism","islamis.",
+        "Nativism","lineage",
+        "Nativism","mass immigration",
+        "Nativism","mass migration",
+        "Nativism","migrant.",
+        "Nativism","migration",
+        "Nativism","nation",
+        "Nativism","national tradition",
+        "Nativism","nations",
+        "Nativism","native.",
+        "Nativism","open border.",
+        "Nativism","our country",
+        "Nativism","our custom.",
+        "Nativism","our tradition.",
+        "Nativism","our way of life",
+        "Nativism","patriot.",
+        "Nativism","reconquista",
+        "Nativism","repatriation",
+        "Nativism","replacement agenda",
+        "Nativism","right of blood",
+        "Nativism","trafficker",
+        "Nativism","trafficking",
+        "Nativism","wave of refugees",
+        "Nativism","western world",
+        "Nativism","alien.",
+        "Nativism","barbar.",
+        "Nativism","border control",
+        "Nativism","britain",
+        "Nativism","britains",
+        "Nativism","british",
+        "Nativism","catastroph.",
+        "Nativism","control the border",
+        "Nativism","controlling the border",
+        "Nativism","decline",
+        "Nativism","demise",
+        "Nativism","destruction",
+        "Nativism","diversity",
+        "Nativism","doom",
+        "Nativism","floodgate.",
+        "Nativism","foreigner.",
+        "Nativism","Great Britain",
+        "Nativism","heritage",
+        "Nativism","inherit.",
+        "Nativism","jus sanguinis",
+        "Nativism","Land of Hope and Glory",
+        "Nativism","loss",
+        "Nativism","minorit.",
+        "Nativism","multi-cultural.",
+        "Nativism","multicultural.",
+        "Nativism","national",
+        "Nativism","nationalism",
+        "Nativism","nationalist.",
+        "Nativism","rape.",
+        "Nativism","rapist.",
+        "Nativism","refugee.",
+        "Nativism","savage.",
+        "Nativism","stranger.",
+        "Nativism","UK"
     };
 }
