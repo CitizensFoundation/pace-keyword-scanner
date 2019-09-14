@@ -351,7 +351,7 @@ public class ImportToES implements Runnable {
 
                             jsonString+="],";
 
-                            System.out.println("\"populismList1KwCount\":"+populismList1KwCount);
+                            /*System.out.println("\"populismList1KwCount\":"+populismList1KwCount);
                             System.out.println("\"nativismList1KwCount\":"+nativismList1KwCount);
                             System.out.println("\"libarismList1KwCount\":"+libarismList1KwCount);
 
@@ -361,7 +361,7 @@ public class ImportToES implements Runnable {
 
                             System.out.println("\"populismTotalKwCount\":"+populismTotalKwCount);
                             System.out.println("\"nativismTotalKwCount\":"+nativismTotalKwCount);
-                            System.out.println("\"libarismTotalKwCount\":"+libarismTotalKwCount);
+                            System.out.println("\"libarismTotalKwCount\":"+libarismTotalKwCount);*/
 
                             // For 3 categories
                             jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
