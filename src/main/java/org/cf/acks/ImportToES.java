@@ -77,6 +77,7 @@ public class ImportToES implements Runnable {
         this.kwCategories = new HashMap<String,String>();
         for (int i=0; i<kwArray.length; i+=2) {
             this.kwCategories.put(kwArray[i+1], kwArray[i]);
+            System.out.println(kwArray[i+1]+" "+kwArray[i]);
         }
     }
 
@@ -282,6 +283,8 @@ public class ImportToES implements Runnable {
                                 } else{
                                     keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
                                 }
+
+                                System.out.println(keyword+" "+kwCategories.get(keyword));
 
                                 if (kwCategories.get(keyword)=="Populism") {
                                     populismKwCount+=1;
