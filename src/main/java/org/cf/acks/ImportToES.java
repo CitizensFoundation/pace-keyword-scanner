@@ -77,7 +77,6 @@ public class ImportToES implements Runnable {
         this.kwCategories = new HashMap<String,String>();
         for (int i=0; i<kwArray.length; i+=2) {
             this.kwCategories.put(kwArray[i+1], kwArray[i]);
-            System.out.println("Import: "+kwArray[i+1]+" "+kwArray[i]);
         }
     }
 
@@ -284,13 +283,14 @@ public class ImportToES implements Runnable {
                                     keyWordsmap.put(keyword, keyWordsmap.get(keyword)+1);
                                 }
 
-                                System.out.println(keyword+" "+kwCategories.get(keyword));
+                                String keywordMinusOne = keyword.substring(0, keyword.length() - 1);
+                                System.out.println(keywordMinusOne+" "+kwCategories.get(keywordMinusOne));
 
-                                if (kwCategories.get(keyword)=="Populism") {
+                                if (kwCategories.get(keywordMinusOne)=="Populism") {
                                     populismKwCount+=1;
-                                } else if (kwCategories.get(keyword)=="Nativism") {
+                                } else if (kwCategories.get(keywordMinusOne)=="Nativism") {
                                     nativismKwCount+=1;
-                                } else if (kwCategories.get(keyword)=="Liberalism") {
+                                } else if (kwCategories.get(keywordMinusOne)=="Liberalism") {
                                     libarismKwCount+=1;
                                 }
                             }
