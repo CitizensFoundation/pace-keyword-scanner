@@ -77,7 +77,7 @@ public class ImportToES implements Runnable {
         this.kwCategories = new HashMap<String,String>();
         for (int i=0; i<kwArray.length; i+=2) {
             this.kwCategories.put(kwArray[i+1], kwArray[i]);
-            System.out.println(kwArray[i+1]+" "+kwArray[i]);
+            System.out.println("Import: "+kwArray[i+1]+" "+kwArray[i]);
         }
     }
 
