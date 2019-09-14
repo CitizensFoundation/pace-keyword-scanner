@@ -76,7 +76,9 @@ public class ImportToES implements Runnable {
         this.bulkUpdateQueue = new ArrayList<UpdateRequest>();
         this.kwCategories = new HashMap<String,String>();
         for (int i=0; i<kwArray.length; i+=2) {
-            this.kwCategories.put(kwArray[i+1], kwArray[i]);
+            String keyword = kwArray[i+1];
+            keyword = keyword.toLowerCase();
+            this.kwCategories.put(keyword, kwArray[i]);
         }
     }
 
