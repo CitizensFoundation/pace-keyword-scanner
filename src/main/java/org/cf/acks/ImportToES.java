@@ -284,12 +284,38 @@ public class ImportToES implements Runnable {
                             int populismList1KwCount=0;
                             int nativismList1KwCount=0;
                             int libarismList1KwCount=0;
+
                             int populismList2KwCount=0;
                             int nativismList2KwCount=0;
                             int libarismList2KwCount=0;
+
                             int populismTotalKwCount=0;
                             int nativismTotalKwCount=0;
                             int libarismTotalKwCount=0;
+
+                            int populismList1UniqueKwCount=0;
+                            int nativismList1UniqueKwCount=0;
+                            int libarismList1UniqueKwCount=0;
+
+                            int populismList2UniqueKwCount=0;
+                            int nativismList2UniqueKwCount=0;
+                            int libarismList2UniqueKwCount=0;
+
+                            int populismTotalUniqueKwCount=0;
+                            int nativismTotalUniqueKwCount=0;
+                            int libarismTotalUniqueKwCount=0;
+
+                            HashMap<String, Boolean> populismList1UniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> nativismList1UniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> libarismList1UniqueKws = new HashMap<String,Boolean>();
+
+                            HashMap<String, Boolean> populismList2UniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> nativismList2UniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> libarismList2UniqueKws = new HashMap<String,Boolean>();
+
+                            HashMap<String, Boolean> populismTotalUniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> nativismTotalUniqueKws = new HashMap<String,Boolean>();
+                            HashMap<String, Boolean> libarismTotalUniqueKws = new HashMap<String,Boolean>();
 
                             for(String keyword:keywords){
                                 if (!keyWordsmap.containsKey(keyword)) {
@@ -304,23 +330,83 @@ public class ImportToES implements Runnable {
                                 if (kwCategoriesList1.get(keywordMinusOne)=="Populism") {
                                     populismList1KwCount+=1;
                                     populismTotalKwCount+=1;
+
+                                    if (populismList1UniqueKws.get(keywordMinusOne)==null) {
+                                        populismList1UniqueKws.put(keywordMinusOne, true);
+                                        populismList1UniqueKwCount+=1;
+                                    }
+
+                                    if (populismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        populismTotalUniqueKws.put(keywordMinusOne, true);
+                                        populismTotalUniqueKwCount+=1;
+                                    }
                                 } else if (kwCategoriesList1.get(keywordMinusOne)=="Nativism") {
                                     nativismList1KwCount+=1;
                                     nativismTotalKwCount+=1;
+
+                                    if (nativismList1UniqueKws.get(keywordMinusOne)==null) {
+                                        nativismList1UniqueKws.put(keywordMinusOne, true);
+                                        nativismList1UniqueKwCount+=1;
+                                    }
+
+                                    if (nativismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        nativismTotalUniqueKws.put(keywordMinusOne, true);
+                                        nativismTotalUniqueKwCount+=1;
+                                    }
                                 } else if (kwCategoriesList1.get(keywordMinusOne)=="Liberalism") {
                                     libarismList1KwCount+=1;
                                     libarismTotalKwCount+=1;
+
+                                    if (libarismList1UniqueKws.get(keywordMinusOne)==null) {
+                                        libarismList1UniqueKws.put(keywordMinusOne, true);
+                                        libarismList1UniqueKwCount+=1;
+                                    }
+
+                                    if (libarismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        libarismTotalUniqueKws.put(keywordMinusOne, true);
+                                        libarismTotalUniqueKwCount+=1;
+                                    }
                                 }
 
                                 if (kwCategoriesList2.get(keywordMinusOne)=="Populism") {
                                     populismList2KwCount+=1;
                                     populismTotalKwCount+=1;
+
+                                    if (populismList2UniqueKws.get(keywordMinusOne)==null) {
+                                        populismList2UniqueKws.put(keywordMinusOne, true);
+                                        populismList2UniqueKwCount+=1;
+                                    }
+
+                                    if (populismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        populismTotalUniqueKws.put(keywordMinusOne, true);
+                                        populismTotalUniqueKwCount+=1;
+                                    }
                                 } else if (kwCategoriesList2.get(keywordMinusOne)=="Nativism") {
                                     nativismList2KwCount+=1;
                                     nativismTotalKwCount+=1;
+
+                                    if (nativismList2UniqueKws.get(keywordMinusOne)==null) {
+                                        nativismList2UniqueKws.put(keywordMinusOne, true);
+                                        nativismList2UniqueKwCount+=1;
+                                    }
+
+                                    if (nativismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        nativismTotalUniqueKws.put(keywordMinusOne, true);
+                                        nativismTotalUniqueKwCount+=1;
+                                    }
                                 } else if (kwCategoriesList2.get(keywordMinusOne)=="Liberalism") {
                                     libarismList2KwCount+=1;
                                     libarismTotalKwCount+=1;
+
+                                    if (libarismList2UniqueKws.get(keywordMinusOne)==null) {
+                                        libarismList2UniqueKws.put(keywordMinusOne, true);
+                                        libarismList2UniqueKwCount+=1;
+                                    }
+
+                                    if (libarismTotalUniqueKws.get(keywordMinusOne)==null) {
+                                        libarismTotalUniqueKws.put(keywordMinusOne, true);
+                                        libarismTotalUniqueKwCount+=1;
+                                    }
                                 }
                             }
 
@@ -363,7 +449,18 @@ public class ImportToES implements Runnable {
                             System.out.println("\"nativismTotalKwCount\":"+nativismTotalKwCount);
                             System.out.println("\"libarismTotalKwCount\":"+libarismTotalKwCount);*/
 
-                            // For 3 categories
+                            System.out.println("\"populismList1UniqueKwCount\":"+populismList1UniqueKwCount);
+                            System.out.println("\"nativismList1UniqueKwCount\":"+nativismList1UniqueKwCount);
+                            System.out.println("\"libarismList1UniqueKwCount\":"+libarismList1UniqueKwCount);
+
+                            System.out.println("\"populismList2UniqueKwCount\":"+populismList2UniqueKwCount);
+                            System.out.println("\"nativismList2UniqueKwCount\":"+nativismList2UniqueKwCount);
+                            System.out.println("\"libarismList2UniqueKwCount\":"+libarismList2UniqueKwCount);
+
+                            System.out.println("\"populismTotalUniqueKwCount\":"+populismTotalUniqueKwCount);
+                            System.out.println("\"nativismTotalUniqueKwCount\":"+nativismTotalUniqueKwCount);
+                            System.out.println("\"libarismTotalUniqueKwCount\":"+libarismTotalUniqueKwCount);
+
                             jsonString+="\"list1KwCount\":"+essentialKeywordsCount+",";
                             jsonString+="\"list2KwCount\":"+additionalKeywordsCount+",";
                             jsonString+="\"essentialKwCount\":"+essentialKeywordsCount+",";
@@ -380,6 +477,20 @@ public class ImportToES implements Runnable {
                             jsonString+="\"populismTotalKwCount\":"+populismTotalKwCount+",";
                             jsonString+="\"nativismTotalKwCount\":"+nativismTotalKwCount+",";
                             jsonString+="\"libarismTotalKwCount\":"+libarismTotalKwCount+",";
+
+                            // UNIQUE
+
+                            jsonString+="\"populismList1UniqueKwCount\":"+populismList1UniqueKwCount+",";
+                            jsonString+="\"nativismList1UniqueKwCount\":"+nativismList1UniqueKwCount+",";
+                            jsonString+="\"libarismList1UniqueKwCount\":"+libarismList1UniqueKwCount+",";
+
+                            jsonString+="\"populismList2UniqueKwCount\":"+populismList2UniqueKwCount+",";
+                            jsonString+="\"nativismList2UniqueKwCount\":"+nativismList2UniqueKwCount+",";
+                            jsonString+="\"libarismList2UniqueKwCount\":"+libarismList2UniqueKwCount+",";
+
+                            jsonString+="\"populismTotalUniqueKwCount\":"+populismTotalUniqueKwCount+",";
+                            jsonString+="\"nativismTotalUniqueKwCount\":"+nativismTotalUniqueKwCount+",";
+                            jsonString+="\"libarismTotalUniqueKwCount\":"+libarismTotalUniqueKwCount+",";
 
                             jsonString+="\"uniqueKwCount\":"+keyWordsmap.entrySet().size()+",";
                             jsonString+="\"extRepostCount\": 0,";
