@@ -1,10 +1,10 @@
 const elasticsearch = require('elasticsearch');
 
-const nativism1 = require('./queries').nativism1;
-const nativism2 = require('./queries').nativism2;
-const liberalism1 = require('./queries').liberalism1;
-const populism1 = require('./queries').populism1;
-const populism2 = require('./queries').populism2;
+const query1 = require('./queries').query1;
+const query2 = require('./queries').query2;
+const query3 = require('./queries').query3;
+const query4 = require('./queries').query4;
+const query5 = require('./queries').query5;
 const _ = require('lodash');
 
 const client = new elasticsearch.Client({
@@ -18,10 +18,48 @@ const search = (index, body) => {
 
 const searchData = (body) => {
     body = _.merge(body, { from: 0, size: 1000 });
+    body = _.merge(body, {
+      sort: [
+        {
+          populismTotalUniqueKwCount: {
+//          nativismTotalUniqueKwCount: {
+//            libarismTotalUniqueKwCount: {
+//           populismList1UniqueKwCount: {
+//          nativismList1UniqueKwCount: {
+             order: "desc"
+          }
+        }
+      ]
+    });
     search('urls', body)
     .then(results => {
 //      console.log(`found ${results.hits.total} items in ${results.took}ms`);
-      const headerColumns = ['paragraph','list1KwCount','list2KwCount','uniqueKwCount'];
+      const headerColumns = [
+        'id',
+        'paragraph',
+        'domainName',
+        'list1KwCount',
+        'list2KwCount',
+        'uniqueKwCount',
+        'populismList1KwCount',
+        'nativismList1KwCount',
+        'libarismList1KwCount',
+        'populismList2KwCount',
+        'nativismList2KwCount',
+        'libarismList2KwCount',
+        'populismTotalKwCount',
+        'nativismTotalKwCount',
+        'libarismTotalKwCount',
+        'populismList1UniqueKwCount',
+        'nativismList1UniqueKwCount',
+        'libarismList1UniqueKwCount',
+        'populismList2UniqueKwCount',
+        'nativismList2UniqueKwCount',
+        'libarismList2UniqueKwCount',
+        'populismTotalUniqueKwCount',
+        'nativismTotalUniqueKwCount',
+        'libarismTotalUniqueKwCount'
+      ];
       const keywordColumns = {};
       const columnKeywords = {};
       results.hits.hits.forEach(
@@ -51,6 +89,7 @@ const searchData = (body) => {
       csvOut+="\n";
       results.hits.hits.forEach(
         (hitIn) => {
+          const id = hitIn._id;
           const hit = hitIn._source;
           const internalKeywordsCount = {};
           if (hit.keywords) {
@@ -61,13 +100,53 @@ const searchData = (body) => {
             });
             headerColumns.forEach((column,index)=>{
               if (index==0) {
-                csvOut += "'"+hit.paragraph.replace(/'/g, '"')+"',"
+                csvOut += "'"+id+"',"
               } else if (index==1) {
-                csvOut += hit.list1KwCount+","
+                csvOut += "'"+hit.paragraph.replace(/'/g, '"')+"',"
               } else if (index==2) {
-                csvOut += hit.list2KwCount+","
+                csvOut += "'"+hit.domainName.replace(/'/g, '"')+"',"
               } else if (index==3) {
+                csvOut += hit.list1KwCount+","
+              } else if (index==4) {
+                csvOut += hit.list2KwCount+","
+              } else if (index==5) {
                 csvOut += hit.uniqueKwCount+","
+              } else if (index==6) {
+                csvOut += hit.populismList1KwCount+","
+              } else if (index==7) {
+                csvOut += hit.nativismList1KwCount+","
+              } else if (index==8) {
+                csvOut += hit.libarismList1KwCount+","
+              } else if (index==9) {
+                csvOut += hit.populismList2KwCount+","
+              } else if (index==10) {
+                csvOut += hit.nativismList2KwCount+","
+              } else if (index==11) {
+                csvOut += hit.libarismList2KwCount+","
+              } else if (index==12) {
+                csvOut += hit.populismTotalKwCount+","
+              } else if (index==13) {
+                csvOut += hit.nativismTotalKwCount+","
+              } else if (index==14) {
+                csvOut += hit.libarismTotalKwCount+","
+              } else if (index==15) {
+                csvOut += hit.populismList1UniqueKwCount+","
+              } else if (index==16) {
+                csvOut += hit.nativismList1UniqueKwCount+","
+              } else if (index==17) {
+                csvOut += hit.libarismList1UniqueKwCount+","
+              } else if (index==18) {
+                csvOut += hit.populismList2UniqueKwCount+","
+              } else if (index==19) {
+                csvOut += hit.nativismList2UniqueKwCount+","
+              } else if (index==20) {
+                csvOut += hit.libarismList2UniqueKwCount+","
+              } else if (index==21) {
+                csvOut += hit.populismTotalUniqueKwCount+","
+              } else if (index==22) {
+                csvOut += hit.nativismTotalUniqueKwCount+","
+              } else if (index==23) {
+                csvOut += hit.libarismTotalUniqueKwCount+","
               } else {
                 if (internalKeywordsCount[columnKeywords[index]]) {
                   //console.log("Index: "+index+" "+columnKeywords[index]+" count: "+internalKeywordsCount[columnKeywords[index]]);
@@ -87,4 +166,4 @@ const searchData = (body) => {
     .catch(console.error);
 };
 
-searchData(nativism1);
+searchData(query1);
