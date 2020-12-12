@@ -28,36 +28,81 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     public static final int BUFFER_SIZE = 128_000;
 
-    /*
+    // TEST
     private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
     private static final String esProtocol="http";
-    */
 
+    /*
+    // PRODUCTION
     private static final String esHostname="search-ec-ac-pace-dev-wyysxnkri3j5ohunwbd4lb6zju.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
     private static final String esProtocol="https";
+    */
 
-    private static List<Expression> loadExpressions(File adPatternFile) throws Throwable {
-        BufferedReader reader = new BufferedReader(new FileReader(adPatternFile));
+    private static List<KeywordEntry> keywordEntries;
+    private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
+    private static void setupKeywordConfig(File configFile) throws Throwable {
+        BufferedReader reader = new BufferedReader(new FileReader(configFile));
+
+        keywordEntries =  new ArrayList<KeywordEntry>();
+
+        long startTime = System.currentTimeMillis();
+
+        String entry;
+        while ((entry = reader.readLine()) != null) {
+            if (entry.isEmpty()) {
+                continue;
+            }
+
+            String[] entryParts = entry.split(",");
+
+            if (entryParts.length>4) {
+                String language = entryParts[0];
+                String idealogyType = entryParts[1];
+                String topic = entryParts[2];
+                String subTopic = entryParts[3];
+                String searchPattern = "";
+                for (int i=4; i<entryParts.length; i++) {
+                    String expressionPart = entryParts[i];
+                    expressionPart = expressionPart.toLowerCase();
+                    expressionPart = expressionPart.replaceAll(" ",".");
+                    if (expressionPart!=null) {
+                        if (expressionPart.startsWith("-")) {
+                            expressionPart.replace("-","");
+                            searchPattern += "(?!.*"+expressionPart+")";
+                        } else {
+                            expressionPart = expressionPart.replaceAll("-",".");
+                            searchPattern += "(?=.*"+expressionPart+")";
+                        }
+                    }
+                }
+                KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic, searchPattern, language);
+                keywordEntries.add(keywordEntry);
+                keywordsMap.put(searchPattern, keywordEntry);
+            }
+        }
+
+        reader.close();
+
+        long duration = System.currentTimeMillis() - startTime;
+        logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
+
+    }
+
+
+    private static List<Expression> loadExpressions() throws Throwable {
         List<Expression> expressions = new ArrayList<>(10_000);
 
         long startTime = System.currentTimeMillis();
 
-        String pattern;
-        while ((pattern = reader.readLine()) != null) {
-            if (pattern.isEmpty()) {
-                continue;
-            }
-
-            Expression scanExpression = new Expression(pattern.toLowerCase());
-
+        for (KeywordEntry entry : keywordEntries) {
+            System.out.println(entry.searchPattern);
+            Expression scanExpression = new Expression(entry.searchPattern);
             expressions.add(scanExpression);
             Database.compile(scanExpression);
         }
-
-        reader.close();
 
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Time taken to load patterns (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
@@ -113,13 +158,11 @@ public class Main {
     private static void scanFiles(String[] args) throws Throwable {
         final List<String> s3KeyList = Files.readAllLines(Paths.get(args[1]));
 
-        List<Expression> essentialExpressions = loadExpressions(new File(args[2]));
-        List<Expression> additionalExpressions = loadExpressions(new File(args[3]));
+        List<Expression> mainExpressions = loadExpressions();
 
-        Database essentialPatternDB, additionalPatternDB;
+        Database mainPatternDB;
         try {
-            essentialPatternDB = Database.compile(essentialExpressions);
-            additionalPatternDB = Database.compile(additionalExpressions);
+            mainPatternDB = Database.compile(mainExpressions);
         } catch (CompileErrorException ce) {
             logger.catching(ce);
             Expression failedExpression = ce.getFailedExpression();
@@ -145,7 +188,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, essentialPatternDB, additionalPatternDB, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, mainPatternDB, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -210,7 +253,13 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new ImportToES(schedulingSemaphore, file+".scanned", Main.esHostname, Main.esPort, Main.esProtocol, pageRanks));
+                    executorService.submit(new ImportToES(schedulingSemaphore,
+                                                          file+".scanned",
+                                                          Main.esHostname,
+                                                          Main.esPort,
+                                                          Main.esProtocol,
+                                                          pageRanks,
+                                                          keywordsMap));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -293,7 +342,7 @@ public class Main {
     }
 
     private static void testKeywords(String[] args) throws Throwable {
-        List<Expression> expressions = loadExpressions(new File(args[1]));
+        List<Expression> expressions = loadExpressions();
 
         Database patternDB;
         try {
@@ -310,6 +359,7 @@ public class Main {
 
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
+        setupKeywordConfig(new File(args[2]));
         if (args[0].equals("scan")) {
             scanFiles(args);
         } else if (args[0].equals("testKeywords")) {

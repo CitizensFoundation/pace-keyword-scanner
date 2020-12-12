@@ -56,6 +56,7 @@ import org.elasticsearch.search.slice.SliceBuilder;
 
 import net.openhft.hashing.LongHashFunction;
 
+//TODO: Use same method to calculate connection strengths
 
 public class FindReoccurringParagraphsES implements Runnable {
 

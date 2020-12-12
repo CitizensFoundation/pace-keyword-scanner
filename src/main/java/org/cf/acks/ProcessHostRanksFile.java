@@ -30,6 +30,8 @@ public class ProcessHostRanksFile implements Runnable {
 
     private final int PAGE_RANK_MIN = 4_000_001;
 
+    private final boolean FORCE_ALL = true;
+
     ProcessHostRanksFile(String archive) {
         this.archive = archive;
     }
@@ -56,7 +58,7 @@ public class ProcessHostRanksFile implements Runnable {
                     Long position = Long.valueOf(parts[0]);
                     Double score = Double.valueOf(parts[1]);
                     Long domainHash = LongHashFunction.xx().hashChars(domainName);
-                    if (position<PAGE_RANK_MIN) {
+                    if (FORCE_ALL || position<PAGE_RANK_MIN) {
                         contentWriter.write(position.toString()+" "+domainHash.toString()+"\n");
                     } else {
                         break;

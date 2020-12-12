@@ -24,8 +24,7 @@ public class WetArchiveProcessor implements Runnable {
     public final int BUFFER_SIZE = 128_000;
     public final int MIN_LINE_LENGTH = 220;
     public final int MAX_LINE_LENGTH = 1250;
-    public final int MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING = 1;
-    public final int MIN_ADDITION_KEYWORDS_FOR_RECORDING = 3;
+    public final int MIN_KEYWORDS_FOR_RECORDING = 1;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -39,15 +38,13 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_HOST = "Host: ";
 
     private final Semaphore schedulingSemaphore;
-    private final Database essentialPatternDB;
-    private final Database additionalPatternDB;
+    private final Database mainPatternDB;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, Database essentialPatternDB, Database additionalPatternDB, String archive) {
+    WetArchiveProcessor(Semaphore schedulingSemaphore, Database mainPatternDB, String archive) {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.essentialPatternDB = essentialPatternDB;
-        this.additionalPatternDB = additionalPatternDB;
+        this.mainPatternDB = mainPatternDB;
         this.archive = archive;
     }
 
@@ -73,12 +70,10 @@ public class WetArchiveProcessor implements Runnable {
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
                 final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-                final Scanner essentialScanner = new Scanner();
-                final Scanner additionalScanner = new Scanner();) {
+                final Scanner mainScanner = new Scanner();) {
 
                 try {
-                    essentialScanner.allocScratch(essentialPatternDB);
-                    additionalScanner.allocScratch(additionalPatternDB);
+                    mainScanner.allocScratch(mainPatternDB);
                 } catch (Throwable t) {
                     throw new IOException(t);
                 }
@@ -106,14 +101,17 @@ public class WetArchiveProcessor implements Runnable {
                         line = contentReader.readLine();
 
                         try {
+                            int paragraphNumber = 1;
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line)) {
-                                        processLineForKeywords(essentialScanner, additionalScanner, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(paragraphNumber, mainScanner, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
+                                paragraphNumber++;
                             }
                         } catch (Throwable t) {
+                            resultsWriter.close();
                             throw new IOException(t);
                         }
                         processingEntry = false;
@@ -133,8 +131,7 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.close();
                 File finalFile = new File(outPath+".working");
                 boolean renameResult = finalFile.renameTo(new File(outPath));
-                essentialScanner.close();
-                additionalScanner.close();
+                mainScanner.close();
             } catch (IOException io) {
                 logger.catching(io);
                 System.out.println("Error for: "+archive);
@@ -158,25 +155,21 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(Scanner essentialScanner, Scanner additionalScanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(int paragraphNumber, Scanner mainScanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
-        final List<Match> essentialMatches = essentialScanner.scan(essentialPatternDB, lowerCaseLine);
-        final List<Match> additionalMatches = additionalScanner.scan(additionalPatternDB, lowerCaseLine);
-        if (essentialMatches.size()>=MIN_ESSENTIAL_KEYWORDS_FOR_RECORDING ||
-            additionalMatches.size()>=MIN_ADDITION_KEYWORDS_FOR_RECORDING) {
+        final List<Match> mainMatches = mainScanner.scan(mainPatternDB, lowerCaseLine);
+        if (mainMatches.size()>=MIN_KEYWORDS_FOR_RECORDING) {
 
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
                 resultsWriter.write(domain+ "\n");
                 resultsWriter.write(currentDate+ "\n");
+                resultsWriter.write(paragraphNumber+ "\n");
             }
             String keywords = "kd8x72dAx";
-            for (Match match : essentialMatches) {
-                keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ "E:";
-            }
-            for (Match match : additionalMatches) {
-                keywords += match.getMatchedExpression().getExpression().replace("\\b", "")+ "A:";
+            for (Match match : mainMatches) {
+                keywords += match.getMatchedExpression().getExpression();
             }
             line = line.replace("","");
             resultsWriter.write(line+keywords+"\n");
