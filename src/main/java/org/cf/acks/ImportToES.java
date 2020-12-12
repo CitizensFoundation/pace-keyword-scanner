@@ -2,9 +2,6 @@ package org.cf.acks;
 
 import com.amazonaws.transform.StaxUnmarshallerContext;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
-import com.gliwka.hyperscan.wrapper.Database;
-import com.gliwka.hyperscan.wrapper.Match;
-import com.gliwka.hyperscan.wrapper.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.http.HttpHost;
@@ -20,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.elasticsearch.action.DocWriteRequest.OpType;
@@ -65,11 +63,12 @@ public class ImportToES implements Runnable {
     private RestHighLevelClient esClient;
     private HashMap<Long, Long> pageRanks;
     private HashMap<String,KeywordEntry> keywordsMap;
-
+    private List<KeywordEntry> keywordEntries;
 
     ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol,
             HashMap<Long, Long> pageRanks,
-            HashMap<String,KeywordEntry> keywordsMap) {
+            HashMap<String,KeywordEntry> keywordsMap,
+            List<KeywordEntry> keywordEntries) {
         this.schedulingSemaphore = schedulingSemaphore;
         String[] archiveParts = archive.split("/");
         this.archive = "results/" + archiveParts[archiveParts.length - 1];
@@ -78,6 +77,7 @@ public class ImportToES implements Runnable {
         this.esProtocol = esProtocol;
         this.pageRanks = pageRanks;
         this.keywordsMap = keywordsMap;
+        this.keywordEntries = keywordEntries;
         this.bulkUpdateQueue = new ArrayList<UpdateRequest>();
     }
 
@@ -253,6 +253,8 @@ public class ImportToES implements Runnable {
 
                     Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
                     String pHash = Long.toString(pHashLong);
+
+                    //TODO: Add the keywordEntryIndex so we can have multiple paragraphs references
                     String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url + pHash));
 
                     String jsonString = "{\"createdAt\":\"" + currentDate + "\",";

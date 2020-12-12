@@ -1,9 +1,5 @@
 package org.cf.acks;
 
-import com.gliwka.hyperscan.wrapper.CompileErrorException;
-import com.gliwka.hyperscan.wrapper.Database;
-import com.gliwka.hyperscan.wrapper.Expression;
-
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +18,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
 
@@ -41,6 +39,7 @@ public class Main {
     */
 
     private static List<KeywordEntry> keywordEntries;
+    private static List<Pattern> keywordRegexPatterns;
     private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
     private static void setupKeywordConfig(File configFile) throws Throwable {
@@ -67,20 +66,24 @@ public class Main {
                 for (int i=4; i<entryParts.length; i++) {
                     String expressionPart = entryParts[i];
                     expressionPart = expressionPart.toLowerCase();
-                    expressionPart = expressionPart.replaceAll(" ",".");
-                    if (expressionPart!=null) {
-                        if (expressionPart.startsWith("-")) {
-                            expressionPart.replace("-","");
-                            searchPattern += "(?!.*"+expressionPart+")";
-                        } else {
-                            expressionPart = expressionPart.replaceAll("-",".");
-                            searchPattern += "(?=.*"+expressionPart+")";
+                    if (expressionPart.length()>1) {
+                        expressionPart = expressionPart.replaceAll(" ",".");
+                        if (expressionPart!=null) {
+                            if (expressionPart.startsWith("-")) {
+                                expressionPart.replace("-","");
+                                searchPattern += "(?!.*"+expressionPart+")";
+                            } else {
+                                expressionPart = expressionPart.replaceAll("-",".");
+                                searchPattern += "(?=.*"+expressionPart+")";
+                            }
                         }
                     }
                 }
-                KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic, searchPattern, language);
-                keywordEntries.add(keywordEntry);
-                keywordsMap.put(searchPattern, keywordEntry);
+                if (searchPattern.length()>5) {
+                    KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic, searchPattern, language);
+                    keywordEntries.add(keywordEntry);
+                    keywordsMap.put(searchPattern, keywordEntry);
+                }
             }
         }
 
@@ -88,26 +91,21 @@ public class Main {
 
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
-
     }
 
-
-    private static List<Expression> loadExpressions() throws Throwable {
-        List<Expression> expressions = new ArrayList<>(10_000);
-
+    private static void createRegexPatterns() {
         long startTime = System.currentTimeMillis();
+
+        keywordRegexPatterns =  new ArrayList<Pattern>();
 
         for (KeywordEntry entry : keywordEntries) {
             System.out.println(entry.searchPattern);
-            Expression scanExpression = new Expression(entry.searchPattern);
-            expressions.add(scanExpression);
-            Database.compile(scanExpression);
+            Pattern pattern = Pattern.compile(entry.searchPattern);
+            keywordRegexPatterns.add(pattern);
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        logger.info("Time taken to load patterns (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
-
-        return expressions;
+        logger.info("Time taken to create patterns (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
     }
 
     private static void setESIndexRefreshAndReplicas(String refreshInterval, Integer numberOfReplicas) {
@@ -158,17 +156,6 @@ public class Main {
     private static void scanFiles(String[] args) throws Throwable {
         final List<String> s3KeyList = Files.readAllLines(Paths.get(args[1]));
 
-        List<Expression> mainExpressions = loadExpressions();
-
-        Database mainPatternDB;
-        try {
-            mainPatternDB = Database.compile(mainExpressions);
-        } catch (CompileErrorException ce) {
-            logger.catching(ce);
-            Expression failedExpression = ce.getFailedExpression();
-            throw new IllegalStateException("The expression '" + failedExpression.getExpression() + "' failed to compile: " + failedExpression.getContext());
-        }
-
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
         final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
@@ -188,7 +175,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, mainPatternDB, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordRegexPatterns, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -259,7 +246,8 @@ public class Main {
                                                           Main.esPort,
                                                           Main.esProtocol,
                                                           pageRanks,
-                                                          keywordsMap));
+                                                          keywordsMap,
+                                                          keywordEntries));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -341,29 +329,12 @@ public class Main {
        }
     }
 
-    private static void testKeywords(String[] args) throws Throwable {
-        List<Expression> expressions = loadExpressions();
-
-        Database patternDB;
-        try {
-             patternDB = Database.compile(expressions);
-        } catch (CompileErrorException ce) {
-            logger.catching(ce);
-            Expression failedExpression = ce.getFailedExpression();
-            throw new IllegalStateException("The expression '" + failedExpression.getExpression() + "' failed to compile: " + failedExpression.getContext());
-        }
-
-        TestKeywords testKw = new TestKeywords(patternDB, args[2]);
-        testKw.run();
-    }
-
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
         setupKeywordConfig(new File(args[2]));
+        createRegexPatterns();
         if (args[0].equals("scan")) {
             scanFiles(args);
-        } else if (args[0].equals("testKeywords")) {
-            testKeywords(args);
         } else if (args[0].equals("importToES")) {
             System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();

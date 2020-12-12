@@ -1,9 +1,5 @@
 package org.cf.acks;
 
-import com.gliwka.hyperscan.wrapper.Database;
-import com.gliwka.hyperscan.wrapper.Match;
-import com.gliwka.hyperscan.wrapper.Scanner;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,11 +7,13 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WetArchiveProcessor implements Runnable {
 
@@ -38,13 +36,13 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_HOST = "Host: ";
 
     private final Semaphore schedulingSemaphore;
-    private final Database mainPatternDB;
+    private List<Pattern> keywordRegexPatterns;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, Database mainPatternDB, String archive) {
+    WetArchiveProcessor(Semaphore schedulingSemaphore,  List<Pattern> keywordRegexPatterns, String archive) {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.mainPatternDB = mainPatternDB;
+        this.keywordRegexPatterns = keywordRegexPatterns;
         this.archive = archive;
     }
 
@@ -69,14 +67,7 @@ public class WetArchiveProcessor implements Runnable {
             long startTime = System.currentTimeMillis();
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
-                final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);
-                final Scanner mainScanner = new Scanner();) {
-
-                try {
-                    mainScanner.allocScratch(mainPatternDB);
-                } catch (Throwable t) {
-                    throw new IOException(t);
-                }
+                final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
 
                 boolean processingEntry = false;
 
@@ -85,11 +76,13 @@ public class WetArchiveProcessor implements Runnable {
 
                 String line;
                 String currentDate = null;
+                int paragraphNumber = 1;
                 while ((line = contentReader.readLine()) != null) {
                     if (line.startsWith(CONVERSION_MARKER)) {
                         processingEntry = true;
                         currentURL = null;
                         currentDate = null;
+                        paragraphNumber = 1;
                         this.haveWrittenDomainLine = false;
                     } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
                         currentURL = line;
@@ -101,11 +94,10 @@ public class WetArchiveProcessor implements Runnable {
                         line = contentReader.readLine();
 
                         try {
-                            int paragraphNumber = 1;
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    if (!hasTooManyCommas(line)) {
-                                        processLineForKeywords(paragraphNumber, mainScanner, currentURL, line, resultsWriter, currentDate);
+                                    if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
+                                        processLineForKeywords(paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -117,21 +109,21 @@ public class WetArchiveProcessor implements Runnable {
                         processingEntry = false;
                     }
                 }
-                if (file.delete())
+                //TODO: Really delete
+                /*if (file.delete())
                 {
                     //System.out.println(archive+" deleted");
                 }
                 else
                 {
                     System.out.println(archive+" FAILED!");
-                }
+                }*/
                 long duration = System.currentTimeMillis() - startTime;
                 resultsWriter.write("Duration\n");
                 resultsWriter.write(duration + "\n");
                 resultsWriter.close();
                 File finalFile = new File(outPath+".working");
                 boolean renameResult = finalFile.renameTo(new File(outPath));
-                mainScanner.close();
             } catch (IOException io) {
                 logger.catching(io);
                 System.out.println("Error for: "+archive);
@@ -155,11 +147,19 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(int paragraphNumber, Scanner mainScanner, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
-        final List<Match> mainMatches = mainScanner.scan(mainPatternDB, lowerCaseLine);
-        if (mainMatches.size()>=MIN_KEYWORDS_FOR_RECORDING) {
 
+        List<Integer> matchedIndexes = new ArrayList<Integer>();
+
+        for (int i=0; i<keywordRegexPatterns.size(); i++) {
+            if (keywordRegexPatterns.get(i).matcher(lowerCaseLine).find()) {
+                matchedIndexes.add(i);
+            }
+        }
+
+        if (matchedIndexes.size()>0) {
+            System.out.println(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
@@ -168,10 +168,14 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write(paragraphNumber+ "\n");
             }
             String keywords = "kd8x72dAx";
-            for (Match match : mainMatches) {
-                keywords += match.getMatchedExpression().getExpression();
+            for (Integer matchIndex : matchedIndexes) {
+                keywords += matchIndex+",";
             }
-            line = line.replace("","");
+
+            if (keywords.endsWith(",")) {
+                keywords= keywords.substring(0, keywords.length() - 1);
+            }
+
             resultsWriter.write(line+keywords+"\n");
        }
     }
