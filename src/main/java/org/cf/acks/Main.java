@@ -162,11 +162,11 @@ public class Main {
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
         final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
-        final int maxScheduled = poolSize * 3;
+        final int maxScheduled = poolSize * 4;
 
-        logger.info("Allocating a thread pool of size {}.", poolSize*3);
+        logger.info("Allocating a thread pool of size {}.", poolSize*2);
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize*3);
+        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize*2);
 
         long startTime = System.currentTimeMillis();
 
