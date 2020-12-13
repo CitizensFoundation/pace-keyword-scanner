@@ -334,7 +334,7 @@ public class Main {
         long startTime = System.currentTimeMillis();
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/processHostRankFile.stats")))) {
-            ProcessHostRanksFile processor = new ProcessHostRanksFile(args[1]);
+            ProcessHostRanksFile processor = new ProcessHostRanksFile(args[3]);
             processor.run();
             long duration = System.currentTimeMillis() - startTime;
             timingResultsStats.write("Duration\n");
