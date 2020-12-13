@@ -273,34 +273,32 @@ public class WetArchiveProcessor implements Runnable {
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
 
-        if (false) {
-            long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
-            List<Expression> expressions = new ArrayList<Expression>();
-            int datbasesSize = keywordHyperDatabases.size();
-            for (int i=0; i<datbasesSize; i++) {
-                List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
-                if (matches.size()>0) {
-                    //TODO: Look if we can optimize this distinct
-                    int matchesSize = matches.size();
-                    expressions.clear();
-                    for (int n=0;n<matchesSize;n++) {
-                        expressions.add(matches.get(n).getMatchedExpression());
+        List<Expression> expressions = new ArrayList<Expression>();
+        int datbasesSize = keywordHyperDatabases.size();
+        for (int i=0; i<datbasesSize; i++) {
+            List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
+            if (false && matches.size()>0) {
+                //TODO: Look if we can optimize this distinct
+                int matchesSize = matches.size();
+                expressions.clear();
+                for (int n=0;n<matchesSize;n++) {
+                    expressions.add(matches.get(n).getMatchedExpression());
+                }
+                List<Expression> unqiqueMatches = new ArrayList<>(new HashSet<>(expressions));
+                if (unqiqueMatches.size()==keywordEntries.get(i).numberOfKeywords) {
+                    boolean skipBecauseOfMinus = false;
+                    List<String> minusWords = keywordEntries.get(i).minusWords;
+                    for (int x=0;x<minusWords.size();x++) {
+                        if (lowerCaseLine.contains(minusWords.get(x))) {
+                            skipBecauseOfMinus = true;
+                            break;
+                        }
                     }
-                    List<Expression> unqiqueMatches = new ArrayList<>(new HashSet<>(expressions));
-                    if (unqiqueMatches.size()==keywordEntries.get(i).numberOfKeywords) {
-                        boolean skipBecauseOfMinus = false;
-                        List<String> minusWords = keywordEntries.get(i).minusWords;
-                        for (int x=0;x<minusWords.size();x++) {
-                            if (lowerCaseLine.contains(minusWords.get(x))) {
-                                skipBecauseOfMinus = true;
-                                break;
-                            }
-                        }
 
-                        if (!skipBecauseOfMinus) {
-                            matchedIndexes.add(i);
-                        }
+                    if (!skipBecauseOfMinus) {
+                        matchedIndexes.add(i);
                     }
                 }
             }
