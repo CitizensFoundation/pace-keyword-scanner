@@ -41,14 +41,14 @@ public class WetArchiveProcessor implements Runnable {
     final static boolean DELETE_FILES = false;
 
     private final Semaphore schedulingSemaphore;
-    private ArrayList<KeywordEntry> keywordEntries;
+    private ArrayList<KeywordEntry> keywordEntriesInt;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
     WetArchiveProcessor(Semaphore schedulingSemaphore, ArrayList<KeywordEntry> keywordEntries, String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.keywordEntries = keywordEntries;
+        this.keywordEntriesInt = keywordEntries;
         this.archive = archive;
     }
 
@@ -74,6 +74,8 @@ public class WetArchiveProcessor implements Runnable {
 
             List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
             List<Database> keywordHyperDatabases = new ArrayList<Database>();
+
+            ArrayList<KeywordEntry> keywordEntries = (ArrayList) keywordEntriesInt.clone();
 
             int keywordEntriesSize = keywordEntries.size();
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
@@ -141,7 +143,7 @@ public class WetArchiveProcessor implements Runnable {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line)) {
-                                        processLineForKeywords(keywordHyperScanners, keywordHyperDatabases, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(keywordEntries, keywordHyperScanners, keywordHyperDatabases, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -192,7 +194,7 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(List<Scanner> keywordHyperScanners, List<Database> keywordHyperDatabases, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(ArrayList<KeywordEntry> keywordEntries, List<Scanner> keywordHyperScanners, List<Database> keywordHyperDatabases, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
