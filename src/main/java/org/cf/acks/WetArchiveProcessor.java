@@ -130,15 +130,14 @@ public class WetArchiveProcessor implements Runnable {
                         processingEntry = false;
                     }
                 }
-                //TODO: Really delete
-                /*if (file.delete())
+                if (file.delete())
                 {
                     //System.out.println(archive+" deleted");
                 }
                 else
                 {
                     System.out.println(archive+" FAILED!");
-                }*/
+                }
                 long duration = System.currentTimeMillis() - startTime;
                 resultsWriter.write("Duration\n");
                 resultsWriter.write(duration + "\n");
