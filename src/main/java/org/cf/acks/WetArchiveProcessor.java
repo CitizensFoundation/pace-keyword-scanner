@@ -198,11 +198,43 @@ public class WetArchiveProcessor implements Runnable {
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
 
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
 
         List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
 
         if (matches.size()>0) {
+            int matchesSize = matches.size();
+
+            //TODO: Possible optimize this by saving the actual Expressions with keywordEntries and using those instead of string
+            HashSet<String> expressionMatches = new HashSet<String>();
+            for (int n=0;n<matchesSize;n++) {
+                expressionMatches.add(matches.get(n).getMatchedExpression().getExpression());
+            }
+
+            int keywordsSize = keywordEntries.size();
+
+            for (int k=0; k<keywordsSize;k++) {
+                KeywordEntry entry = keywordEntries.get(k);
+
+                if (expressionMatches.containsAll(entry.scanExpressionHash)) {
+                    boolean skipBecauseOfMinus = false;
+                    List<String> minusWords = entry.minusWords;
+                    for (int x=0;x<minusWords.size();x++) {
+                        if (lowerCaseLine.contains(minusWords.get(x))) {
+                            skipBecauseOfMinus = true;
+                            break;
+                        }
+                    }
+
+                    if (!skipBecauseOfMinus) {
+                        matchedIndexes.add(k);
+                    }
+                }
+            }
+        }
+
+        // OLD METHOD (here for now if faster than containsAll)
+        if (false && matches.size()>0) {
             int matchesSize = matches.size();
 
             HashMap<String, Boolean> expressionMatches = new HashMap<String, Boolean>();
@@ -239,10 +271,12 @@ public class WetArchiveProcessor implements Runnable {
             }
         }
 
-        //System.out.println(System.currentTimeMillis() - startTime);
+
+
+        //System.out.println(System.nanoTime() - startTime);
 
         if (matchedIndexes.size()>0) {
-            //System.out.print(".");
+            System.out.print(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");

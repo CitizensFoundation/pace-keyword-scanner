@@ -28,16 +28,16 @@ public class Main {
     public static final int BUFFER_SIZE = 128_000;
 
     // TEST
-    private static final String esHostname="127.0.0.1";
+    /*private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
     private static final String esProtocol="http";
+    */
 
-    /*
     // PRODUCTION
-    private static final String esHostname="search-ec-ac-pace-dev-wyysxnkri3j5ohunwbd4lb6zju.us-east-1.es.amazonaws.com";
+    private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
     private static final String esProtocol="https";
-    */
+
 
     private static ArrayList<KeywordEntry> keywordEntries;
 
@@ -66,6 +66,7 @@ public class Main {
                 String searchPattern = "";
                 List<String> minusWords = new ArrayList<String>();
                 List<String> scanExpressions = new ArrayList<String>();
+                HashSet<String> scanExpressionsHash = new HashSet<String>();
 
                 for (int i=4; i<entryParts.length; i++) {
                     String expressionPart = entryParts[i];
@@ -90,6 +91,7 @@ public class Main {
                                 }
                                 expressionPart = expressionPart.replaceAll("\\*",".");
                                 scanExpressions.add(expressionPart);
+                                scanExpressionsHash.add(expressionPart);
                                 System.out.println(expressionPart);
                             }
                         }
@@ -99,7 +101,8 @@ public class Main {
                 if (scanExpressions.size()>0) {
                     KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
                                                           scanExpressions.size(),
-                                                          language, minusWords, scanExpressions);
+                                                          language, minusWords, scanExpressions,
+                                                          scanExpressionsHash);
                     keywordEntries.add(keywordEntry);
                 }
             }
@@ -224,8 +227,9 @@ public class Main {
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
-        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
-        final int maxScheduled = poolSize * 3;
+//        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        final int poolSize = Runtime.getRuntime().availableProcessors() / 7;
+        final int maxScheduled = poolSize * 2;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
 
@@ -361,6 +365,8 @@ public class Main {
             System.out.println("ImportES Completed");
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
+        } else if (args[0].equals("enableESIndexRefreshAndReplicas")) {
+            enableESIndexRefreshAndReplicas();
         } else {
             logger.error("Cant find function to run");
         }
