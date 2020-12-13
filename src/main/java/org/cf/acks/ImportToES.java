@@ -236,7 +236,7 @@ public class ImportToES implements Runnable {
     }
 
     private void importLinesToES(String url, String line, String currentDate) throws Throwable {
-        String splitLines[] = line.split("kd8x72dAx");
+        String splitLines[] = line.split("kx72dAx");
         url = url.substring(0, Math.min(512, url.length()));
         URL uri = new URL(url);
         String domainName = uri.getHost();
@@ -270,18 +270,21 @@ public class ImportToES implements Runnable {
                         String urlIdHash = entryId+"-"+Long.toString(LongHashFunction.xx().hashChars(url + pHash));
 
                         String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
-                        jsonString +=  "{\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";
-                        jsonString +=  "{\"topic\":\"" + keywordEntry.topic + "\",";
-                        jsonString +=  "{\"subTopic\":\"" + keywordEntry.subTopic + "\",";
-                        jsonString +=  "{\"language\":\"" + keywordEntry.language + "\",";
+                        jsonString +=  "\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";
+                        jsonString +=  "\"topic\":\"" + keywordEntry.topic + "\",";
+                        jsonString +=  "\"subTopic\":\"" + keywordEntry.subTopic + "\",";
+                        jsonString +=  "\"language\":\"" + keywordEntry.language + "\",";
 
                         jsonString += "\"paragraph\":\"" + paragraph + "\",\"keywordIds\":[";
 
-                        String[] domainParts = domainName.split("");
-                        String domainRoot = domainParts[domainParts.length-1];
+                        String domainRoot = domainName;
+                        String[] domainParts = domainName.split(".");
+                        if (domainParts.length>1) {
+                            domainRoot = domainParts[domainParts.length-1];
+                        }
 
                         for (String entrySaveId : entryIds.split(",")) {
-                            jsonString += "{\"keywordId\":\"" + entrySaveId + "\"},";
+                            jsonString += entrySaveId + ",";
                         }
                         jsonString = jsonString.substring(0, jsonString.length() - 1);
 
@@ -293,14 +296,16 @@ public class ImportToES implements Runnable {
                         jsonString += "\"pHash\":" + pHash + ",";
 
                         jsonString += "\"pageRank\":" + pageRank + ",";
-                        jsonString += "\"paragraphNumber\":\"" + paragraphNumber + "\"";
+                        jsonString += "\"paragraphNumber\":\"" + Integer.parseInt(paragraphNumber) + "\",";
 
                         //TODO: Get working by reading in files with URLs to match and check url endings for unis
                         //jsonString += "\"websiteType\":\"" + ["media","blogs","politicalParties","academia","other"] + "\"";
 
-                        jsonString += "\"domainName\":\"" + domainName + "\"";
+                        jsonString += "\"domainName\":\"" + domainName + "\",";
                         jsonString += "\"domainRoot\":\"" + domainRoot + "\"";
                         jsonString += "}";
+
+                        System.out.println(jsonString);
 
                         //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
                         UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
