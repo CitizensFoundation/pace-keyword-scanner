@@ -39,56 +39,77 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_HOST = "Host: ";
 
     private final Semaphore schedulingSemaphore;
-    private List<Database> keywordHyperDatabases;
     private List<KeywordEntry> keywordEntries;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore,
-                        List<Database> keywordHyperDatabases,
-                        List<KeywordEntry> keywordEntries,
-                        String archive)
+    WetArchiveProcessor(Semaphore schedulingSemaphore, List<KeywordEntry> keywordEntries, String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.keywordHyperDatabases = keywordHyperDatabases;
         this.keywordEntries = keywordEntries;
         this.archive = archive;
     }
 
     @Override
     public void run() {
-        System.out.println("Scanning: "+archive);
-        if (archive!=null & archive.length()>0) {
+        System.out.println("Scanning: " + archive);
+        if (archive != null & archive.length() > 0) {
             File file = new File(archive);
-            while (file.exists()==false) {
+            while (file.exists() == false) {
                 try {
                     Random rand = new Random();
                     int n = rand.nextInt(3500);
                     n += 4500;
-                    System.out.println("Waiting on file to scan: "+archive+" "+n/1000+"s");
+                    System.out.println("Waiting on file to scan: " + archive + " " + n / 1000 + "s");
                     Thread.sleep(n);
                 } catch (Exception ex) {
-                    System.out.println("Error sleeping in thread: "+ex.getMessage());
+                    System.out.println("Error sleeping in thread: " + ex.getMessage());
                 }
             }
 
             String currentURL = null; // Should never be null in practice.
             long startTime = System.currentTimeMillis();
+
+            List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
+            List<Database> keywordHyperDatabases = new ArrayList<Database>();
+
+            int keywordEntriesSize = keywordEntries.size();
+            for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
+                List<Expression> scanExpressions = new ArrayList<Expression>();
+                try {
+                    List<String> expressions = keywordEntries.get(keyIndex).scanExpressions;
+                    for (int eIndex = 0; eIndex < expressions.size(); eIndex++) {
+                        Expression scanExpression = new Expression(expressions.get(eIndex));
+                        Database.compile(scanExpression);
+                        scanExpressions.add(scanExpression);
+                    }
+                    Database mainDB;
+                    mainDB = Database.compile(scanExpressions);
+                    keywordHyperDatabases.add(mainDB);
+                } catch (CompileErrorException ce) {
+                    logger.catching(ce);
+                    Expression failedExpression = ce.getFailedExpression();
+                    throw new IllegalStateException("The expression '" + failedExpression.getExpression());
+                }
+            }
+
+            for (int i = 0; i < keywordHyperDatabases.size(); i++) {
+                try {
+                    Scanner scanner = new Scanner();
+                    scanner.allocScratch(keywordHyperDatabases.get(i));
+                    keywordHyperScanners.add(scanner);
+                } catch (Throwable t) {
+                    try {
+                        throw new IOException(t);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
                 final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
-
-                List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
-
-                for (int i=0; i<keywordHyperDatabases.size();i++) {
-                    try {
-                        Scanner scanner = new Scanner();
-                        scanner.allocScratch(keywordHyperDatabases.get(i));
-                        keywordHyperScanners.add(scanner);
-                    } catch (Throwable t) {
-                        throw new IOException(t);
-                    }
-                }
 
                 boolean processingEntry = false;
 
@@ -118,7 +139,7 @@ public class WetArchiveProcessor implements Runnable {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line)) {
-                                        processLineForKeywords(keywordHyperScanners, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(keywordHyperScanners, keywordHyperDatabases, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -167,7 +188,7 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(List<Scanner> keywordHyperScanners, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(List<Scanner> keywordHyperScanners, List<Database> keywordHyperDatabases, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();

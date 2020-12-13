@@ -40,7 +40,9 @@ public class Main {
     */
 
     private static List<KeywordEntry> keywordEntries;
+
     private static List<Database> keywordHyperDatabases = new ArrayList<Database>();
+
     private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
     private static void setupKeywordConfig(File configFile) throws Throwable {
@@ -65,7 +67,7 @@ public class Main {
                 String subTopic = entryParts[3];
                 String searchPattern = "";
                 List<String> minusWords = new ArrayList<String>();
-                List<Expression> scanExpressions = new ArrayList<>();
+                List<String> scanExpressions = new ArrayList<String>();
 
                 for (int i=4; i<entryParts.length; i++) {
                     String expressionPart = entryParts[i];
@@ -89,10 +91,8 @@ public class Main {
                                     expressionPart = expressionPart+"\\b";
                                 }
                                 expressionPart = expressionPart.replaceAll("\\*",".");
+                                scanExpressions.add(expressionPart);
                                 System.out.println(expressionPart);
-                                Expression scanExpression = new Expression(expressionPart);
-                                scanExpressions.add(scanExpression);
-                                Database.compile(scanExpression);
                             }
                         }
                     }
@@ -101,18 +101,8 @@ public class Main {
                 if (scanExpressions.size()>0) {
                     KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
                                                           scanExpressions.size(),
-                                                          language, minusWords);
+                                                          language, minusWords, scanExpressions);
                     keywordEntries.add(keywordEntry);
-
-                    Database mainDB;
-                    try {
-                        mainDB = Database.compile(scanExpressions);
-                        keywordHyperDatabases.add(mainDB);
-                    } catch (CompileErrorException ce) {
-                        logger.catching(ce);
-                        Expression failedExpression = ce.getFailedExpression();
-                        throw new IllegalStateException("The expression '" + failedExpression.getExpression() + "' failed to compile: " + failedExpression.getContext());
-                    }
                 }
             }
         }
@@ -190,8 +180,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabases,
-                                           keywordEntries, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordEntries, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
