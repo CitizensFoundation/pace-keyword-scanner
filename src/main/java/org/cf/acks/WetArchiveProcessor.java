@@ -280,7 +280,7 @@ public class WetArchiveProcessor implements Runnable {
 
         List<Expression> expressions = new ArrayList<Expression>();
         int datbasesSize = keywordHyperDatabases.size();
-        for (int i=0; i<datbasesSize-(datbasesSize-2); i++) {
+        for (int i=0; i<datbasesSize; i++) {
             List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
             if (false && matches.size()>0) {
                 //TODO: Look if we can optimize this distinct
