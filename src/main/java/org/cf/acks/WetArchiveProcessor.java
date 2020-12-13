@@ -172,26 +172,26 @@ public class WetArchiveProcessor implements Runnable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
-        List<String> matchedSubtopics = new ArrayList<String>();
-        List<String> matchedTopics = new ArrayList<String>();
 
         long startTime = System.currentTimeMillis();
 
         List<Expression> expressions = new ArrayList<Expression>();
-        for (int i=0; i<keywordHyperDatabases.size(); i++) {
+        int datbasesSize = keywordHyperDatabases.size();
+        for (int i=0; i<datbasesSize; i++) {
             List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
-
             if (matches.size()>0) {
+                int matchesSize = matches.size();
                 //TODO: Look if we can optimize this distinct
                 expressions.clear();
-                for (int n=0;n<matches.size();n++) {
+                for (int n=0;n<matchesSize;n++) {
                     expressions.add(matches.get(n).getMatchedExpression());
                 }
                 List<Expression> unqiqueMatches = new ArrayList<>(new HashSet<>(expressions));
                 if (unqiqueMatches.size()==keywordEntries.get(i).numberOfKeywords) {
                     boolean skipBecauseOfMinus = false;
-                    for (int x=0;x<keywordEntries.get(i).minusWords.size();x++) {
-                        if (lowerCaseLine.contains(keywordEntries.get(i).minusWords.get(x))) {
+                    List<String> minusWords = keywordEntries.get(i).minusWords;
+                    for (int x=0;x<minusWords.size();x++) {
+                        if (lowerCaseLine.contains(minusWords.get(x))) {
                             skipBecauseOfMinus = true;
                             break;
                         }
@@ -199,8 +199,6 @@ public class WetArchiveProcessor implements Runnable {
 
                     if (!skipBecauseOfMinus) {
                         matchedIndexes.add(i);
-                        matchedSubtopics.add(keywordEntries.get(i).subTopic);
-                        matchedTopics.add(keywordEntries.get(i).topic);
                     }
                 }
             }
@@ -216,17 +214,15 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write(domain+ "\n");
                 resultsWriter.write(currentDate+ "\n");
             }
-            String keywords = "kx72dAx:";
+            String keywords = "kx72dAx";
             for (int x=0; x<matchedIndexes.size();x++) {
                 Integer matchIndex = matchedIndexes.get(x);
-                keywords += matchIndex+":";
-                keywords += paragraphNumber+":";
-                keywords += matchedTopics.get(x)+":";
-                keywords += matchedSubtopics.get(x)+",";
+                keywords += matchIndex+",";
             }
             if (keywords.endsWith(",")) {
                 keywords= keywords.substring(0, keywords.length() - 1);
             }
+            keywords += ":"+paragraphNumber;
 
             resultsWriter.write(line+keywords+"\n");
        }
