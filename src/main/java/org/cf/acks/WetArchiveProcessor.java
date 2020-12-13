@@ -85,7 +85,7 @@ public class WetArchiveProcessor implements Runnable {
                     List<String> expressions = keywordEntries.get(keyIndex).scanExpressions;
                     for (int eIndex = 0; eIndex < expressions.size(); eIndex++) {
                         Expression scanExpression = new Expression(expressions.get(eIndex));
-                        Database.compile(scanExpression);
+                        //Database.compile(scanExpression);
                         scanExpressions.add(scanExpression);
                     }
                     Database mainDB;
@@ -155,6 +155,9 @@ public class WetArchiveProcessor implements Runnable {
                         }
                         processingEntry = false;
                     }
+                }
+                for (int i = 0; i < keywordHyperScanners.size(); i++) {
+                    keywordHyperScanners.get(i).close();
                 }
                 if (DELETE_FILES) {
                     if (file.delete())
@@ -277,7 +280,7 @@ public class WetArchiveProcessor implements Runnable {
 
         List<Expression> expressions = new ArrayList<Expression>();
         int datbasesSize = keywordHyperDatabases.size();
-        for (int i=0; i<datbasesSize; i++) {
+        for (int i=0; i<datbasesSize-(datbasesSize-2); i++) {
             List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
             if (false && matches.size()>0) {
                 //TODO: Look if we can optimize this distinct
