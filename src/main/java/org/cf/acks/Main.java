@@ -178,9 +178,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    ArrayList<KeywordEntry> clonedKeywords = new ArrayList();
-                    clonedKeywords = (ArrayList)keywordEntries.clone();
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, args[2], key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore,keywordEntries, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -245,8 +243,6 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    ArrayList<KeywordEntry> clonedKeywords = new ArrayList();
-                    clonedKeywords = (ArrayList)keywordEntries.clone();
                     executorService.submit(new ImportToES(schedulingSemaphore,
                                                           file+".scanned",
                                                           Main.esHostname,
@@ -254,7 +250,7 @@ public class Main {
                                                           Main.esProtocol,
                                                           pageRanks,
                                                           keywordsMap,
-                                                          clonedKeywords));
+                                                          keywordEntries));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }

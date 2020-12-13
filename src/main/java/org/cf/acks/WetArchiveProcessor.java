@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -44,12 +45,12 @@ public class WetArchiveProcessor implements Runnable {
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
-    private final String configFilePath;
+    private ArrayList<KeywordEntry> keywordEntries;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, String configFilePath, String archive)
+    WetArchiveProcessor(Semaphore schedulingSemaphore, ArrayList<KeywordEntry> keywordEntries, String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.configFilePath = configFilePath;
+        this.keywordEntries = keywordEntries;
         this.archive = archive;
     }
 
@@ -73,36 +74,26 @@ public class WetArchiveProcessor implements Runnable {
             String currentURL = null; // Should never be null in practice.
             long startTime = System.currentTimeMillis();
 
-            List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
-            List<Database> keywordHyperDatabases = new ArrayList<Database>();
-
-            ArrayList<KeywordEntry> keywordEntries = getKeywordConfig();
+            Scanner keywordHyperScanner = new Scanner();
+            Database keywordHyperDatabase;
+            List<Expression> scanExpressions = new ArrayList<Expression>();
 
             int keywordEntriesSize = keywordEntries.size();
-            for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
-                List<Expression> scanExpressions = new ArrayList<Expression>();
-                try {
+
+            try {
+                for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
                     List<String> expressions = keywordEntries.get(keyIndex).scanExpressions;
                     for (int eIndex = 0; eIndex < expressions.size(); eIndex++) {
                         Expression scanExpression = new Expression(expressions.get(eIndex));
                         //Database.compile(scanExpression);
                         scanExpressions.add(scanExpression);
                     }
-                    Database mainDB;
-                    mainDB = Database.compile(scanExpressions);
-                    keywordHyperDatabases.add(mainDB);
-                } catch (CompileErrorException ce) {
-                    logger.catching(ce);
-                    Expression failedExpression = ce.getFailedExpression();
-                    throw new IllegalStateException("The expression '" + failedExpression.getExpression());
                 }
-            }
 
-            for (int i = 0; i < keywordHyperDatabases.size(); i++) {
+                keywordHyperDatabase = Database.compile(scanExpressions);
+
                 try {
-                    Scanner scanner = new Scanner();
-                    scanner.allocScratch(keywordHyperDatabases.get(i));
-                    keywordHyperScanners.add(scanner);
+                    keywordHyperScanner.allocScratch(keywordHyperDatabase);
                 } catch (Throwable t) {
                     try {
                         throw new IOException(t);
@@ -110,7 +101,13 @@ public class WetArchiveProcessor implements Runnable {
                         e.printStackTrace();
                     }
                 }
+            } catch (CompileErrorException ce) {
+                logger.catching(ce);
+                Expression failedExpression = ce.getFailedExpression();
+                throw new IllegalStateException("The expression '" + failedExpression.getExpression());
             }
+
+
 
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
@@ -144,7 +141,7 @@ public class WetArchiveProcessor implements Runnable {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line)) {
-                                        processLineForKeywords(keywordEntries, keywordHyperScanners, keywordHyperDatabases, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(keywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -156,9 +153,7 @@ public class WetArchiveProcessor implements Runnable {
                         processingEntry = false;
                     }
                 }
-                for (int i = 0; i < keywordHyperScanners.size(); i++) {
-                    keywordHyperScanners.get(i).close();
-                }
+                keywordHyperScanner.close();
                 if (DELETE_FILES) {
                     if (file.delete())
                     {
@@ -186,79 +181,6 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private  ArrayList<KeywordEntry> getKeywordConfig()  {
-        ArrayList<KeywordEntry> keywordEntries =  new ArrayList<KeywordEntry>();
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(configFilePath));
-            long startTime = System.currentTimeMillis();
-
-            String entry;
-            while ((entry = reader.readLine()) != null) {
-                if (entry.isEmpty()) {
-                    continue;
-                }
-
-                String[] entryParts = entry.split(",");
-
-                if (entryParts.length>4) {
-                    String language = entryParts[0];
-                    String idealogyType = entryParts[1];
-                    String topic = entryParts[2];
-                    String subTopic = entryParts[3];
-                    String searchPattern = "";
-                    List<String> minusWords = new ArrayList<String>();
-                    List<String> scanExpressions = new ArrayList<String>();
-
-                    for (int i=4; i<entryParts.length; i++) {
-                        String expressionPart = entryParts[i];
-                        expressionPart = expressionPart.toLowerCase().trim();
-                        if (expressionPart.length()>1) {
-                            expressionPart = expressionPart.replaceAll(" ",".");
-                            if (expressionPart!=null) {
-                                if (expressionPart.startsWith("-")) {
-                                    expressionPart = expressionPart.replaceAll("-","");
-                                    System.out.println("=-=:"+expressionPart);
-                                    minusWords.add(expressionPart);
-                                } else {
-                                    if (expressionPart.startsWith("*")) {
-                                        expressionPart = expressionPart.substring(1);
-                                    } else {
-                                        expressionPart = "\\b"+expressionPart;
-                                    }
-                                    if (expressionPart.endsWith("*")) {
-                                        expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
-                                    } else {
-                                        expressionPart = expressionPart+"\\b";
-                                    }
-                                    expressionPart = expressionPart.replaceAll("\\*",".");
-                                    scanExpressions.add(expressionPart);
-                                    System.out.println(expressionPart);
-                                }
-                            }
-                        }
-                    }
-
-                    if (scanExpressions.size()>0) {
-                        KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
-                                                              scanExpressions.size(),
-                                                              language, minusWords, scanExpressions);
-                        keywordEntries.add(keywordEntry);
-                    }
-                }
-            }
-
-            reader.close();
-
-            long duration = System.currentTimeMillis() - startTime;
-            logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
-
-        } catch (Exception e) {
-            logger.error(e);
-        }
-
-        return keywordEntries;
-    }
-
     private boolean hasTooManyCommas(String text) {
         Double count = Double.valueOf(StringUtils.countMatches(text, ","));
         Double textLength = Double.valueOf(text.length());
@@ -271,28 +193,38 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(ArrayList<KeywordEntry> keywordEntries, List<Scanner> keywordHyperScanners, List<Database> keywordHyperDatabases, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(ArrayList<KeywordEntry> keywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
 
         long startTime = System.currentTimeMillis();
 
-        List<Expression> expressions = new ArrayList<Expression>();
-        int datbasesSize = keywordHyperDatabases.size();
-        for (int i=0; i<datbasesSize; i++) {
-            List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
-            if (false && matches.size()>0) {
-                //TODO: Look if we can optimize this distinct
-                int matchesSize = matches.size();
-                expressions.clear();
-                for (int n=0;n<matchesSize;n++) {
-                    expressions.add(matches.get(n).getMatchedExpression());
+        List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
+
+        if (matches.size()>0) {
+            int matchesSize = matches.size();
+
+            HashMap<String, Boolean> expressionMatches = new HashMap<String, Boolean>();
+            for (int n=0;n<matchesSize;n++) {
+                expressionMatches.put(matches.get(n).getMatchedExpression().getExpression(), true);
+            }
+
+            int keywordsSize = keywordEntries.size();
+
+            for (int k=0; k<keywordsSize;k++) {
+                int matchCount = 0;
+                KeywordEntry entry = keywordEntries.get(k);
+
+                for (int e=0;e<entry.scanExpressions.size();e++) {
+                    if (expressionMatches.get(entry.scanExpressions.get(e))!=null) {
+                        matchCount+=1;
+                    }
                 }
-                List<Expression> unqiqueMatches = new ArrayList<>(new HashSet<>(expressions));
-                if (unqiqueMatches.size()==keywordEntries.get(i).numberOfKeywords) {
+
+                if (matchCount==entry.numberOfKeywords) {
                     boolean skipBecauseOfMinus = false;
-                    List<String> minusWords = keywordEntries.get(i).minusWords;
+                    List<String> minusWords = entry.minusWords;
                     for (int x=0;x<minusWords.size();x++) {
                         if (lowerCaseLine.contains(minusWords.get(x))) {
                             skipBecauseOfMinus = true;
@@ -301,7 +233,7 @@ public class WetArchiveProcessor implements Runnable {
                     }
 
                     if (!skipBecauseOfMinus) {
-                        matchedIndexes.add(i);
+                        matchedIndexes.add(k);
                     }
                 }
             }
@@ -310,6 +242,7 @@ public class WetArchiveProcessor implements Runnable {
         //System.out.println(System.currentTimeMillis() - startTime);
 
         if (matchedIndexes.size()>0) {
+            System.out.print(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
