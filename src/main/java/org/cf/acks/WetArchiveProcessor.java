@@ -231,7 +231,7 @@ public class WetArchiveProcessor implements Runnable {
         //System.out.println(System.currentTimeMillis() - startTime);
 
         if (matchedIndexes.size()>0) {
-            //System.out.print(".");
+            System.out.print(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
