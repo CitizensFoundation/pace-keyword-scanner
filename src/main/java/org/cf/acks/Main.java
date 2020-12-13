@@ -162,7 +162,7 @@ public class Main {
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
         final int poolSize = Runtime.getRuntime().availableProcessors();
-        final int maxScheduled = poolSize * 7;
+        final int maxScheduled = poolSize * 5;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
 
