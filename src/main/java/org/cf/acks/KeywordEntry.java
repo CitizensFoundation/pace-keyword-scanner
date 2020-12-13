@@ -12,7 +12,8 @@ class KeywordEntry {
     public final List<String> scanExpressions;
 
     KeywordEntry(String idealogyType, String topic, String subTopic,
-                 Integer numberOfKeywords, String language, List<String> minusWords,  List<String> scanExpressions) {
+                 Integer numberOfKeywords, String language, List<String> minusWords,
+                 List<String> scanExpressions) {
         this.idealogyType = idealogyType;
         this.topic = topic;
         this.subTopic = subTopic;

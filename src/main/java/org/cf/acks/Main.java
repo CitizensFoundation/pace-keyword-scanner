@@ -180,7 +180,7 @@ public class Main {
                 try {
                     ArrayList<KeywordEntry> clonedKeywords = new ArrayList();
                     clonedKeywords = (ArrayList)keywordEntries.clone();
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, clonedKeywords, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, args[2], key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }

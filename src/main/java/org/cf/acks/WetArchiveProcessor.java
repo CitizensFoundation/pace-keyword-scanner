@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;
@@ -44,11 +45,12 @@ public class WetArchiveProcessor implements Runnable {
     private ArrayList<KeywordEntry> keywordEntriesInt;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
+    private final String configFilePath;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, ArrayList<KeywordEntry> keywordEntries, String archive)
+    WetArchiveProcessor(Semaphore schedulingSemaphore, String configFilePath, String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.keywordEntriesInt = keywordEntries;
+        this.configFilePath = configFilePath;
         this.archive = archive;
     }
 
@@ -75,7 +77,7 @@ public class WetArchiveProcessor implements Runnable {
             List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
             List<Database> keywordHyperDatabases = new ArrayList<Database>();
 
-            ArrayList<KeywordEntry> keywordEntries = (ArrayList) keywordEntriesInt.clone();
+            ArrayList<KeywordEntry> keywordEntries = getKeywordConfig();
 
             int keywordEntriesSize = keywordEntries.size();
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
@@ -180,6 +182,79 @@ public class WetArchiveProcessor implements Runnable {
         } else {
             System.out.println("Empty: "+archive);
         }
+    }
+
+    private  ArrayList<KeywordEntry> getKeywordConfig()  {
+        ArrayList<KeywordEntry> keywordEntries =  new ArrayList<KeywordEntry>();
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(configFilePath));
+            long startTime = System.currentTimeMillis();
+
+            String entry;
+            while ((entry = reader.readLine()) != null) {
+                if (entry.isEmpty()) {
+                    continue;
+                }
+
+                String[] entryParts = entry.split(",");
+
+                if (entryParts.length>4) {
+                    String language = entryParts[0];
+                    String idealogyType = entryParts[1];
+                    String topic = entryParts[2];
+                    String subTopic = entryParts[3];
+                    String searchPattern = "";
+                    List<String> minusWords = new ArrayList<String>();
+                    List<String> scanExpressions = new ArrayList<String>();
+
+                    for (int i=4; i<entryParts.length; i++) {
+                        String expressionPart = entryParts[i];
+                        expressionPart = expressionPart.toLowerCase().trim();
+                        if (expressionPart.length()>1) {
+                            expressionPart = expressionPart.replaceAll(" ",".");
+                            if (expressionPart!=null) {
+                                if (expressionPart.startsWith("-")) {
+                                    expressionPart = expressionPart.replaceAll("-","");
+                                    System.out.println("=-=:"+expressionPart);
+                                    minusWords.add(expressionPart);
+                                } else {
+                                    if (expressionPart.startsWith("*")) {
+                                        expressionPart = expressionPart.substring(1);
+                                    } else {
+                                        expressionPart = "\\b"+expressionPart;
+                                    }
+                                    if (expressionPart.endsWith("*")) {
+                                        expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
+                                    } else {
+                                        expressionPart = expressionPart+"\\b";
+                                    }
+                                    expressionPart = expressionPart.replaceAll("\\*",".");
+                                    scanExpressions.add(expressionPart);
+                                    System.out.println(expressionPart);
+                                }
+                            }
+                        }
+                    }
+
+                    if (scanExpressions.size()>0) {
+                        KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
+                                                              scanExpressions.size(),
+                                                              language, minusWords, scanExpressions);
+                        keywordEntries.add(keywordEntry);
+                    }
+                }
+            }
+
+            reader.close();
+
+            long duration = System.currentTimeMillis() - startTime;
+            logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
+
+        } catch (Exception e) {
+            logger.error(e);
+        }
+
+        return keywordEntries;
     }
 
     private boolean hasTooManyCommas(String text) {
