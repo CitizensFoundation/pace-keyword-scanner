@@ -164,9 +164,9 @@ public class Main {
         final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
         final int maxScheduled = poolSize * 3;
 
-        logger.info("Allocating a thread pool of size {}.", poolSize);
+        logger.info("Allocating a thread pool of size {}.", poolSize*3);
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
+        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize*3);
 
         long startTime = System.currentTimeMillis();
 
