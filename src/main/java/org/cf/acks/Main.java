@@ -334,7 +334,7 @@ public class Main {
         long startTime = System.currentTimeMillis();
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/processHostRankFile.stats")))) {
-            ProcessHostRanksFile processor = new ProcessHostRanksFile(args[3]);
+            ProcessHostRanksFile processor = new ProcessHostRanksFile(args[1]);
             processor.run();
             long duration = System.currentTimeMillis() - startTime;
             timingResultsStats.write("Duration\n");
@@ -347,11 +347,11 @@ public class Main {
 
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
-        setupKeywordConfig(new File(args[2]));
-
         if (args[0].equals("scan")) {
+            setupKeywordConfig(new File(args[2]));
             scanFiles(args);
         } else if (args[0].equals("importToES")) {
+            setupKeywordConfig(new File(args[2]));
             System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();
             System.out.println("ImportES: disableESIndexRefreshAndReplicas");
