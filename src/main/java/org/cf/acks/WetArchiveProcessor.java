@@ -173,6 +173,8 @@ public class WetArchiveProcessor implements Runnable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
+        List<String> matchedSubtopics = new ArrayList<String>();
+        List<String> matchedTopics = new ArrayList<String>();
 
         long startTime = System.currentTimeMillis();
 
@@ -192,11 +194,14 @@ public class WetArchiveProcessor implements Runnable {
                     for (int x=0;x<keywordEntries.get(i).minusWords.size();x++) {
                         if (lowerCaseLine.contains(keywordEntries.get(i).minusWords.get(x))) {
                             skipBecauseOfMinus = true;
+                            break;
                         }
                     }
 
                     if (!skipBecauseOfMinus) {
                         matchedIndexes.add(i);
+                        matchedSubtopics.add(keywordEntries.get(i).subTopic);
+                        matchedTopics.add(keywordEntries.get(i).topic);
                     }
                 }
             }
@@ -213,11 +218,13 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write(currentDate+ "\n");
                 resultsWriter.write(paragraphNumber+ "\n");
             }
-            String keywords = "kd8x72dAx";
-            for (Integer matchIndex : matchedIndexes) {
-                keywords += matchIndex+",";
+            String keywords = "kx72dAx:";
+            for (int x=0; x<matchedIndexes.size();x++) {
+                Integer matchIndex = matchedIndexes.get(x);
+                keywords += matchIndex+":";
+                keywords += matchedTopics.get(x)+":";
+                keywords += matchedSubtopics.get(x)+",";
             }
-
             if (keywords.endsWith(",")) {
                 keywords= keywords.substring(0, keywords.length() - 1);
             }
