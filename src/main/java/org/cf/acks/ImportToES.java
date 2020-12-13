@@ -308,7 +308,7 @@ public class ImportToES implements Runnable {
                         System.out.println(jsonString);
 
                         //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
-                        UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
+                        UpdateRequest esRequest = new UpdateRequest("urls", urlIdHash);
                         esRequest.doc(jsonString, XContentType.JSON);
                         esRequest.docAsUpsert(true);
                         this.bulkUpdateQueue.add(esRequest);

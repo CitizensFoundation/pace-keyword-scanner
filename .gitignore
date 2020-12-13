@@ -1,6 +1,10 @@
 target/
 .idea/
 .iml
+.settings
+results.test/
+.settings
+results.test/
 node_modules/
 log/
 state/
