@@ -16,7 +16,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
@@ -63,12 +63,12 @@ public class ImportToES implements Runnable {
     private RestHighLevelClient esClient;
     private HashMap<Long, Long> pageRanks;
     private HashMap<String,KeywordEntry> keywordsMap;
-    private List<KeywordEntry> keywordEntries;
+    private ArrayList<KeywordEntry> keywordEntries;
 
     ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol,
             HashMap<Long, Long> pageRanks,
             HashMap<String,KeywordEntry> keywordsMap,
-            List<KeywordEntry> keywordEntries) {
+            ArrayList<KeywordEntry> keywordEntries) {
         this.schedulingSemaphore = schedulingSemaphore;
         String[] archiveParts = archive.split("/");
         this.archive = "results/" + archiveParts[archiveParts.length - 1];

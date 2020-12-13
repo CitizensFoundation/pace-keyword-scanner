@@ -39,9 +39,7 @@ public class Main {
     private static final String esProtocol="https";
     */
 
-    private static List<KeywordEntry> keywordEntries;
-
-    private static List<Database> keywordHyperDatabases = new ArrayList<Database>();
+    private static ArrayList<KeywordEntry> keywordEntries;
 
     private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
@@ -180,7 +178,9 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordEntries, key));
+                    ArrayList<KeywordEntry> clonedKeywords = new ArrayList();
+                    clonedKeywords = (ArrayList)keywordEntries.clone();
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, clonedKeywords, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
@@ -245,6 +245,8 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
+                    ArrayList<KeywordEntry> clonedKeywords = new ArrayList();
+                    clonedKeywords = (ArrayList)keywordEntries.clone();
                     executorService.submit(new ImportToES(schedulingSemaphore,
                                                           file+".scanned",
                                                           Main.esHostname,
@@ -252,7 +254,7 @@ public class Main {
                                                           Main.esProtocol,
                                                           pageRanks,
                                                           keywordsMap,
-                                                          keywordEntries));
+                                                          clonedKeywords));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }

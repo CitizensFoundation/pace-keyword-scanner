@@ -38,12 +38,14 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_RESPONSE_OK = "HTTP/1.1 200 OK";
     final static String HTTP_HEADER_HOST = "Host: ";
 
+    final static boolean DELETE_FILES = false;
+
     private final Semaphore schedulingSemaphore;
-    private List<KeywordEntry> keywordEntries;
+    private ArrayList<KeywordEntry> keywordEntries;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, List<KeywordEntry> keywordEntries, String archive)
+    WetArchiveProcessor(Semaphore schedulingSemaphore, ArrayList<KeywordEntry> keywordEntries, String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
         this.keywordEntries = keywordEntries;
@@ -151,13 +153,15 @@ public class WetArchiveProcessor implements Runnable {
                         processingEntry = false;
                     }
                 }
-                if (file.delete())
-                {
-                    //System.out.println(archive+" deleted");
-                }
-                else
-                {
-                    System.out.println(archive+" FAILED!");
+                if (DELETE_FILES) {
+                    if (file.delete())
+                    {
+                        //System.out.println(archive+" deleted");
+                    }
+                    else
+                    {
+                        System.out.println(archive+" FAILED!");
+                    }
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 resultsWriter.write("Duration\n");
