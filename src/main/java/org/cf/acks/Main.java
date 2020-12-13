@@ -69,16 +69,28 @@ public class Main {
 
                 for (int i=4; i<entryParts.length; i++) {
                     String expressionPart = entryParts[i];
-                    expressionPart = expressionPart.toLowerCase();
+                    expressionPart = expressionPart.toLowerCase().trim();
                     if (expressionPart.length()>1) {
                         expressionPart = expressionPart.replaceAll(" ",".");
                         if (expressionPart!=null) {
                             if (expressionPart.startsWith("-")) {
-                                expressionPart.replace("-","");
-                                expressionPart = expressionPart.replaceAll("-",".");
+                                expressionPart = expressionPart.replaceAll("-","");
+                                System.out.println("=-=:"+expressionPart);
                                 minusWords.add(expressionPart);
                             } else {
-                                Expression scanExpression = new Expression("\\b"+expressionPart+"\\b");
+                                if (expressionPart.startsWith("*")) {
+                                    expressionPart = expressionPart.substring(1);
+                                } else {
+                                    expressionPart = "\\b"+expressionPart;
+                                }
+                                if (expressionPart.endsWith("*")) {
+                                    expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
+                                } else {
+                                    expressionPart = expressionPart+"\\b";
+                                }
+                                expressionPart = expressionPart.replaceAll("\\*",".");
+                                System.out.println(expressionPart);
+                                Expression scanExpression = new Expression(expressionPart);
                                 scanExpressions.add(scanExpression);
                                 Database.compile(scanExpression);
                             }

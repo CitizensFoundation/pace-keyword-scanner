@@ -120,7 +120,6 @@ public class ImportToES implements Runnable {
                     String line;
                     String currentDate = null;
                     int bulkCounter = 0;
-                    String paragraphNumber = null;
                     outerloop: while ((line = contentReader.readLine()) != null) {
                         if (line.length() == 0) {
                             processingEntry = true;
@@ -130,14 +129,13 @@ public class ImportToES implements Runnable {
                                 && (line.startsWith("http://") || line.startsWith("https://"))) {
                             currentURL = line;
                             currentDate = contentReader.readLine();
-                            paragraphNumber = contentReader.readLine();
                         } else if (processingEntry && currentURL != null && currentDate != null) {
                             try {
                                 while ((line = contentReader.readLine()) != null && line.length() != 0) {
                                     if (line.startsWith("Duration")) {
                                         break outerloop;
                                     } else {
-                                        importLinesToES(currentURL, line, currentDate, paragraphNumber);
+                                        importLinesToES(currentURL, line, currentDate);
                                         bulkCounter += 1;
                                         if (bulkCounter > ES_BULK_MAX_SIZE) {
                                             pumpBulkUpdateQueue();
@@ -231,7 +229,13 @@ public class ImportToES implements Runnable {
         }
     }
 
-    private void importLinesToES(String url, String line, String currentDate, String paragraphNumber) throws Throwable {
+    private String stripParagraph(String paragraph) {
+        return paragraph.toLowerCase().replace(" ", "").replace("'", "")
+        .replace("`", "").replace("´", "").replace("‘", "").replace("’", "").replace("”", "")
+        .replace(":", "").replace("?", "").replace(";", "").replace("“", "");
+    }
+
+    private void importLinesToES(String url, String line, String currentDate) throws Throwable {
         String splitLines[] = line.split("kd8x72dAx");
         url = url.substring(0, Math.min(512, url.length()));
         URL uri = new URL(url);
@@ -242,81 +246,77 @@ public class ImportToES implements Runnable {
             Long domainHash = LongHashFunction.xx().hashChars(domainName);
             Long pageRank = this.pageRanks.get(domainHash);
 
-            if (pageRank != null) {
-                if (splitLines.length > 1) {
-                    String paragraph = splitLines[0].replaceAll("\"", "");
-                    JsonStringEncoder e = JsonStringEncoder.getInstance();
-                    paragraph = new String(e.quoteAsString(paragraph));
-                    String strippedParagraph = paragraph.toLowerCase().replace(" ", "").replace("'", "")
-                            .replace("`", "").replace("´", "").replace("‘", "").replace("’", "").replace("”", "")
-                            .replace(":", "").replace("?", "").replace(";", "").replace("“", "");
+            if (pageRank == null) {
+                pageRank = -1l;
+            }
 
-                    Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
-                    String pHash = Long.toString(pHashLong);
+            if (splitLines.length > 1) {
+                String paragraph = splitLines[0].replaceAll("\"", "");
+                String rest = splitLines[1];
+                String entryIds = rest.split(":")[0];
+                String paragraphNumber = rest.split(":")[1];
 
-                    //TODO: Add the keywordEntryIndex so we can have multiple paragraphs references
-                    String urlIdHash = Long.toString(LongHashFunction.xx().hashChars(url + pHash));
+                JsonStringEncoder e = JsonStringEncoder.getInstance();
+                paragraph = new String(e.quoteAsString(paragraph));
+                String strippedParagraph = stripParagraph(paragraph);
 
-                    String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
+                Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
+                String pHash = Long.toString(pHashLong);
 
-                    String keywordsString = splitLines[1];
-                    KeywordEntry keywordEntry = this.keywordsMap.get(keywordsString);
+                for (String entryId : entryIds.split(",")) {
+                    KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
-                    jsonString +=  "{\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";
-                    jsonString +=  "{\"topic\":\"" + keywordEntry.topic + "\",";
-                    jsonString +=  "{\"subTopic\":\"" + keywordEntry.subTopic + "\",";
-                    jsonString +=  "{\"language\":\"" + keywordEntry.language + "\",";
+                    if (keywordEntry!=null) {
+                        String urlIdHash = entryId+"-"+Long.toString(LongHashFunction.xx().hashChars(url + pHash));
 
-                    String keywords[] = splitLines[1].split(":");
-                    Map<String, Integer> keyWordsmap = new HashMap<String, Integer>();
+                        String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
+                        jsonString +=  "{\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";
+                        jsonString +=  "{\"topic\":\"" + keywordEntry.topic + "\",";
+                        jsonString +=  "{\"subTopic\":\"" + keywordEntry.subTopic + "\",";
+                        jsonString +=  "{\"language\":\"" + keywordEntry.language + "\",";
 
-                    for (String keyword : keywords) {
-                        if (!keyWordsmap.containsKey(keyword)) {
-                            keyWordsmap.put(keyword, 1);
-                        } else {
-                            keyWordsmap.put(keyword, keyWordsmap.get(keyword) + 1);
+                        jsonString += "\"paragraph\":\"" + paragraph + "\",\"keywordIds\":[";
+
+                        String[] domainParts = domainName.split("");
+                        String domainRoot = domainParts[domainParts.length-1];
+
+                        for (String entrySaveId : entryIds.split(",")) {
+                            jsonString += "{\"keywordId\":\"" + entrySaveId + "\"},";
                         }
+                        jsonString = jsonString.substring(0, jsonString.length() - 1);
+
+                        jsonString += "],";
+
+                        jsonString += "\"totalKwCount\":" + entryIds.split(",").length + ",";
+                        jsonString += "\"extRepostCount\": 0,";
+                        jsonString += "\"intRepostCount\": 1,";
+                        jsonString += "\"pHash\":" + pHash + ",";
+
+                        jsonString += "\"pageRank\":" + pageRank + ",";
+                        jsonString += "\"paragraphNumber\":\"" + paragraphNumber + "\"";
+
+                        //TODO: Get working by reading in files with URLs to match and check url endings for unis
+                        //jsonString += "\"websiteType\":\"" + ["media","blogs","politicalParties","academia","other"] + "\"";
+
+                        jsonString += "\"domainName\":\"" + domainName + "\"";
+                        jsonString += "\"domainRoot\":\"" + domainRoot + "\"";
+                        jsonString += "}";
+
+                        //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
+                        UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
+                        esRequest.doc(jsonString, XContentType.JSON);
+                        esRequest.docAsUpsert(true);
+                        this.bulkUpdateQueue.add(esRequest);
+
+                    } else {
+                        System.out.println("ERROR: Can't find keywordEntry for ES Import");
                     }
 
-                    jsonString += "\"paragraph\":\"" + paragraph + "\",\"keywords\":[";
 
-                    String[] domainParts = domainName.split("");
-                    String domainRoot = domainParts[domainParts.length-1];
-
-                    for (Map.Entry<String, Integer> entry : keyWordsmap.entrySet()) {
-                        String keyword = entry.getKey().replace("\\b", "");
-                        String count = entry.getValue().toString();
-                        keyword = keyword.substring(0, keyword.length() - 1);
-                        jsonString += "{\"keyword\":\"" + keyword + "\",\"count\":" + count;
-                    }
-                    jsonString = jsonString.substring(0, jsonString.length() - 1);
-
-                    jsonString += "],";
-
-                    jsonString += "\"totalKwCount\":" + keyWordsmap.entrySet().size() + ",";
-                    jsonString += "\"extRepostCount\": 0,";
-                    jsonString += "\"intRepostCount\": 1,";
-                    jsonString += "\"pHash\":" + pHash + ",";
-
-                    jsonString += "\"pageRank\":" + pageRank + ",";
-                    jsonString += "\"paragraphNumber\":\"" + paragraphNumber + "\"";
-
-                    //TODO: Get working by reading in files with URLs to match and check url endings for unis
-                    //jsonString += "\"websiteType\":\"" + ["media","blogs","politicalParties","academia","other"] + "\"";
-
-                    jsonString += "\"domainName\":\"" + domainName + "\"";
-                    jsonString += "\"domainRoot\":\"" + domainRoot + "\"";
-                    jsonString += "}";
-
-                    //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
-                    UpdateRequest esRequest = new UpdateRequest("urls", "doc", urlIdHash);
-                    esRequest.doc(jsonString, XContentType.JSON);
-                    esRequest.docAsUpsert(true);
-                    this.bulkUpdateQueue.add(esRequest);
-                } else {
-                    throw new Exception("Splitlines! " + line);
                 }
+
             } else {
+                throw new Exception("Splitlines! " + line);
             }
         } else {
         }

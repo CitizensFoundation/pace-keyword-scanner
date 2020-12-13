@@ -24,9 +24,8 @@ public class WetArchiveProcessor implements Runnable {
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
     public final int BUFFER_SIZE = 128_000;
-    public final int MIN_LINE_LENGTH = 220;
-    public final int MAX_LINE_LENGTH = 1250;
-    public final int MIN_KEYWORDS_FOR_RECORDING = 1;
+    public final int MIN_LINE_LENGTH = 120;
+    public final int MAX_LINE_LENGTH = 2500;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -118,7 +117,7 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
+                                    if (!hasTooManyCommas(line)) {
                                         processLineForKeywords(keywordHyperScanners, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
@@ -216,12 +215,12 @@ public class WetArchiveProcessor implements Runnable {
                 resultsWriter.write("\n");
                 resultsWriter.write(domain+ "\n");
                 resultsWriter.write(currentDate+ "\n");
-                resultsWriter.write(paragraphNumber+ "\n");
             }
             String keywords = "kx72dAx:";
             for (int x=0; x<matchedIndexes.size();x++) {
                 Integer matchIndex = matchedIndexes.get(x);
                 keywords += matchIndex+":";
+                keywords += paragraphNumber+":";
                 keywords += matchedTopics.get(x)+":";
                 keywords += matchedSubtopics.get(x)+",";
             }
