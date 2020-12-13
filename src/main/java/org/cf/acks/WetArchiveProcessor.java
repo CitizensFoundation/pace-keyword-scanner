@@ -8,12 +8,16 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.zip.GZIPInputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.gliwka.hyperscan.wrapper.CompileErrorException;
+import com.gliwka.hyperscan.wrapper.Database;
+import com.gliwka.hyperscan.wrapper.Expression;
+import com.gliwka.hyperscan.wrapper.Match;
+import com.gliwka.hyperscan.wrapper.Scanner;
 
 public class WetArchiveProcessor implements Runnable {
 
@@ -36,13 +40,19 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_HOST = "Host: ";
 
     private final Semaphore schedulingSemaphore;
-    private List<Pattern> keywordRegexPatterns;
+    private List<Database> keywordHyperDatabases;
+    private List<KeywordEntry> keywordEntries;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore,  List<Pattern> keywordRegexPatterns, String archive) {
+    WetArchiveProcessor(Semaphore schedulingSemaphore,
+                        List<Database> keywordHyperDatabases,
+                        List<KeywordEntry> keywordEntries,
+                        String archive)
+            throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.keywordRegexPatterns = keywordRegexPatterns;
+        this.keywordHyperDatabases = keywordHyperDatabases;
+        this.keywordEntries = keywordEntries;
         this.archive = archive;
     }
 
@@ -68,6 +78,18 @@ public class WetArchiveProcessor implements Runnable {
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
                 final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
+
+                List<Scanner> keywordHyperScanners = new ArrayList<Scanner>();
+
+                for (int i=0; i<keywordHyperDatabases.size();i++) {
+                    try {
+                        Scanner scanner = new Scanner();
+                        scanner.allocScratch(keywordHyperDatabases.get(i));
+                        keywordHyperScanners.add(scanner);
+                    } catch (Throwable t) {
+                        throw new IOException(t);
+                    }
+                }
 
                 boolean processingEntry = false;
 
@@ -97,7 +119,7 @@ public class WetArchiveProcessor implements Runnable {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
-                                        processLineForKeywords(paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(keywordHyperScanners, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -147,19 +169,43 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(List<Scanner> keywordHyperScanners, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
 
-        for (int i=0; i<keywordRegexPatterns.size(); i++) {
-            if (keywordRegexPatterns.get(i).matcher(lowerCaseLine).find()) {
-                matchedIndexes.add(i);
+        long startTime = System.currentTimeMillis();
+
+        List<Expression> expressions = new ArrayList<Expression>();
+        for (int i=0; i<keywordHyperDatabases.size(); i++) {
+            List<Match> matches = keywordHyperScanners.get(i).scan(keywordHyperDatabases.get(i),lowerCaseLine);
+
+            if (matches.size()>0) {
+                //TODO: Look if we can optimize this distinct
+                expressions.clear();
+                for (int n=0;n<matches.size();n++) {
+                    expressions.add(matches.get(n).getMatchedExpression());
+                }
+                List<Expression> unqiqueMatches = new ArrayList<>(new HashSet<>(expressions));
+                if (unqiqueMatches.size()==keywordEntries.get(i).numberOfKeywords) {
+                    boolean skipBecauseOfMinus = false;
+                    for (int x=0;x<keywordEntries.get(i).minusWords.size();x++) {
+                        if (lowerCaseLine.contains(keywordEntries.get(i).minusWords.get(x))) {
+                            skipBecauseOfMinus = true;
+                        }
+                    }
+
+                    if (!skipBecauseOfMinus) {
+                        matchedIndexes.add(i);
+                    }
+                }
             }
         }
 
+        //System.out.println(System.currentTimeMillis() - startTime);
+
         if (matchedIndexes.size()>0) {
-            System.out.println(".");
+            System.out.print(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
