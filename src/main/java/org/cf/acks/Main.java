@@ -40,6 +40,8 @@ public class Main {
 
 
     private static ArrayList<KeywordEntry> keywordEntries;
+    private static HashMap<Expression, Integer> expressionToKeywordEntries = new HashMap<Expression, Integer>();
+    private static Database keywordHyperDatabase;
 
     private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
@@ -86,6 +88,8 @@ public class Main {
         }
 
         reader.close();
+
+        keywordHyperDatabase = KeywordEntry.setupExpressionsAndDatabase(keywordEntries, expressionToKeywordEntries);
 
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
@@ -158,7 +162,7 @@ public class Main {
                 schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore,keywordEntries, key));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabase, expressionToKeywordEntries, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }

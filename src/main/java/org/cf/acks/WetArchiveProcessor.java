@@ -48,12 +48,18 @@ public class WetArchiveProcessor implements Runnable {
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
-    private ArrayList<KeywordEntry> keywordEntries;
 
-    WetArchiveProcessor(Semaphore schedulingSemaphore, ArrayList<KeywordEntry> keywordEntries, String archive)
+    private HashMap<Expression, Integer> expressionToKeywordEntries;
+    private Database keywordHyperDatabase;
+
+    WetArchiveProcessor(Semaphore schedulingSemaphore,
+                        Database keywordHyperDatabase,
+                        HashMap<Expression, Integer>expressionToKeywordEntries,
+                        String archive)
             throws IOException {
         this.schedulingSemaphore = schedulingSemaphore;
-        this.keywordEntries = keywordEntries;
+        this.expressionToKeywordEntries = expressionToKeywordEntries;
+        this.keywordHyperDatabase = keywordHyperDatabase;
         this.archive = archive;
     }
 
@@ -78,9 +84,17 @@ public class WetArchiveProcessor implements Runnable {
             long startTime = System.currentTimeMillis();
 
             Scanner keywordHyperScanner = new Scanner();
-            HashMap<Expression, KeywordEntry> expressionToKeywordEntries = new HashMap<Expression, KeywordEntry>();
 
-            Database keywordHyperDatabase = setupExpressionsAndDatabase(keywordHyperScanner, expressionToKeywordEntries);
+            try {
+                keywordHyperScanner.allocScratch(keywordHyperDatabase);
+            } catch (Throwable t) {
+                try {
+                    throw new IOException(t);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
 
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
@@ -155,105 +169,6 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private String transformExpression(int index, String expressionPart) {
-        expressionPart = expressionPart.replaceAll(" ",".");
-        if (expressionPart.startsWith("*")) {
-            expressionPart = expressionPart.substring(1);
-        } else {
-            expressionPart = "\\b"+expressionPart;
-        }
-        if (expressionPart.endsWith("*")) {
-            expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
-        } else {
-            expressionPart = expressionPart+"\\b";
-        }
-        expressionPart = expressionPart.replaceAll("\\*",".");
-
-        System.out.println(index+": "+expressionPart);
-
-        return expressionPart;
-    }
-
-    private Database setupExpressionsAndDatabase(Scanner keywordHyperScanner, HashMap<Expression, KeywordEntry> expressionToKeywordEntries) {
-        Database keywordHyperDatabase;
-        try {
-            Integer expressionCounter = 0;
-            int keywordEntriesSize = keywordEntries.size();
-            List<Expression> scanExpressions = new ArrayList<Expression>();
-            for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
-                List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
-                if (expressionStrings.size()==1) {
-                    Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionStrings.get(0)));
-                    scanExpressions.add(scanExpression);
-                    expressionCounter++;
-                } else {
-                    String combinedString = "(";
-                    for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
-                        String expressionString = expressionStrings.get(eIndex);
-                        if (expressionString.contains("|")) {
-                            combinedString += expressionCounter + "(";
-                            String[] splitString = expressionString.split("|");
-                            for (int s=0; s<splitString.length; s++) {
-                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
-                                scanExpressions.add(scanExpression);
-                                combinedString += expressionCounter;
-                                if (s!=splitString.length-1) {
-                                    combinedString += " | ";
-                                }
-                                expressionCounter++;
-                            }
-                            combinedString += expressionCounter + ")";
-                            if (eIndex!=expressionStrings.size()-1) {
-                                combinedString += " & ";
-                            }
-                        } else if (expressionString.startsWith("-")) {
-                            expressionString = expressionString.substring(1);
-                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
-                            scanExpressions.add(scanExpression);
-                            combinedString += "!" + expressionCounter;
-                            if (eIndex!=expressionStrings.size()-1) {
-                                combinedString += " & ";
-                            }
-                            expressionCounter++;
-                        } else {
-                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
-                            scanExpressions.add(scanExpression);
-                            combinedString += expressionCounter;
-                            if (eIndex!=expressionStrings.size()-1) {
-                                combinedString += " & ";
-                            }
-                            expressionCounter++;
-                        }
-                    }
-                    combinedString += ")";
-                    System.out.println(expressionCounter+": "+combinedString);
-                    Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION));
-                    scanExpressions.add(scanExpression);
-                    expressionCounter++;
-                    expressionToKeywordEntries.put(scanExpression, keywordEntries.get(keyIndex));
-                }
-            }
-
-            keywordHyperDatabase = Database.compile(scanExpressions);
-
-            try {
-                keywordHyperScanner.allocScratch(keywordHyperDatabase);
-            } catch (Throwable t) {
-                try {
-                    throw new IOException(t);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (CompileErrorException ce) {
-            logger.catching(ce);
-            Expression failedExpression = ce.getFailedExpression();
-            throw new IllegalStateException("The expression '" + failedExpression.getExpression());
-        }
-
-        return keywordHyperDatabase;
-    }
-
     private boolean hasTooManyCommas(String text) {
         Double count = Double.valueOf(StringUtils.countMatches(text, ","));
         Double textLength = Double.valueOf(text.length());
@@ -266,7 +181,7 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(HashMap<Expression, KeywordEntry> expressionToKeywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(HashMap<Expression, Integer> expressionToKeywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
@@ -278,7 +193,7 @@ public class WetArchiveProcessor implements Runnable {
         if (matches.size()>0) {
             HashSet<Match> unqiueMatches = new HashSet<Match>(matches);
             for (Match match : unqiueMatches) {
-                matchedIndexes.add(expressionToKeywordEntries.get(match.getMatchedExpression()).index);
+                matchedIndexes.add(expressionToKeywordEntries.get(match.getMatchedExpression()));
              }
         }
 
