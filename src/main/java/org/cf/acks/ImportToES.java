@@ -296,7 +296,7 @@ public class ImportToES implements Runnable {
                         jsonString += "\"pHash\":" + pHash + ",";
 
                         jsonString += "\"pageRank\":" + pageRank + ",";
-                        jsonString += "\"paragraphNumber\":\"" + Integer.parseInt(paragraphNumber) + "\",";
+                        jsonString += "\"paragraphNumber\":" + Integer.parseInt(paragraphNumber) + ",";
 
                         //TODO: Get working by reading in files with URLs to match and check url endings for unis
                         //jsonString += "\"websiteType\":\"" + ["media","blogs","politicalParties","academia","other"] + "\"";
