@@ -51,6 +51,7 @@ public class Main {
         long startTime = System.currentTimeMillis();
 
         String entry;
+        int index = 0;
         while ((entry = reader.readLine()) != null) {
             if (entry.isEmpty()) {
                 continue;
@@ -64,46 +65,22 @@ public class Main {
                 String topic = entryParts[2];
                 String subTopic = entryParts[3];
                 String searchPattern = "";
-                List<String> minusWords = new ArrayList<String>();
                 List<String> scanExpressions = new ArrayList<String>();
-                HashSet<String> scanExpressionsHash = new HashSet<String>();
 
                 for (int i=4; i<entryParts.length; i++) {
                     String expressionPart = entryParts[i];
                     expressionPart = expressionPart.toLowerCase().trim();
                     if (expressionPart.length()>1) {
-                        expressionPart = expressionPart.replaceAll(" ",".");
-                        if (expressionPart!=null) {
-                            if (expressionPart.startsWith("-")) {
-                                expressionPart = expressionPart.replaceAll("-","");
-                                System.out.println("=-=:"+expressionPart);
-                                minusWords.add(expressionPart);
-                            } else {
-                                if (expressionPart.startsWith("*")) {
-                                    expressionPart = expressionPart.substring(1);
-                                } else {
-                                    expressionPart = "\\b"+expressionPart;
-                                }
-                                if (expressionPart.endsWith("*")) {
-                                    expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
-                                } else {
-                                    expressionPart = expressionPart+"\\b";
-                                }
-                                expressionPart = expressionPart.replaceAll("\\*",".");
-                                scanExpressions.add(expressionPart);
-                                scanExpressionsHash.add(expressionPart);
-                                System.out.println(expressionPart);
-                            }
-                        }
+                       scanExpressions.add(expressionPart);
                     }
                 }
 
                 if (scanExpressions.size()>0) {
                     KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
                                                           scanExpressions.size(),
-                                                          language, minusWords, scanExpressions,
-                                                          scanExpressionsHash);
+                                                          language, scanExpressions, index);
                     keywordEntries.add(keywordEntry);
+                    index++;
                 }
             }
         }

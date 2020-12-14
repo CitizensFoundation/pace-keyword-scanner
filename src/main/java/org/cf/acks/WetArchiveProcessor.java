@@ -8,8 +8,10 @@ import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
@@ -18,6 +20,7 @@ import java.util.zip.GZIPInputStream;
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Expression;
+import com.gliwka.hyperscan.wrapper.ExpressionFlag;
 import com.gliwka.hyperscan.wrapper.Match;
 import com.gliwka.hyperscan.wrapper.Scanner;
 
@@ -75,39 +78,9 @@ public class WetArchiveProcessor implements Runnable {
             long startTime = System.currentTimeMillis();
 
             Scanner keywordHyperScanner = new Scanner();
-            Database keywordHyperDatabase;
-            List<Expression> scanExpressions = new ArrayList<Expression>();
+            HashMap<Expression, KeywordEntry> expressionToKeywordEntries = new HashMap<Expression, KeywordEntry>();
 
-            int keywordEntriesSize = keywordEntries.size();
-
-            try {
-                for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
-                    List<String> expressions = keywordEntries.get(keyIndex).scanExpressions;
-                    for (int eIndex = 0; eIndex < expressions.size(); eIndex++) {
-                        Expression scanExpression = new Expression(expressions.get(eIndex));
-                        //Database.compile(scanExpression);
-                        scanExpressions.add(scanExpression);
-                    }
-                }
-
-                keywordHyperDatabase = Database.compile(scanExpressions);
-
-                try {
-                    keywordHyperScanner.allocScratch(keywordHyperDatabase);
-                } catch (Throwable t) {
-                    try {
-                        throw new IOException(t);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } catch (CompileErrorException ce) {
-                logger.catching(ce);
-                Expression failedExpression = ce.getFailedExpression();
-                throw new IllegalStateException("The expression '" + failedExpression.getExpression());
-            }
-
-
+            Database keywordHyperDatabase = setupExpressionsAndDatabase(keywordHyperScanner, expressionToKeywordEntries);
 
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
@@ -142,7 +115,7 @@ public class WetArchiveProcessor implements Runnable {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
                                         System.out.println(line);
-                                        processLineForKeywords(keywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
                                 paragraphNumber++;
@@ -182,6 +155,105 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
+    private String transformExpression(int index, String expressionPart) {
+        expressionPart = expressionPart.replaceAll(" ",".");
+        if (expressionPart.startsWith("*")) {
+            expressionPart = expressionPart.substring(1);
+        } else {
+            expressionPart = "\\b"+expressionPart;
+        }
+        if (expressionPart.endsWith("*")) {
+            expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
+        } else {
+            expressionPart = expressionPart+"\\b";
+        }
+        expressionPart = expressionPart.replaceAll("\\*",".");
+
+        System.out.println(index+": "+expressionPart);
+
+        return expressionPart;
+    }
+
+    private Database setupExpressionsAndDatabase(Scanner keywordHyperScanner, HashMap<Expression, KeywordEntry> expressionToKeywordEntries) {
+        Database keywordHyperDatabase;
+        try {
+            Integer expressionCounter = 0;
+            int keywordEntriesSize = keywordEntries.size();
+            List<Expression> scanExpressions = new ArrayList<Expression>();
+            for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
+                List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
+                if (expressionStrings.size()==1) {
+                    Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionStrings.get(0)));
+                    scanExpressions.add(scanExpression);
+                    expressionCounter++;
+                } else {
+                    String combinedString = "(";
+                    for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
+                        String expressionString = expressionStrings.get(eIndex);
+                        if (expressionString.contains("|")) {
+                            combinedString += expressionCounter + "(";
+                            String[] splitString = expressionString.split("|");
+                            for (int s=0; s<splitString.length; s++) {
+                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
+                                scanExpressions.add(scanExpression);
+                                combinedString += expressionCounter;
+                                if (s!=splitString.length-1) {
+                                    combinedString += " | ";
+                                }
+                                expressionCounter++;
+                            }
+                            combinedString += expressionCounter + ")";
+                            if (eIndex!=expressionStrings.size()-1) {
+                                combinedString += " & ";
+                            }
+                        } else if (expressionString.startsWith("-")) {
+                            expressionString = expressionString.substring(1);
+                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
+                            scanExpressions.add(scanExpression);
+                            combinedString += "!" + expressionCounter;
+                            if (eIndex!=expressionStrings.size()-1) {
+                                combinedString += " & ";
+                            }
+                            expressionCounter++;
+                        } else {
+                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString),  EnumSet.of(ExpressionFlag.QUIET));
+                            scanExpressions.add(scanExpression);
+                            combinedString += expressionCounter;
+                            if (eIndex!=expressionStrings.size()-1) {
+                                combinedString += " & ";
+                            }
+                            expressionCounter++;
+                        }
+                    }
+                    combinedString += ")";
+                    System.out.println(expressionCounter+": "+combinedString);
+                    Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION));
+                    scanExpressions.add(scanExpression);
+                    expressionCounter++;
+                    expressionToKeywordEntries.put(scanExpression, keywordEntries.get(keyIndex));
+                }
+            }
+
+            keywordHyperDatabase = Database.compile(scanExpressions);
+
+            try {
+                keywordHyperScanner.allocScratch(keywordHyperDatabase);
+            } catch (Throwable t) {
+                try {
+                    throw new IOException(t);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (CompileErrorException ce) {
+            logger.catching(ce);
+            Expression failedExpression = ce.getFailedExpression();
+            throw new IllegalStateException("The expression '" + failedExpression.getExpression());
+        }
+
+        return keywordHyperDatabase;
+    }
+
     private boolean hasTooManyCommas(String text) {
         Double count = Double.valueOf(StringUtils.countMatches(text, ","));
         Double textLength = Double.valueOf(text.length());
@@ -194,7 +266,7 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(ArrayList<KeywordEntry> keywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processLineForKeywords(HashMap<Expression, KeywordEntry> expressionToKeywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
@@ -204,75 +276,11 @@ public class WetArchiveProcessor implements Runnable {
         List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
 
         if (matches.size()>0) {
-            int matchesSize = matches.size();
-
-            //TODO: Possible optimize this by saving the actual Expressions with keywordEntries and using those instead of string
-            HashSet<String> expressionMatches = new HashSet<String>();
-            for (int n=0;n<matchesSize;n++) {
-                expressionMatches.add(matches.get(n).getMatchedExpression().getExpression());
-            }
-
-            int keywordsSize = keywordEntries.size();
-
-            for (int k=0; k<keywordsSize;k++) {
-                KeywordEntry entry = keywordEntries.get(k);
-
-                if (expressionMatches.containsAll(entry.scanExpressionHash)) {
-                    boolean skipBecauseOfMinus = false;
-                    List<String> minusWords = entry.minusWords;
-                    for (int x=0;x<minusWords.size();x++) {
-                        if (lowerCaseLine.contains(minusWords.get(x))) {
-                            skipBecauseOfMinus = true;
-                            break;
-                        }
-                    }
-
-                    if (!skipBecauseOfMinus) {
-                        matchedIndexes.add(k);
-                    }
-                }
-            }
+            HashSet<Match> unqiueMatches = new HashSet<Match>(matches);
+            for (Match match : unqiueMatches) {
+                matchedIndexes.add(expressionToKeywordEntries.get(match.getMatchedExpression()).index);
+             }
         }
-
-        // OLD METHOD (here for now if faster than containsAll)
-        if (false && matches.size()>0) {
-            int matchesSize = matches.size();
-
-            HashMap<String, Boolean> expressionMatches = new HashMap<String, Boolean>();
-            for (int n=0;n<matchesSize;n++) {
-                expressionMatches.put(matches.get(n).getMatchedExpression().getExpression(), true);
-            }
-
-            int keywordsSize = keywordEntries.size();
-
-            for (int k=0; k<keywordsSize;k++) {
-                int matchCount = 0;
-                KeywordEntry entry = keywordEntries.get(k);
-
-                for (int e=0;e<entry.scanExpressions.size();e++) {
-                    if (expressionMatches.get(entry.scanExpressions.get(e))!=null) {
-                        matchCount+=1;
-                    }
-                }
-
-                if (matchCount==entry.numberOfKeywords) {
-                    boolean skipBecauseOfMinus = false;
-                    List<String> minusWords = entry.minusWords;
-                    for (int x=0;x<minusWords.size();x++) {
-                        if (lowerCaseLine.contains(minusWords.get(x))) {
-                            skipBecauseOfMinus = true;
-                            break;
-                        }
-                    }
-
-                    if (!skipBecauseOfMinus) {
-                        matchedIndexes.add(k);
-                    }
-                }
-            }
-        }
-
-
 
         //System.out.println(System.nanoTime() - startTime);
 
