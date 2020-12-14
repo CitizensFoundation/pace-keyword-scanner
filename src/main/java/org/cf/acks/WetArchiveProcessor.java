@@ -144,10 +144,6 @@ public class WetArchiveProcessor implements Runnable {
                                         System.out.println(line);
                                         processLineForKeywords(keywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
-                                } else {
-                                    if (line.length()>MAX_LINE_LENGTH) {
-                                        //System.out.println(line.length());
-                                    }
                                 }
                                 paragraphNumber++;
                             }
