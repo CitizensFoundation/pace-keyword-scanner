@@ -43,7 +43,9 @@ class KeywordEntry {
         if (expressionPart.endsWith("*")) {
             expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
         } else {
-            expressionPart = expressionPart+"\\b";
+            //TODO: Get his working, getting a compile error
+//            expressionPart = expressionPart+"\\b";
+            expressionPart = expressionPart+"";
         }
         expressionPart = expressionPart.replaceAll("\\*",".");
 
@@ -70,19 +72,23 @@ class KeywordEntry {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
                         String expressionString = expressionStrings.get(eIndex);
+                        System.out.println(expressionString);
                         if (expressionString.contains("|")) {
-                            combinedString += expressionCounter + "(";
-                            String[] splitString = expressionString.split("|");
+                            combinedString += "(";
+                            String[] splitString = expressionString.split("\\|");
+                            System.out.println(splitString.toString());
                             for (int s=0; s<splitString.length; s++) {
-                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
+                                Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
                                 scanExpressions.add(scanExpression);
                                 combinedString += expressionCounter;
                                 if (s!=splitString.length-1) {
                                     combinedString += " | ";
+                                } else {
+                                    combinedString += "";
                                 }
                                 expressionCounter++;
                             }
-                            combinedString += expressionCounter + ")";
+                            combinedString += ")";
                             if (eIndex!=expressionStrings.size()-1) {
                                 combinedString += " & ";
                             }

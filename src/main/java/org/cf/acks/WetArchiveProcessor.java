@@ -128,7 +128,6 @@ public class WetArchiveProcessor implements Runnable {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
                                     if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
-                                        System.out.println(line);
                                         processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
@@ -191,16 +190,18 @@ public class WetArchiveProcessor implements Runnable {
         List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
 
         if (matches.size()>0) {
-            HashSet<Match> unqiueMatches = new HashSet<Match>(matches);
-            for (Match match : unqiueMatches) {
+            System.out.println(lowerCaseLine);
+            System.out.println(matches.size());
+            for (Match match : matches) {
                 matchedIndexes.add(expressionToKeywordEntries.get(match.getMatchedExpression()));
-             }
+                System.out.println(match.getMatchedExpression().getExpression());
+            }
         }
 
         //System.out.println(System.nanoTime() - startTime);
 
         if (matchedIndexes.size()>0) {
-            System.out.print(".");
+            //System.out.print(".");
             if (!this.haveWrittenDomainLine) {
                 this.haveWrittenDomainLine = true;
                 resultsWriter.write("\n");
