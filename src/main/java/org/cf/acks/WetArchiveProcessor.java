@@ -190,11 +190,12 @@ public class WetArchiveProcessor implements Runnable {
         List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
 
         if (matches.size()>0) {
-            System.out.println(lowerCaseLine);
-            System.out.println(matches.size());
-            for (Match match : matches) {
-                matchedIndexes.add(expressionToKeywordEntries.get(match.getMatchedExpression()));
-                System.out.println(match.getMatchedExpression().getExpression());
+            //System.out.println(lowerCaseLine);
+            //System.out.println(matches.size());
+            int matchesSize = matches.size();
+            for (int m=0;m<matchesSize;m++) {
+                matchedIndexes.add(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
+                //System.out.println(match.getMatchedExpression().getExpression());
             }
         }
 
