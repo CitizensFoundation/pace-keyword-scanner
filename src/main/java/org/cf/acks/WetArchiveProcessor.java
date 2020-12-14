@@ -27,7 +27,7 @@ public class WetArchiveProcessor implements Runnable {
 
     public final int BUFFER_SIZE = 128_000;
     public final int MIN_LINE_LENGTH = 120;
-    public final int MAX_LINE_LENGTH = 2500;
+    public final int MAX_LINE_LENGTH = 2000;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
@@ -40,7 +40,7 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_RESPONSE_OK = "HTTP/1.1 200 OK";
     final static String HTTP_HEADER_HOST = "Host: ";
 
-    final static boolean DELETE_FILES = true;
+    final static boolean DELETE_FILES = false;
 
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
@@ -140,8 +140,13 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    if (!hasTooManyCommas(line)) {
+                                    if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
+                                        System.out.println(line);
                                         processLineForKeywords(keywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                    }
+                                } else {
+                                    if (line.length()>MAX_LINE_LENGTH) {
+                                        //System.out.println(line.length());
                                     }
                                 }
                                 paragraphNumber++;
@@ -185,7 +190,7 @@ public class WetArchiveProcessor implements Runnable {
         Double count = Double.valueOf(StringUtils.countMatches(text, ","));
         Double textLength = Double.valueOf(text.length());
         Double ratio = count/textLength;
-        if (ratio>0.05) {
+        if (ratio>0.04) {
             //System.out.println("Skipping ("+ratio+"): "+text);
             return true;
         } else {

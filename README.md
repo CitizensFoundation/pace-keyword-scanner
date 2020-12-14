@@ -8,5 +8,5 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 ![screenshot](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-13+23-36-41.png)
 
-![screenshot](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-14+00-10-55.png)
+![screenshot2](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-14+00-10-55.png)
 
