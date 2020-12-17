@@ -54,6 +54,7 @@ class KeywordEntry {
         return expressionPart;
     }
 
+    //TODO: Don't add duplicate keywords, reused them somehow with a refrence hash so the combined points to the right place
     public static Database setupExpressionsAndDatabase(List<KeywordEntry> keywordEntries, HashMap<Expression, Integer> expressionToKeywordEntries) {
         Database keywordHyperDatabase;
 
@@ -61,13 +62,19 @@ class KeywordEntry {
             Integer expressionCounter = 0;
             int keywordEntriesSize = keywordEntries.size();
             List<Expression> scanExpressions = new ArrayList<Expression>();
+            HashMap<String, Integer> usedExpressions = new HashMap<String, Integer>();
+            HashMap<String, Integer> usedSingleKeywordExpressions = new HashMap<String, Integer>();
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
                 List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
                 if (expressionStrings.size()==1) {
-                    Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionStrings.get(0)), EnumSet.of(ExpressionFlag.SINGLEMATCH));
-                    scanExpressions.add(scanExpression);
-                    expressionCounter++;
-                    expressionToKeywordEntries.put(scanExpression, keyIndex);
+                    String expressionString = expressionStrings.get(0);
+                    if (!usedSingleKeywordExpressions.containsKey(expressionString)) {
+                        Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.SINGLEMATCH));
+                        scanExpressions.add(scanExpression);
+                        usedSingleKeywordExpressions.put(expressionString, expressionCounter);
+                        expressionCounter++;
+                        expressionToKeywordEntries.put(scanExpression, keyIndex);
+                    }
                 } else {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
@@ -78,15 +85,21 @@ class KeywordEntry {
                             String[] splitString = expressionString.split("\\|");
                             System.out.println(splitString.toString());
                             for (int s=0; s<splitString.length; s++) {
-                                Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
-                                scanExpressions.add(scanExpression);
-                                combinedString += expressionCounter;
+                                if (!usedExpressions.containsKey(splitString[s])) {
+                                    Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
+                                    scanExpressions.add(scanExpression);
+                                    combinedString += expressionCounter;
+                                    usedExpressions.put(splitString[s], expressionCounter);
+                                    expressionCounter++;
+                                } else {
+                                    combinedString += usedExpressions.get(splitString[s]);
+                                }
+
                                 if (s!=splitString.length-1) {
                                     combinedString += " | ";
                                 } else {
                                     combinedString += "";
                                 }
-                                expressionCounter++;
                             }
                             combinedString += ")";
                             if (eIndex!=expressionStrings.size()-1) {
@@ -94,21 +107,31 @@ class KeywordEntry {
                             }
                         } else if (expressionString.startsWith("-")) {
                             expressionString = expressionString.substring(1);
-                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
-                            scanExpressions.add(scanExpression);
-                            combinedString += "!" + expressionCounter;
+                            if (!usedExpressions.containsKey(expressionString)) {
+                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
+                                scanExpressions.add(scanExpression);
+                                combinedString += "!" + expressionCounter;
+                                usedExpressions.put(expressionString, expressionCounter);
+                                expressionCounter++;
+                            } else {
+                                combinedString += usedExpressions.get(expressionString);
+                            }
                             if (eIndex!=expressionStrings.size()-1) {
                                 combinedString += " & ";
                             }
-                            expressionCounter++;
                         } else {
-                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
-                            scanExpressions.add(scanExpression);
-                            combinedString += expressionCounter;
+                            if (!usedExpressions.containsKey(expressionString)) {
+                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
+                                scanExpressions.add(scanExpression);
+                                combinedString += expressionCounter;
+                                usedExpressions.put(expressionString, expressionCounter);
+                                expressionCounter++;
+                            } else {
+                                combinedString += usedExpressions.get(expressionString);
+                            }
                             if (eIndex!=expressionStrings.size()-1) {
                                 combinedString += " & ";
                             }
-                            expressionCounter++;
                         }
                     }
                     combinedString += "";

@@ -1,6 +1,8 @@
 target/
 .idea/
 .iml
+results.comparewith/
+results.comparewith2/
 .settings
 results.test/
 .settings
