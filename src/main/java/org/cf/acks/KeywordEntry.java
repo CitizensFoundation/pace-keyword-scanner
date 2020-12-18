@@ -35,18 +35,6 @@ class KeywordEntry {
 
     public static String transformExpression(int index, String expressionPart) {
         expressionPart = expressionPart.replaceAll(" ",".");
-        if (expressionPart.startsWith("*")) {
-            expressionPart = expressionPart.substring(1);
-        } else {
-            expressionPart = "\\b"+expressionPart;
-        }
-        if (expressionPart.endsWith("*")) {
-            expressionPart= expressionPart.substring(0, expressionPart.length() - 1);
-        } else {
-            //TODO: Get his working, getting a compile error
-//            expressionPart = expressionPart+"\\b";
-            expressionPart = expressionPart+"";
-        }
         expressionPart = expressionPart.replaceAll("\\*",".");
 
         System.out.println(index+": "+expressionPart);
@@ -83,8 +71,8 @@ class KeywordEntry {
                         if (expressionString.contains("|")) {
                             combinedString += "(";
                             String[] splitString = expressionString.split("\\|");
-                            System.out.println(splitString.toString());
                             for (int s=0; s<splitString.length; s++) {
+                                System.out.println(splitString[s]);
                                 if (!usedExpressions.containsKey(splitString[s])) {
                                     Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
                                     scanExpressions.add(scanExpression);
