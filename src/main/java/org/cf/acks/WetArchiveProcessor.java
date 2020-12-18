@@ -43,7 +43,7 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_RESPONSE_OK = "HTTP/1.1 200 OK";
     final static String HTTP_HEADER_HOST = "Host: ";
 
-    final static boolean DELETE_FILES = false;
+    final static boolean DELETE_FILES = true;
 
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
