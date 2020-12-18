@@ -54,7 +54,6 @@ class KeywordEntry {
         return expressionPart;
     }
 
-    //TODO: Don't add duplicate keywords, reused them somehow with a refrence hash so the combined points to the right place
     public static Database setupExpressionsAndDatabase(List<KeywordEntry> keywordEntries, HashMap<Expression, Integer> expressionToKeywordEntries) {
         Database keywordHyperDatabase;
 
@@ -67,6 +66,7 @@ class KeywordEntry {
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
                 List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
                 if (expressionStrings.size()==1) {
+                    //TODO: This is not working properly post dup optimization, remove single use keywords
                     String expressionString = expressionStrings.get(0);
                     if (!usedSingleKeywordExpressions.containsKey(expressionString)) {
                         Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.SINGLEMATCH));
