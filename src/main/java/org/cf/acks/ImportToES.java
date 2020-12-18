@@ -305,7 +305,7 @@ public class ImportToES implements Runnable {
                         jsonString += "\"domainRoot\":\"" + domainRoot + "\"";
                         jsonString += "}";
 
-                        System.out.println(jsonString);
+                        //System.out.println(jsonString);
 
                         //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
                         UpdateRequest esRequest = new UpdateRequest("urls", urlIdHash);
