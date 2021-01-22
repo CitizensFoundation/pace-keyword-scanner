@@ -115,38 +115,41 @@ public class ImportToES implements Runnable {
                     this.esClient = new RestHighLevelClient(
                             RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
 
-                    boolean processingEntry = false;
-
                     String line;
                     String currentDate = null;
                     int bulkCounter = 0;
                     outerloop: while ((line = contentReader.readLine()) != null) {
                         if (line.length() == 0) {
-                            processingEntry = true;
                             currentURL = null;
                             currentDate = null;
-                        } else if (processingEntry && !line.contains("kd8x72dAx")
+                            //System.out.println("RESET - RESET - RESET");
+                        } else if (!line.contains("kx72dAx")
                                 && (line.startsWith("http://") || line.startsWith("https://"))) {
                             currentURL = line;
+                            //System.out.println("URL: "+currentURL);
                             currentDate = contentReader.readLine();
-                        } else if (processingEntry && currentURL != null && currentDate != null) {
+                            //System.out.println("Date: "+currentDate);
+                        } else if (currentURL != null && currentDate != null) {
+                            //System.out.println(("Import: "+line));
                             try {
-                                while ((line = contentReader.readLine()) != null && line.length() != 0) {
-                                    if (line.startsWith("Duration")) {
-                                        break outerloop;
-                                    } else {
-                                        importLinesToES(currentURL, line, currentDate);
-                                        bulkCounter += 1;
-                                        if (bulkCounter > ES_BULK_MAX_SIZE) {
-                                            pumpBulkUpdateQueue();
-                                            bulkCounter = 0;
-                                        }
+                                if (line.startsWith("Duration")) {
+                                    break outerloop;
+                                } else {
+                                    importLinesToES(currentURL, line, currentDate);
+                                    bulkCounter += 1;
+                                    if (bulkCounter > ES_BULK_MAX_SIZE) {
+                                        pumpBulkUpdateQueue();
+                                        bulkCounter = 0;
                                     }
                                 }
+                                //while ((line = contentReader.readLine()) != null && line.length() != 0) {
+                                //}
                             } catch (Throwable t) {
                                 throw new IOException(t);
                             }
-                            processingEntry = false;
+                            //processingEntry = false;
+                        } else {
+                            System.out.println("NOT PROCESSING - NOT PROCESSING "+line);
                         }
                     }
                     try {
@@ -263,7 +266,13 @@ public class ImportToES implements Runnable {
                 Long pHashLong = LongHashFunction.xx().hashChars(strippedParagraph);
                 String pHash = Long.toString(pHashLong);
 
-                for (String entryId : entryIds.split(",")) {
+                String[] splitEntryIds = entryIds.split(",");
+
+                if (splitEntryIds.length==0) {
+                    System.out.println("WARNING: entryIds null: "+line);
+                }
+
+                for (String entryId : splitEntryIds) {
                     KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
                     if (keywordEntry!=null) {
@@ -293,6 +302,7 @@ public class ImportToES implements Runnable {
                         jsonString += "\"totalKwCount\":" + entryIds.split(",").length + ",";
                         jsonString += "\"extRepostCount\": 0,";
                         jsonString += "\"intRepostCount\": 1,";
+                        jsonString += "\"relevanceScore\": 0.0,";
                         jsonString += "\"pHash\":" + pHash + ",";
 
                         jsonString += "\"pageRank\":" + pageRank + ",";
@@ -316,14 +326,14 @@ public class ImportToES implements Runnable {
                     } else {
                         System.out.println("ERROR: Can't find keywordEntry for ES Import");
                     }
-
-
                 }
 
             } else {
+                System.out.println("ERROR: Splitlines! ES Import");
                 throw new Exception("Splitlines! " + line);
             }
         } else {
+            System.out.println("WARNING: Can't find domain for: "+line);
         }
     }
 
