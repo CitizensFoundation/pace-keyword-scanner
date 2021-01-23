@@ -124,7 +124,7 @@ public class ImportToES implements Runnable {
                             currentDate = null;
                             //System.out.println("RESET - RESET - RESET");
                         } else if (!line.contains("kx72dAx")
-                                && (line.startsWith("http://") || line.startsWith("https://"))) {
+                                   && (line.startsWith("http://") || line.startsWith("https://"))) {
                             currentURL = line;
                             //System.out.println("URL: "+currentURL);
                             currentDate = contentReader.readLine();
@@ -142,12 +142,9 @@ public class ImportToES implements Runnable {
                                         bulkCounter = 0;
                                     }
                                 }
-                                //while ((line = contentReader.readLine()) != null && line.length() != 0) {
-                                //}
                             } catch (Throwable t) {
                                 throw new IOException(t);
                             }
-                            //processingEntry = false;
                         } else {
                             System.out.println("NOT PROCESSING - NOT PROCESSING "+line);
                         }
@@ -322,12 +319,10 @@ public class ImportToES implements Runnable {
                         esRequest.doc(jsonString, XContentType.JSON);
                         esRequest.docAsUpsert(true);
                         this.bulkUpdateQueue.add(esRequest);
-
                     } else {
                         System.out.println("ERROR: Can't find keywordEntry for ES Import");
                     }
                 }
-
             } else {
                 System.out.println("ERROR: Splitlines! ES Import");
                 throw new Exception("Splitlines! " + line);
