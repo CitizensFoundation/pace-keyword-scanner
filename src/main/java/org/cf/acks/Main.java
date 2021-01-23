@@ -28,7 +28,8 @@ public class Main {
     public static final int BUFFER_SIZE = 128_000;
 
     // TEST
-    /*private static final String esHostname="127.0.0.1";
+    /*
+    private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
     private static final String esProtocol="http";
     */
@@ -37,7 +38,6 @@ public class Main {
     private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
     private static final String esProtocol="https";
-
 
     private static ArrayList<KeywordEntry> keywordEntries;
     private static HashMap<Expression, Integer> expressionToKeywordEntries = new HashMap<Expression, Integer>();
@@ -78,10 +78,12 @@ public class Main {
                 }
 
                 if (scanExpressions.size()>0) {
-                    KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic, subTopic,
-                                                          scanExpressions.size(),
-                                                          language, scanExpressions, index);
-                    keywordEntries.add(keywordEntry);
+                    if (idealogyType!="DROP") {
+                        KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic,
+                                subTopic, scanExpressions.size(),
+                                language, scanExpressions, index);
+                        keywordEntries.add(keywordEntry);
+                    }
                     index++;
                 }
             }
@@ -208,9 +210,14 @@ public class Main {
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
-//        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
-        final int poolSize = Runtime.getRuntime().availableProcessors() / 7;
-        final int maxScheduled = poolSize * 2;
+        //final int poolSize = 1;
+        //final int maxScheduled = poolSize * 1;
+        //final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        //final int maxScheduled = poolSize * 3;
+
+        // Production
+        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        final int maxScheduled = poolSize * 3;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
 

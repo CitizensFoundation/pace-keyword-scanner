@@ -26,10 +26,12 @@ import com.gliwka.hyperscan.wrapper.Scanner;
 
 public class WetArchiveProcessor implements Runnable {
 
+    final static boolean DELETE_FILES = true;
+
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
     public final int BUFFER_SIZE = 128_000;
-    public final int MIN_LINE_LENGTH = 120;
+    public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
     final static String WARC_VERSION = "WARC/1.0";
@@ -42,8 +44,6 @@ public class WetArchiveProcessor implements Runnable {
     final static String ENTITY_TYPE = "text/html";
     final static String HTTP_HEADER_RESPONSE_OK = "HTTP/1.1 200 OK";
     final static String HTTP_HEADER_HOST = "Host: ";
-
-    final static boolean DELETE_FILES = true;
 
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
@@ -127,7 +127,9 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
                                 if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    if (!hasTooManyCommas(line) && !(line.contains("function") && line.contains("{"))) {
+                                    if (!hasTooManyCommas(line) &&
+                                        !line.startsWith("http") &&
+                                        !(line.contains("function") && line.contains("{"))) {
                                         processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
                                     }
                                 }
