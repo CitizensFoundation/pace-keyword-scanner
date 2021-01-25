@@ -1,5 +1,7 @@
 package org.cf.acks;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +23,8 @@ import java.util.zip.GZIPInputStream;
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Expression;
+import com.gliwka.hyperscan.wrapper.Match;
+import com.gliwka.hyperscan.wrapper.Scanner;
 
 public class Main {
 
@@ -54,26 +58,25 @@ public class Main {
 
         String entry;
         int index = 0;
-        while ((entry = reader.readLine()) != null) {
-            if (entry.isEmpty()) {
-                continue;
-            }
-
-            String[] entryParts = entry.split(",");
-
-            if (entryParts.length>4) {
-                String language = entryParts[0];
-                String idealogyType = entryParts[1];
-                String topic = entryParts[2];
-                String subTopic = entryParts[3];
-                String searchPattern = "";
+        Reader in = new FileReader(configFile);
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+        for (CSVRecord record : records) {
+            if (!record.get(4).isEmpty() && !record.get(5).isEmpty() && record.getRecordNumber()>2) {
+                String language = record.get(0);
+                String idealogyType = record.get(1);
+                String topic = record.get(2);
+                String subTopic = record.get(3);
+                System.out.println(topic+" "+subTopic);
+                String validationParagraph = record.get(4);
                 List<String> scanExpressions = new ArrayList<String>();
 
-                for (int i=4; i<entryParts.length; i++) {
-                    String expressionPart = entryParts[i];
-                    expressionPart = expressionPart.toLowerCase().trim();
-                    if (expressionPart.length()>1) {
-                       scanExpressions.add(expressionPart);
+                for (int i=5; i<record.size(); i++) {
+                    if (record.get(i)!="") {
+                        String expressionPart = record.get(i);
+                        expressionPart = expressionPart.toLowerCase().trim();
+                        if (expressionPart.length()>1) {
+                           scanExpressions.add(expressionPart);
+                        }
                     }
                 }
 
@@ -81,15 +84,17 @@ public class Main {
                     if (idealogyType!="DROP") {
                         KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic,
                                 subTopic, scanExpressions.size(),
-                                language, scanExpressions, index);
+                                language, scanExpressions, index, validationParagraph);
                         keywordEntries.add(keywordEntry);
+                    } else {
+                        System.out.println("DROP: "+topic+" "+subTopic);
                     }
                     index++;
                 }
+
             }
         }
 
-        reader.close();
 
         keywordHyperDatabase = KeywordEntry.setupExpressionsAndDatabase(keywordEntries, expressionToKeywordEntries);
 
@@ -147,8 +152,8 @@ public class Main {
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
-        final int poolSize = Runtime.getRuntime().availableProcessors();
-        final int maxScheduled = poolSize * 5;
+        final int poolSize = Runtime.getRuntime().availableProcessors() * 2;
+        final int maxScheduled = poolSize * 3;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
 
@@ -324,6 +329,48 @@ public class Main {
        }
     }
 
+    private static void validateKeywords(String[] args) throws Throwable {
+
+        long startTime = System.currentTimeMillis();
+
+        Scanner keywordHyperScanner = new Scanner();
+
+        try {
+            keywordHyperScanner.allocScratch(keywordHyperDatabase);
+        } catch (Throwable t) {
+            try {
+                throw new IOException(t);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        for (KeywordEntry entry: keywordEntries) {
+            if (entry.validationParagraph!="") {
+                String lowerCaseLine = entry.validationParagraph.toLowerCase();
+                //System.out.println("P:"+entry.validationParagraph);
+
+                List<Integer> matchedIndexes = new ArrayList<Integer>();
+
+                List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
+
+                if (matches.size()>0) {
+                    //System.out.println(matches.size());
+                    int matchesSize = matches.size();
+                    for (int m=0;m<matchesSize;m++) {
+                        matchedIndexes.add(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
+                        //System.out.println(matches.get(m).getMatchedExpression().getExpression());
+                    }
+                    System.out.println("OK: ("+entry.topic+" "+entry.subTopic+")");
+                } else {
+                    System.out.println("ERROR: ("+entry.topic+" "+entry.subTopic+") "+entry.validationParagraph);
+                }
+            } else {
+                System.out.println("WARN: validateKeywords, no validation paragraph");
+            }
+        }
+    }
+
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
         if (args[0].equals("scan")) {
@@ -353,6 +400,9 @@ public class Main {
             System.out.println("ImportES Completed");
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
+        } else if (args[0].equals("validateKeywords")) {
+            setupKeywordConfig(new File(args[2]));
+            validateKeywords(args);
         } else if (args[0].equals("enableESIndexRefreshAndReplicas")) {
             enableESIndexRefreshAndReplicas();
         } else {

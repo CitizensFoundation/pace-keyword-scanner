@@ -20,10 +20,11 @@ class KeywordEntry {
     public final String language;
     public final List<String> scanExpressions;
     public final int index;
+    public final String validationParagraph;
 
     KeywordEntry(String idealogyType, String topic, String subTopic,
                  Integer numberOfKeywords, String language,
-                 List<String> scanExpressions, int index) {
+                 List<String> scanExpressions, int index, String validationParagraph) {
         this.idealogyType = idealogyType;
         this.topic = topic;
         this.subTopic = subTopic;
@@ -31,9 +32,11 @@ class KeywordEntry {
         this.language = language;
         this.scanExpressions = scanExpressions;
         this.index = index;
+        this.validationParagraph = validationParagraph;
     }
 
     public static String transformExpression(int index, String expressionPart) {
+        expressionPart = expressionPart.replaceAll("-",".");
         expressionPart = expressionPart.replaceAll(" ",".");
         expressionPart = expressionPart.replaceAll("\\*",".");
 

@@ -26,11 +26,11 @@ import com.gliwka.hyperscan.wrapper.Scanner;
 
 public class WetArchiveProcessor implements Runnable {
 
-    final static boolean DELETE_FILES = true;
+    final static boolean DELETE_FILES = false;
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
-    public final int BUFFER_SIZE = 128_000;
+    public final int BUFFER_SIZE = 250_000_000;
     public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
@@ -48,8 +48,8 @@ public class WetArchiveProcessor implements Runnable {
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
-
     private HashMap<Expression, Integer> expressionToKeywordEntries;
+
     private Database keywordHyperDatabase;
 
     WetArchiveProcessor(Semaphore schedulingSemaphore,
@@ -94,7 +94,6 @@ public class WetArchiveProcessor implements Runnable {
                     e.printStackTrace();
                 }
             }
-
 
             try (final InputStream objectStream = new FileInputStream(new File(archive));
                 final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);

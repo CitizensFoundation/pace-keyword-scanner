@@ -10,3 +10,16 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 ![screenshot2](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-14+00-10-55.png)
 
+# Prepare the page ranks file into the condences format
+processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.com/projects/hyperlinkgraph/cc-main-2020-jul-aug-sep/host/cc-main-2020-jul-aug-sep-host-ranks.txt.gz
+processScripts/processHostRanksFile.sh 2020 11
+
+# Parallel Step 1 - Download files list and start parallel downloading
+processScripts/getLatestWetPathsAndDownloadAll.sh 2020 11 https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz 72000
+
+# Parallel Step 2- Scan the files (start a bit after the download starts)
+processScripts/scan.sh 2020 11
+
+# Parallel (or not) Step 3 - Import into ElasticSearch
+processScripts/importToES.sh 2020 11
+
