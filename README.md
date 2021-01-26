@@ -19,8 +19,8 @@ sudo apt-get update; sudo apt-get install -y java-15-amazon-corretto-jdk
 sudo apt install build-essential cmake libboost-all-dev ragel maven
 
 git clone git://github.com/intel/hyperscan
-cd hyperscane
-cmake .
+cd hyperscan
+cmake -DBUILD_SHARED_LIBS=YES
 make 
 sudo make install
 

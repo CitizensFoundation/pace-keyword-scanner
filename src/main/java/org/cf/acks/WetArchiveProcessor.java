@@ -30,7 +30,7 @@ public class WetArchiveProcessor implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
-    public final int BUFFER_SIZE = 250_000_000;
+    public final int BUFFER_SIZE = 140_000_000;
     public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
