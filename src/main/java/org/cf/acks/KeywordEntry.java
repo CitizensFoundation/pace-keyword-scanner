@@ -1,16 +1,24 @@
 package org.cf.acks;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.gliwka.hyperscan.wrapper.CompileErrorException;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Expression;
 import com.gliwka.hyperscan.wrapper.ExpressionFlag;
 import com.gliwka.hyperscan.wrapper.Scanner;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 
 class KeywordEntry {
     public final String idealogyType;
@@ -40,7 +48,7 @@ class KeywordEntry {
         expressionPart = expressionPart.replaceAll(" ",".");
         expressionPart = expressionPart.replaceAll("\\*",".");
 
-        System.out.println(index+": "+expressionPart);
+        //System.out.println(index+": "+expressionPart);
 
         return expressionPart;
     }
@@ -70,12 +78,12 @@ class KeywordEntry {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
                         String expressionString = expressionStrings.get(eIndex);
-                        System.out.println(expressionString);
+                        //System.out.println(expressionString);
                         if (expressionString.contains("|")) {
                             combinedString += "(";
                             String[] splitString = expressionString.split("\\|");
                             for (int s=0; s<splitString.length; s++) {
-                                System.out.println(splitString[s]);
+                                //System.out.println(splitString[s]);
                                 if (!usedExpressions.containsKey(splitString[s])) {
                                     Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
                                     scanExpressions.add(scanExpression);
@@ -126,7 +134,7 @@ class KeywordEntry {
                         }
                     }
                     combinedString += "";
-                    System.out.println(expressionCounter+": "+combinedString);
+                    //System.out.println(expressionCounter+": "+combinedString);
                     Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION,ExpressionFlag.SINGLEMATCH));
                     scanExpressions.add(scanExpression);
                     expressionCounter++;
@@ -141,5 +149,56 @@ class KeywordEntry {
         }
 
         return keywordHyperDatabase;
+    }
+
+    public static Database createPatternDataFromFile(String configFilePath,
+                HashMap<Expression, Integer> expressionToKeywordEntries,
+                ArrayList<KeywordEntry> keywordEntries) {
+
+        File configFile = new File(configFilePath);
+
+        int index = 0;
+        try {
+            Reader in = new FileReader(configFile);
+            Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+            for (CSVRecord record : records) {
+                if (!record.get(4).isEmpty() && !record.get(5).isEmpty() && record.getRecordNumber()>2) {
+                    String language = record.get(0);
+                    String idealogyType = record.get(1);
+                    String topic = record.get(2);
+                    String subTopic = record.get(3);
+                    //System.out.println(topic+" "+subTopic);
+                    String validationParagraph = record.get(4);
+                    List<String> scanExpressions = new ArrayList<String>();
+
+                    for (int i=5; i<record.size(); i++) {
+                        if (record.get(i)!="") {
+                            String expressionPart = record.get(i);
+                            expressionPart = expressionPart.toLowerCase().trim();
+                            if (expressionPart.length()>1) {
+                               scanExpressions.add(expressionPart);
+                            }
+                        }
+                    }
+
+                    if (scanExpressions.size()>0) {
+                        if (idealogyType!="DROP") {
+                            KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic,
+                                    subTopic, scanExpressions.size(),
+                                    language, scanExpressions, index, validationParagraph);
+                            keywordEntries.add(keywordEntry);
+                        } else {
+                            //System.out.println("DROP: "+topic+" "+subTopic);
+                        }
+                        index++;
+                    }
+
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
+
+        return KeywordEntry.setupExpressionsAndDatabase(keywordEntries, expressionToKeywordEntries);
     }
 }

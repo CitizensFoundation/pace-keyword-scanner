@@ -49,6 +49,61 @@ public class Main {
 
     private static HashMap<String,KeywordEntry> keywordsMap = new HashMap<String,KeywordEntry>();
 
+    private static void setupKeywordConfig(File configFile) throws Throwable {
+        BufferedReader reader = new BufferedReader(new FileReader(configFile));
+
+        keywordEntries =  new ArrayList<KeywordEntry>();
+
+        long startTime = System.currentTimeMillis();
+
+        String entry;
+        int index = 0;
+        Reader in = new FileReader(configFile);
+        Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
+        for (CSVRecord record : records) {
+            if (!record.get(4).isEmpty() && !record.get(5).isEmpty() && record.getRecordNumber()>2) {
+                String language = record.get(0);
+                String idealogyType = record.get(1);
+                String topic = record.get(2);
+                String subTopic = record.get(3);
+                System.out.println(topic+" "+subTopic);
+                String validationParagraph = record.get(4);
+                List<String> scanExpressions = new ArrayList<String>();
+
+                for (int i=5; i<record.size(); i++) {
+                    if (record.get(i)!="") {
+                        String expressionPart = record.get(i);
+                        expressionPart = expressionPart.toLowerCase().trim();
+                        if (expressionPart.length()>1) {
+                           scanExpressions.add(expressionPart);
+                        }
+                    }
+                }
+
+                if (scanExpressions.size()>0) {
+                    if (idealogyType!="DROP") {
+                        KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic,
+                                subTopic, scanExpressions.size(),
+                                language, scanExpressions, index, validationParagraph);
+                        keywordEntries.add(keywordEntry);
+                    } else {
+                        System.out.println("DROP: "+topic+" "+subTopic);
+                    }
+                    index++;
+                }
+
+            }
+        }
+
+
+        keywordHyperDatabase = KeywordEntry.setupExpressionsAndDatabase(keywordEntries, expressionToKeywordEntries);
+
+        System.out.println("HS Version: "+Scanner.getVersion());
+
+        long duration = System.currentTimeMillis() - startTime;
+        logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
+    }
+
     private static void setESIndexRefreshAndReplicas(String refreshInterval, Integer numberOfReplicas) {
         RestHighLevelClient esClient = new RestHighLevelClient(
             RestClient.builder(
@@ -110,18 +165,20 @@ public class Main {
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/scanningTimingResults.stats")))) {
 
+            Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
             for (String key : s3KeyList) {
+                schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(key, args[2]));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabase, expressionToKeywordEntries, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
             }
 
             // If all permits can be acquired, it can be assumed no more callables are executing.
-            //schedulingSemaphore.acquire(maxScheduled);
+            schedulingSemaphore.acquire(maxScheduled);
 
             executorService.shutdown();
 
@@ -319,8 +376,10 @@ public class Main {
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
         if (args[0].equals("scan")) {
+            setupKeywordConfig(new File(args[2]));
             scanFiles(args);
         } else if (args[0].equals("importToES")) {
+            setupKeywordConfig(new File(args[2]));
             System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();
             System.out.println("ImportES: disableESIndexRefreshAndReplicas");
@@ -344,6 +403,7 @@ public class Main {
         } else if (args[0].equals("processHostRanksFile")) {
             processHostRanksFile(args);
         } else if (args[0].equals("validateKeywords")) {
+            setupKeywordConfig(new File(args[2]));
             validateKeywords(args);
         } else if (args[0].equals("enableESIndexRefreshAndReplicas")) {
             enableESIndexRefreshAndReplicas();
