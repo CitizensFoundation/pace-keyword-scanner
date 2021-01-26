@@ -10,16 +10,44 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 ![screenshot2](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-14+00-10-55.png)
 
-# Prepare the page ranks file into the condences format
+## Various setup steps that might be needed for installing on AWS
+```bash
+wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add - 
+sudo add-apt-repository 'deb https://apt.corretto.aws stable main'
+sudo apt-get update; sudo apt-get install -y java-15-amazon-corretto-jdk
+
+sudo apt install build-essential cmake libboost-all-dev ragel maven
+
+git clone git://github.com/intel/hyperscan
+cd hyperscane
+cmake .
+make 
+sudo make install
+
+cd
+
+git clone https://github.com/CitizensFoundation/ac-keyword-scanner.git
+cd ac-keyword-scanner
+```
+
+## Prepare the page ranks file into the condenced format
+```bash
 processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.com/projects/hyperlinkgraph/cc-main-2020-jul-aug-sep/host/cc-main-2020-jul-aug-sep-host-ranks.txt.gz
 processScripts/processHostRanksFile.sh 2020 11
+```
 
-# Parallel Step 1 - Download files list and start parallel downloading
+## Parallel Step 1 - Download files list and start parallel downloading
+```bash
 processScripts/getLatestWetPathsAndDownloadAll.sh 2020 11 https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz 72000
+```
 
-# Parallel Step 2- Scan the files (start a bit after the download starts)
+## Parallel Step 2- Scan the files (start a bit after the download starts)
+```bash
 processScripts/scan.sh 2020 11
+```
 
-# Parallel (or not) Step 3 - Import into ElasticSearch
+## Parallel (or not) Step 3 - Import into ElasticSearch
+```bash
 processScripts/importToES.sh 2020 11
+```
 

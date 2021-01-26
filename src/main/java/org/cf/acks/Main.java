@@ -98,6 +98,8 @@ public class Main {
 
         keywordHyperDatabase = KeywordEntry.setupExpressionsAndDatabase(keywordEntries, expressionToKeywordEntries);
 
+        System.out.println("HS Version: "+Scanner.getVersion());
+
         long duration = System.currentTimeMillis() - startTime;
         logger.info("Time taken to load and setup keywordEntries (seconds): {}", TimeUnit.SECONDS.convert(duration, TimeUnit.MILLISECONDS));
     }
