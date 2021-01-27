@@ -9,7 +9,7 @@ wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add -
 sudo add-apt-repository 'deb https://apt.corretto.aws stable main'
 sudo apt-get update; sudo apt-get install -y java-15-amazon-corretto-jdk
 
-sudo apt install build-essential cmake libboost-all-dev ragel maven iotop
+sudo apt install build-essential cmake libboost-all-dev ragel maven
 
 git clone git://github.com/intel/hyperscan
 cd hyperscan
