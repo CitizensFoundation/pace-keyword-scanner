@@ -171,7 +171,7 @@ class KeywordEntry {
                     String validationParagraph = record.get(4);
                     List<String> scanExpressions = new ArrayList<String>();
 
-                    for (int i=5; i<record.size(); i++) {
+                    for (int i=7; i<record.size(); i++) {
                         if (record.get(i)!="") {
                             String expressionPart = record.get(i);
                             expressionPart = expressionPart.toLowerCase().trim();

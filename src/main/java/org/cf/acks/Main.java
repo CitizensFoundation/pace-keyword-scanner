@@ -12,10 +12,12 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
+import org.apache.commons.collections4.ListUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
@@ -94,12 +96,38 @@ public class Main {
         }
     }
 
-    private static void scanFiles(String[] args) throws Throwable {
+    private static void startScan(String[] args) throws Throwable {
+        logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
+        System.out.println("CPU cores available: "+Runtime.getRuntime().availableProcessors());
+
+        final int availableProcessors = Runtime.getRuntime().availableProcessors();
+        Path mainFilePath = Paths.get(args[1]);
+        final List<String> allWetFiles = Files.readAllLines(mainFilePath);
+        final List<List<String>> splitWetFiles = ListUtils.partition(allWetFiles, allWetFiles.size()/availableProcessors);
+        final String filesPathName = mainFilePath.getParent().toAbsolutePath().toString();
+
+        System.out.println("Filespath:" +filesPathName);
+
+        for (int i=0; i<splitWetFiles.size();i++) {
+            String newOutFileContent = "";
+            String wetFilesSplitFilename=filesPathName+"/"+"wetfiles_split_by_cpu."+i;
+
+            for (String wetFile : splitWetFiles.get(i)) {
+                newOutFileContent+=wetFile+"\n";
+            }
+            Files.write(Paths.get(wetFilesSplitFilename), newOutFileContent.getBytes());
+            Runtime.getRuntime().exec("./processScripts/scanPerCPU.sh "+wetFilesSplitFilename+" "+args[2]);
+        }
+
+        logger.info("Start Scan complete.");
+    }
+
+    private static void scanFilesOneCPU(String[] args) throws Throwable {
         final List<String> s3KeyList = Files.readAllLines(Paths.get(args[1]));
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
-        final int poolSize = Runtime.getRuntime().availableProcessors() * 2;
+        final int poolSize = 2;
         final int maxScheduled = poolSize * 3;
 
         logger.info("Allocating a thread pool of size {}.", poolSize);
@@ -108,20 +136,27 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
+        expressionToKeywordEntries = new HashMap<Expression, Integer>();
+        keywordEntries = new ArrayList<KeywordEntry>();
+
+        keywordHyperDatabase = KeywordEntry.createPatternDataFromFile(args[2], expressionToKeywordEntries, keywordEntries);
+
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/scanningTimingResults.stats")))) {
 
+            Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
             for (String key : s3KeyList) {
+                schedulingSemaphore.acquire();
 
                 try {
-                    executorService.submit(new WetArchiveProcessor(key, args[2]));
+                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabase, expressionToKeywordEntries, key));
                 } catch (RejectedExecutionException ree) {
                     logger.catching(ree);
                 }
             }
 
             // If all permits can be acquired, it can be assumed no more callables are executing.
-            //schedulingSemaphore.acquire(maxScheduled);
+            schedulingSemaphore.acquire(maxScheduled);
 
             executorService.shutdown();
 
@@ -277,6 +312,10 @@ public class Main {
     private static void validateKeywords(String[] args) throws Throwable {
 
         long startTime = System.currentTimeMillis();
+        expressionToKeywordEntries = new HashMap<Expression, Integer>();
+        keywordEntries = new ArrayList<KeywordEntry>();
+
+        keywordHyperDatabase = KeywordEntry.createPatternDataFromFile(args[2], expressionToKeywordEntries, keywordEntries);
 
         Scanner keywordHyperScanner = new Scanner();
 
@@ -319,7 +358,9 @@ public class Main {
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
         if (args[0].equals("scan")) {
-            scanFiles(args);
+            startScan(args);
+        } else if (args[0].equals("scanPerCPU")) {
+            scanFilesOneCPU(args);
         } else if (args[0].equals("importToES")) {
             System.out.println("ImportES: ensureIndexIsCreated");
             ensureIndexIsCreated();

@@ -30,7 +30,7 @@ public class WetArchiveProcessor implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
-    public final int BUFFER_SIZE = 100_000_000;
+    public final int BUFFER_SIZE = 75_000_000;
     public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
@@ -45,26 +45,21 @@ public class WetArchiveProcessor implements Runnable {
     final static String HTTP_HEADER_RESPONSE_OK = "HTTP/1.1 200 OK";
     final static String HTTP_HEADER_HOST = "Host: ";
 
+    private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
     private final String archive;
     private HashMap<Expression, Integer> expressionToKeywordEntries;
-    private ArrayList<KeywordEntry> keywordEntries;
 
     private Database keywordHyperDatabase;
 
-    WetArchiveProcessor(String archive, String patternConfigFile)
+    WetArchiveProcessor(Semaphore schedulingSemaphore,
+                        Database keywordHyperDatabase,
+                        HashMap<Expression, Integer>expressionToKeywordEntries,
+                        String archive)
             throws IOException {
-//        this.schedulingSemaphore = schedulingSemaphore;
-
-        this.expressionToKeywordEntries = new HashMap<Expression, Integer>();
-        this.keywordEntries = new ArrayList<KeywordEntry>();
-
-        try {
-            this.keywordHyperDatabase = KeywordEntry.createPatternDataFromFile(patternConfigFile, expressionToKeywordEntries, keywordEntries);
-        } catch (Exception ex) {
-            System.out.println("Error sleeping in thread: " + ex.getMessage());
-        }
-
+        this.schedulingSemaphore = schedulingSemaphore;
+        this.expressionToKeywordEntries = expressionToKeywordEntries;
+        this.keywordHyperDatabase = keywordHyperDatabase;
         this.archive = archive;
     }
 
@@ -167,7 +162,7 @@ public class WetArchiveProcessor implements Runnable {
                 logger.catching(io);
                 System.out.println("Error for: "+archive);
             } finally {
-                //schedulingSemaphore.release();
+                schedulingSemaphore.release();
             }
         } else {
             System.out.println("Empty: "+archive);
