@@ -1,5 +1,5 @@
 # ac-keyword-scanner
-Scans CommonCrawl datasets for keywords. Scans the whole month of CommonCrawl data using Amazon EC2 c5.24xlarge instance for hundreds of keywords in about 6 hours. Developed with support from the EU and the Populism &amp; Civic Engagement H2020 project.
+Scans CommonCrawl datasets for keywords. Scans the whole month of CommonCrawl data using Amazon EC2 c5n.16xlarge instance for hundreds of keywords in about 4 hours. Developed with support from the EU and the Populism &amp; Civic Engagement H2020 project.
 
 
 ![eu logo](https://demos-h2020.eu/img/EU_logo.jpg)
