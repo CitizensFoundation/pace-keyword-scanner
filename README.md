@@ -42,12 +42,12 @@ processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.
 processScripts/processHostRanksFile.sh 2020 11
 ```
 
-## Parallel Step 1 - Download files list and start parallel downloading
+## Parallel Step 1 - Download files list
 ```bash
 processScripts/getLatestWetPathsAndDownloadAll.sh 2020 11 https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz 72000
 ```
 
-## Parallel Step 2- Scan the files (start a bit after the download starts)
+## Parallel Step 2- Download, gunzip and scan the files
 ```bash
 processScripts/scan.sh 2020 11
 ```
