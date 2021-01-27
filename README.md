@@ -10,13 +10,13 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 ![screenshot2](https://yrpri-direct-asset.s3.amazonaws.com/Screenshot+from+2020-12-14+00-10-55.png)
 
-## Various setup steps that might be needed for installing on AWS
+## Various setup steps for installing on a AWS Ubuntu v20.04
 ```bash
 wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add - 
 sudo add-apt-repository 'deb https://apt.corretto.aws stable main'
 sudo apt-get update; sudo apt-get install -y java-15-amazon-corretto-jdk
 
-sudo apt install build-essential cmake libboost-all-dev ragel maven
+sudo apt install build-essential cmake libboost-all-dev ragel maven iotop
 
 git clone git://github.com/intel/hyperscan
 cd hyperscan
@@ -28,6 +28,28 @@ cd
 
 git clone https://github.com/CitizensFoundation/ac-keyword-scanner.git
 cd ac-keyword-scanner
+mvn clean package
+
+mkdir /home/ubuntu/ac-keyword-scanner/results
+
+cd /home
+sudo ln -s ubuntu/ robert
+```
+
+## Connect ephemeral drives on EC2 
+```bash
+cd
+mkdir data
+lsblk
+sudo mkfs -t xfs /dev/nvme1n1
+sudo mkfs -t xfs /dev/nvme2n1
+sudo mount /dev/nvme1n1 /home/ubuntu/data
+sudo mount /dev/nvme2n1 /home/ubuntu/ac-keyword-scanner/results
+cd /home/ubuntu/data
+sudo chown ubuntu.ubuntu .
+cd /home/ubuntu/ac-keyword-scanner/results
+sudo chown ubuntu.ubuntu .
+
 ```
 
 ## Prepare the page ranks file into the condenced format

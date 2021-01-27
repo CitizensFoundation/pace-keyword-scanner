@@ -26,11 +26,11 @@ import com.gliwka.hyperscan.wrapper.Scanner;
 
 public class WetArchiveProcessor implements Runnable {
 
-    final static boolean DELETE_FILES = false;
+    final static boolean DELETE_FILES = true;
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
-    public final int BUFFER_SIZE = 75_000_000;
+    public final int BUFFER_SIZE = 1_000_000;
     public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
