@@ -36,22 +36,6 @@ cd /home
 sudo ln -s ubuntu/ robert
 ```
 
-## Connect ephemeral drives on EC2 
-```bash
-cd
-mkdir data
-lsblk
-sudo mkfs -t xfs /dev/nvme1n1
-sudo mkfs -t xfs /dev/nvme2n1
-sudo mount /dev/nvme1n1 /home/ubuntu/data
-sudo mount /dev/nvme2n1 /home/ubuntu/ac-keyword-scanner/results
-cd /home/ubuntu/data
-sudo chown ubuntu.ubuntu .
-cd /home/ubuntu/ac-keyword-scanner/results
-sudo chown ubuntu.ubuntu .
-
-```
-
 ## Prepare the page ranks file into the condenced format
 ```bash
 processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.com/projects/hyperlinkgraph/cc-main-2020-jul-aug-sep/host/cc-main-2020-jul-aug-sep-host-ranks.txt.gz
