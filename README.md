@@ -55,7 +55,7 @@ processScripts/getLatestWetPathsAndDownloadAll.sh 2020 11 https://commoncrawl.s3
 processScripts/scan.sh 2020 11
 ```
 
-## Step 3 - Import into ElasticSearch (can be down in parallel with step 2)
+## Step 3 - Import into ElasticSearch (can be done in parallel with step 2)
 ```bash
 processScripts/importToES.sh 2020 11
 ```
