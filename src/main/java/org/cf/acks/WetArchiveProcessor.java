@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class WetArchiveProcessor implements Runnable {
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
-    public final int BUFFER_SIZE = 25_000_000;
+    public final int BUFFER_SIZE = 5_000_000;
     public final int MIN_LINE_LENGTH = 50;
     public final int MAX_LINE_LENGTH = 2000;
 
@@ -67,102 +68,81 @@ public class WetArchiveProcessor implements Runnable {
     public void run() {
         System.out.println("Scanning: " + archive);
         if (archive != null & archive.length() > 0) {
-            File file = new File(archive);
-            while (file.exists() == false) {
-                try {
-                    Random rand = new Random();
-                    int n = rand.nextInt(3500);
-                    n += 4500;
-                    System.out.println("Waiting on file to scan: " + archive + " " + n / 1000 + "s");
-                    Thread.sleep(n);
-                } catch (Exception ex) {
-                    System.out.println("Error sleeping in thread: " + ex.getMessage());
-                }
-            }
 
             String currentURL = null; // Should never be null in practice.
             long startTime = System.currentTimeMillis();
 
             Scanner keywordHyperScanner = new Scanner();
-
+            HttpURLConnection myURLConnection;
             try {
                 keywordHyperScanner.allocScratch(keywordHyperDatabase);
+                URL archiveUrl = new URL(archive);
+                myURLConnection = (HttpURLConnection) archiveUrl.openConnection();
+                try (
+                    final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(myURLConnection.getInputStream()), BUFFER_SIZE);
+                    final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
+
+                    boolean processingEntry = false;
+
+                    String outPath = "results/"+getFilename(archive)+".scanned";
+                    Writer resultsWriter = new BufferedWriter(new FileWriter(new File(outPath+".working")));
+
+                    String line;
+                    String currentDate = null;
+                    int paragraphNumber = 1;
+                    while ((line = contentReader.readLine()) != null) {
+                        if (line.startsWith(CONVERSION_MARKER)) {
+                            processingEntry = true;
+                            currentURL = null;
+                            currentDate = null;
+                            paragraphNumber = 1;
+                            this.haveWrittenDomainLine = false;
+                        } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
+                            currentURL = line;
+                            currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
+                        } else if (processingEntry && line.startsWith(TARGET_DATE)) {
+                            currentDate = line;
+                            currentDate = currentDate.replace(TARGET_DATE+" ", "");
+                        } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
+                            line = contentReader.readLine();
+
+                            try {
+                                while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
+                                    if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
+                                        if (!hasTooManyCommas(line) &&
+                                            !line.startsWith("http") &&
+                                            !(line.contains("function") && line.contains("{"))) {
+                                            processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                        }
+                                    }
+                                    paragraphNumber++;
+                                }
+                            } catch (Throwable t) {
+                                resultsWriter.close();
+                                throw new IOException(t);
+                            }
+                            processingEntry = false;
+                        }
+                    }
+                    keywordHyperScanner.close();
+                    long duration = System.currentTimeMillis() - startTime;
+                    resultsWriter.write("Duration\n");
+                    resultsWriter.write(duration + "\n");
+                    resultsWriter.close();
+                    File finalFile = new File(outPath+".working");
+                    boolean renameResult = finalFile.renameTo(new File(outPath));
+                } catch (IOException io) {
+                    logger.catching(io);
+                    System.out.println("Error for: "+archive);
+                } finally {
+                    schedulingSemaphore.release();
+                }
             } catch (Throwable t) {
                 try {
                     throw new IOException(t);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-
-            try (final InputStream objectStream = new FileInputStream(new File(archive));
-                final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(objectStream), BUFFER_SIZE);
-                final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
-
-                boolean processingEntry = false;
-
-                String outPath = "results/"+getFilename(archive)+".scanned";
-                Writer resultsWriter = new BufferedWriter(new FileWriter(new File(outPath+".working")));
-
-                String line;
-                String currentDate = null;
-                int paragraphNumber = 1;
-                while ((line = contentReader.readLine()) != null) {
-                    if (line.startsWith(CONVERSION_MARKER)) {
-                        processingEntry = true;
-                        currentURL = null;
-                        currentDate = null;
-                        paragraphNumber = 1;
-                        this.haveWrittenDomainLine = false;
-                    } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
-                        currentURL = line;
-                        currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
-                    } else if (processingEntry && line.startsWith(TARGET_DATE)) {
-                        currentDate = line;
-                        currentDate = currentDate.replace(TARGET_DATE+" ", "");
-                    } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
-                        line = contentReader.readLine();
-
-                        try {
-                            while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
-                                if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                    if (!hasTooManyCommas(line) &&
-                                        !line.startsWith("http") &&
-                                        !(line.contains("function") && line.contains("{"))) {
-                                        processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
-                                    }
-                                }
-                                paragraphNumber++;
-                            }
-                        } catch (Throwable t) {
-                            resultsWriter.close();
-                            throw new IOException(t);
-                        }
-                        processingEntry = false;
-                    }
-                }
-                keywordHyperScanner.close();
-                if (DELETE_FILES) {
-                    if (file.delete())
-                    {
-                        //System.out.println(archive+" deleted");
-                    }
-                    else
-                    {
-                        System.out.println(archive+" FAILED!");
-                    }
-                }
-                long duration = System.currentTimeMillis() - startTime;
-                resultsWriter.write("Duration\n");
-                resultsWriter.write(duration + "\n");
-                resultsWriter.close();
-                File finalFile = new File(outPath+".working");
-                boolean renameResult = finalFile.renameTo(new File(outPath));
-            } catch (IOException io) {
-                logger.catching(io);
-                System.out.println("Error for: "+archive);
-            } finally {
-                schedulingSemaphore.release();
             }
         } else {
             System.out.println("Empty: "+archive);
