@@ -8,7 +8,7 @@ This project has received funding from the European Union’s Horizon 2020 resea
 
 ![screenshot](https://yrpri-eu-direct-assets.s3-eu-west-1.amazonaws.com/Screenshot+from+2021-01-27+23-40-42.png)
 
-## Various setup steps for installing on a AWS Ubuntu v20.04
+## Various setup steps for installing on a AWS Ubuntu 20.04
 ```bash
 wget -O- https://apt.corretto.aws/corretto.key | sudo apt-key add - 
 sudo add-apt-repository 'deb https://apt.corretto.aws stable main'
