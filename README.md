@@ -36,7 +36,7 @@ cd /home
 sudo ln -s ubuntu/ robert
 ```
 
-## Prepare the page ranks file into the condenced format
+## Prepare the page ranks file into the condensed format
 ```bash
 processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.com/projects/hyperlinkgraph/cc-main-2020-jul-aug-sep/host/cc-main-2020-jul-aug-sep-host-ranks.txt.gz
 processScripts/processHostRanksFile.sh 2020 11
