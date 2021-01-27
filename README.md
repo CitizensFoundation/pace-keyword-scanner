@@ -42,17 +42,17 @@ processScripts/getLatestPageRanking.sh 2020 11 https://commoncrawl.s3.amazonaws.
 processScripts/processHostRanksFile.sh 2020 11
 ```
 
-## Parallel Step 1 - Download files list
+## Step 1 - Download files list
 ```bash
 processScripts/getLatestWetPathsAndDownloadAll.sh 2020 11 https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz 72000
 ```
 
-## Parallel Step 2- Download, gunzip and scan the files
+## Step 2- Download, gunzip and scan the files
 ```bash
 processScripts/scan.sh 2020 11
 ```
 
-## Parallel (or not) Step 3 - Import into ElasticSearch
+## Step 3 - Import into ElasticSearch (can be down in parallel with step 2)
 ```bash
 processScripts/importToES.sh 2020 11
 ```
