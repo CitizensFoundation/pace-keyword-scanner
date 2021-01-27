@@ -34,6 +34,9 @@ mkdir /home/ubuntu/ac-keyword-scanner/results
 
 cd /home
 sudo ln -s ubuntu/ robert
+
+cd
+cd ac-keyword-scanner
 ```
 
 ## Prepare the page ranks file into the condensed format
