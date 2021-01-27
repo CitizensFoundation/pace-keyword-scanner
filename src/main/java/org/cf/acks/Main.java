@@ -141,32 +141,22 @@ public class Main {
 
         keywordHyperDatabase = KeywordEntry.createPatternDataFromFile(args[2], expressionToKeywordEntries, keywordEntries);
 
-        try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/scanningTimingResults.stats")))) {
+        Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
 
-            Semaphore schedulingSemaphore = new Semaphore(maxScheduled);
+        for (String key : s3KeyList) {
+            schedulingSemaphore.acquire();
 
-            for (String key : s3KeyList) {
-                schedulingSemaphore.acquire();
-
-                try {
-                    executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabase, expressionToKeywordEntries, key));
-                } catch (RejectedExecutionException ree) {
-                    logger.catching(ree);
-                }
+            try {
+                executorService.submit(new WetArchiveProcessor(schedulingSemaphore, keywordHyperDatabase, expressionToKeywordEntries, key));
+            } catch (RejectedExecutionException ree) {
+                logger.catching(ree);
             }
-
-            // If all permits can be acquired, it can be assumed no more callables are executing.
-            schedulingSemaphore.acquire(maxScheduled);
-
-            executorService.shutdown();
-
-            long duration = System.currentTimeMillis() - startTime;
-            timingResultsStats.write("Duration\n");
-            timingResultsStats.write(duration + "\n");
-            timingResultsStats.close();
-
-            logger.info("Scanning complete.");
         }
+
+        // If all permits can be acquired, it can be assumed no more callables are executing.
+        schedulingSemaphore.acquire(maxScheduled);
+
+        executorService.shutdown();
     }
 
     private static HashMap<Long, Long> getPageRanks(String pageRanksFile) {
