@@ -201,6 +201,9 @@ public class Main {
         long startTime = System.currentTimeMillis();
 
         HashMap<Long, Long> pageRanks = getPageRanks(args[3]);
+        expressionToKeywordEntries = new HashMap<Expression, Integer>();
+        keywordEntries = new ArrayList<KeywordEntry>();
+        keywordHyperDatabase = KeywordEntry.createPatternDataFromFile(args[2], expressionToKeywordEntries, keywordEntries);
 
         try (Writer timingResultsStats = new BufferedWriter(new FileWriter(new File("log/importToESTimingResults.stats")))) {
 
