@@ -29,6 +29,8 @@ public class WetArchiveProcessor implements Runnable {
 
     final static boolean DELETE_FILES = true;
 
+    final static boolean PAGE_MODE = true;
+
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
     public final int BUFFER_SIZE = 5_000_000;
@@ -90,11 +92,16 @@ public class WetArchiveProcessor implements Runnable {
                     String line;
                     String currentDate = null;
                     int paragraphNumber = 1;
+                    String wholePage = "";
                     while ((line = contentReader.readLine()) != null) {
                         if (line.startsWith(CONVERSION_MARKER)) {
+                            if (PAGE_MODE && wholePage.length()>0) {
+                                processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
+                            }
                             processingEntry = true;
                             currentURL = null;
                             currentDate = null;
+                            wholePage = "";
                             paragraphNumber = 1;
                             this.haveWrittenDomainLine = false;
                         } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
@@ -105,17 +112,20 @@ public class WetArchiveProcessor implements Runnable {
                             currentDate = currentDate.replace(TARGET_DATE+" ", "");
                         } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
                             line = contentReader.readLine();
-
                             try {
                                 while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
-                                    if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                        if (!hasTooManyCommas(line) &&
-                                            !line.startsWith("http") &&
-                                            !(line.contains("function") && line.contains("{"))) {
-                                            processLineForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                    if (PAGE_MODE) {
+                                        wholePage+=line.replaceAll("\\R"," ");
+                                    } else {
+                                        if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
+                                            if (!hasTooManyCommas(line) &&
+                                                !line.startsWith("http") &&
+                                                !(line.contains("function") && line.contains("{"))) {
+                                                processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                            }
                                         }
+                                        paragraphNumber++;
                                     }
-                                    paragraphNumber++;
                                 }
                             } catch (Throwable t) {
                                 resultsWriter.close();
@@ -123,6 +133,10 @@ public class WetArchiveProcessor implements Runnable {
                             }
                             processingEntry = false;
                         }
+                    }
+                    // Catch the end the WET file
+                    if (PAGE_MODE && wholePage.length()>0) {
+                        processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
                     }
                     keywordHyperScanner.close();
                     long duration = System.currentTimeMillis() - startTime;
@@ -161,7 +175,7 @@ public class WetArchiveProcessor implements Runnable {
         }
     }
 
-    private void processLineForKeywords(HashMap<Expression, Integer> expressionToKeywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
+    private void processStringForKeywords(HashMap<Expression, Integer> expressionToKeywordEntries, Scanner keywordHyperScanner, Database keywordHyperDatabase, int paragraphNumber, String domain, String line, Writer resultsWriter, String currentDate) throws Throwable {
         String lowerCaseLine = line.toLowerCase();
 
         List<Integer> matchedIndexes = new ArrayList<Integer>();
