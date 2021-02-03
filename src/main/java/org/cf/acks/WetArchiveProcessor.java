@@ -114,18 +114,18 @@ public class WetArchiveProcessor implements Runnable {
                             line = contentReader.readLine();
                             try {
                                 while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
-                                    if (PAGE_MODE) {
-                                        wholePage+=line.replaceAll("\\R"," ");
-                                    } else {
-                                        if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                            if (!hasTooManyCommas(line) &&
-                                                !line.startsWith("http") &&
-                                                !(line.contains("function") && line.contains("{"))) {
-                                                processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                    if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
+                                        if (!hasTooManyCommas(line) &&
+                                            !line.startsWith("http") &&
+                                            !(line.contains("function") && line.contains("{"))) {
+                                                if (PAGE_MODE) {
+                                                    wholePage+=line.replaceAll("\\R"," ");
+                                                } else {
+                                                    processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                                }
                                             }
-                                        }
-                                        paragraphNumber++;
                                     }
+                                    paragraphNumber++;
                                 }
                             } catch (Throwable t) {
                                 resultsWriter.close();
