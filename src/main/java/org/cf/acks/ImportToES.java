@@ -273,7 +273,7 @@ public class ImportToES implements Runnable {
                     KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
                     if (keywordEntry!=null) {
-                        String urlIdHash = entryId+"-"+Long.toString(LongHashFunction.xx().hashChars(url + pHash));
+                        String urlIdHash = entryId+"-"+Long.toString(LongHashFunction.xx().hashChars(url)) +"-"+pHash;
 
                         String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
                         jsonString +=  "\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";

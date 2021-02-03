@@ -78,20 +78,21 @@ class KeywordEntry {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
                         String expressionString = expressionStrings.get(eIndex);
-                        //System.out.println(expressionString);
+                        System.out.println(expressionString);
                         if (expressionString.contains("|")) {
                             combinedString += "(";
                             String[] splitString = expressionString.split("\\|");
                             for (int s=0; s<splitString.length; s++) {
-                                //System.out.println(splitString[s]);
-                                if (!usedExpressions.containsKey(splitString[s])) {
+                                String splitStringItem = splitString[s].trim();
+                                System.out.println(splitStringItem);
+                                if (!usedExpressions.containsKey(splitStringItem)) {
                                     Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
                                     scanExpressions.add(scanExpression);
                                     combinedString += expressionCounter;
-                                    usedExpressions.put(splitString[s], expressionCounter);
+                                    usedExpressions.put(splitStringItem, expressionCounter);
                                     expressionCounter++;
                                 } else {
-                                    combinedString += usedExpressions.get(splitString[s]);
+                                    combinedString += usedExpressions.get(splitStringItem);
                                 }
 
                                 if (s!=splitString.length-1) {
@@ -113,7 +114,7 @@ class KeywordEntry {
                                 usedExpressions.put(expressionString, expressionCounter);
                                 expressionCounter++;
                             } else {
-                                combinedString += usedExpressions.get(expressionString);
+                                combinedString +=  "!" + usedExpressions.get(expressionString);
                             }
                             if (eIndex!=expressionStrings.size()-1) {
                                 combinedString += " & ";
@@ -134,7 +135,7 @@ class KeywordEntry {
                         }
                     }
                     combinedString += "";
-                    //System.out.println(expressionCounter+": "+combinedString);
+                    System.out.println(expressionCounter+": "+combinedString);
                     Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION,ExpressionFlag.SINGLEMATCH));
                     scanExpressions.add(scanExpression);
                     expressionCounter++;
@@ -145,7 +146,7 @@ class KeywordEntry {
             keywordHyperDatabase = Database.compile(scanExpressions);
         } catch (CompileErrorException ce) {
             Expression failedExpression = ce.getFailedExpression();
-            throw new IllegalStateException("The expression '" + failedExpression.getExpression());
+            throw new IllegalStateException("The expression " + ce.getMessage());
         }
 
         return keywordHyperDatabase;
@@ -171,7 +172,7 @@ class KeywordEntry {
                     String validationParagraph = record.get(4);
                     List<String> scanExpressions = new ArrayList<String>();
 
-                    for (int i=7; i<record.size(); i++) {
+                    for (int i=8; i<record.size(); i++) {
                         if (record.get(i)!="") {
                             String expressionPart = record.get(i);
                             expressionPart = expressionPart.toLowerCase().trim();
