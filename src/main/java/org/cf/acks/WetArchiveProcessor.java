@@ -29,7 +29,7 @@ public class WetArchiveProcessor implements Runnable {
 
     final static boolean DELETE_FILES = true;
 
-    final static boolean PAGE_MODE = true;
+    final static boolean PAGE_MODE = false;
 
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
@@ -134,7 +134,7 @@ public class WetArchiveProcessor implements Runnable {
                             processingEntry = false;
                         }
                     }
-                    // Catch the end the WET file
+                    // Catch the end the WET file in page mode
                     if (PAGE_MODE && wholePage.length()>0) {
                         processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
                     }
