@@ -44,11 +44,16 @@ class KeywordEntry {
     }
 
     public static String transformExpression(int index, String expressionPart) {
+        if (expressionPart.startsWith("*")) {
+            expressionPart = expressionPart.substring(1);
+        } else {
+            expressionPart = "\\b"+expressionPart;
+        }
         expressionPart = expressionPart.replaceAll("-",".");
         expressionPart = expressionPart.replaceAll(" ",".");
         expressionPart = expressionPart.replaceAll("\\*",".");
 
-        //System.out.println(index+": "+expressionPart);
+        System.out.println(index+": "+expressionPart);
 
         return expressionPart;
     }
@@ -65,7 +70,6 @@ class KeywordEntry {
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
                 List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
                 if (expressionStrings.size()==1) {
-                    //TODO: This is not working properly post dup optimization, remove single use keywords
                     String expressionString = expressionStrings.get(0);
                     if (!usedSingleKeywordExpressions.containsKey(expressionString)) {
                         Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.SINGLEMATCH));
@@ -78,13 +82,13 @@ class KeywordEntry {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
                         String expressionString = expressionStrings.get(eIndex);
-                        System.out.println(expressionString);
+                        //System.out.println(expressionString);
                         if (expressionString.contains("|")) {
                             combinedString += "(";
                             String[] splitString = expressionString.split("\\|");
                             for (int s=0; s<splitString.length; s++) {
                                 String splitStringItem = splitString[s].trim();
-                                System.out.println(splitStringItem);
+                                //System.out.println(splitStringItem);
                                 if (!usedExpressions.containsKey(splitStringItem)) {
                                     Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
                                     scanExpressions.add(scanExpression);
