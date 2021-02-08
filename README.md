@@ -1,4 +1,4 @@
-# ac-keyword-scanner
+# pace-commoncrawl-scanner
 Scans CommonCrawl datasets for keywords. Scans the whole month of CommonCrawl data using Amazon EC2 c5n.16xlarge instance for hundreds of keywords in about 4 hours. Developed with support from the EU and the Populism &amp; Civic Engagement H2020 project.
 
 ![screenshot](https://yrpri-eu-direct-assets.s3-eu-west-1.amazonaws.com/Screenshot+from+2021-01-27+23-40-42.png)
@@ -19,17 +19,17 @@ sudo make install
 
 cd
 
-git clone https://github.com/CitizensFoundation/ac-keyword-scanner.git
-cd ac-keyword-scanner
+git clone https://github.com/CitizensFoundation/pace-commoncrawl-scanner.git
+cd pace-commoncrawl-scanner
 mvn clean package
 
-mkdir /home/ubuntu/ac-keyword-scanner/results
+mkdir /home/ubuntu/pace-commoncrawl-scanner/results
 
 cd /home
 sudo ln -s ubuntu/ robert
 
 cd
-cd ac-keyword-scanner
+cd pace-commoncrawl-scanner
 ```
 
 ## Prepare the page ranks file into the condensed format
