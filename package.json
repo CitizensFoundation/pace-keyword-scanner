@@ -1,5 +1,5 @@
 {
-  "name": "ac-keyword-scanner",
+  "name": "pace-commoncrawl-scanner",
   "version": "1.0.0",
   "description": "Scans CommonCrawl datasets for keywords. Scans the whole month of CommonCrawl data using Amazon EC2 c5n.16xlarge instance for hundreds of keywords in about 4 hours. Developed with support from the EU and the Populism &amp; Civic Engagement H2020 project.",
   "main": "index.js",
@@ -13,12 +13,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CitizensFoundation/ac-keyword-scanner.git"
+    "url": "git+https://github.com/CitizensFoundation/pace-commoncrawl-scanner.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/CitizensFoundation/ac-keyword-scanner/issues"
+    "url": "https://github.com/CitizensFoundation/pace-commoncrawl-scanner/issues"
   },
-  "homepage": "https://github.com/CitizensFoundation/ac-keyword-scanner#readme"
+  "homepage": "https://github.com/CitizensFoundation/pace-commoncrawl-scanner#readme"
 }
