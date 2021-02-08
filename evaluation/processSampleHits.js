@@ -38,14 +38,16 @@ const addSampleHitsToWorkbook = async (
     let currentTopic = "";
     let currentSubTopic = "";
     let isFirstSubTopic = true;
-    let currentRow = 3;
+    let currentRow;
     for (let i = 0; i < allSubTopics.length; i++) {
       const subTopic = allSubTopics[i].subTopic;
 
       if (allSubTopics[i].topic != currentTopic) {
         currentTopic = allSubTopics[i].topic;
+        currentRow = 3;
+        isFirstSubTopic = true;
       }
- 
+
       const hitResults = await getEsSubTopicHits(
         subTopic,
         language,
@@ -58,26 +60,28 @@ const addSampleHitsToWorkbook = async (
       worksheet.getColumn(2).width = 75;
 
       if (allSubTopics[i].subTopic != currentSubTopic && !isFirstSubTopic) {
-        currentSubTopic = allSubTopics;
+        currentSubTopic = allSubTopics[i].subTopic;
         const sumRow = worksheet.addRow();
         sumRow.getCell(3).value = {
-          formula: `SUM(C${subTopicHits.length - currentRow}:C${currentRow})`,
+          formula: `COUNTIF(C${currentRow-subTopicHits.length}:C${currentRow-1},"x")/${subTopicHits.length}`,
         };
+        sumRow.getCell(3).numFmt = "0%";
         const masterRow = xlsWorkbook.worksheets[0].getRow(
           allSubTopics[i].rowNumber
         );
         masterRow.getCell(9).value = {
-          formula: `${currentTopic}.C${currentRow + 1}`,
+          formula: `'${currentTopic}'!C${currentRow}`,
         };
+        masterRow.getCell(9).numFmt = "0%";
         masterRow.getCell(7).value = hitResults.totalHits;
-        masterRow.getCell(7).numFmt = "#.###";
+        masterRow.getCell(7).numFmt = "#,##0";
         worksheet.addRow();
         currentRow += 2;
       } else {
         isFirstSubTopic = false;
       }
 
-      currentSubTopic = allSubTopics;
+      currentSubTopic = allSubTopics[i].subTopic;
 
       let lastRow;
 
@@ -85,9 +89,9 @@ const addSampleHitsToWorkbook = async (
         lastRow = worksheet.addRow([subTopic, subTopicHits[n].paragraph]);
         lastRow.getCell(2).alignment = { wrapText: true };
         lastRow.height = 100;
+        currentRow++;
       }
 
-      currentRow++;
     }
 
     resolve();
