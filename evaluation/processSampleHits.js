@@ -36,7 +36,6 @@ const addSampleHitsToWorkbook = async (
 ) => {
   return new Promise(async (resolve) => {
     let currentTopic = "";
-    let currentSubTopic = "";
     let isFirstSubTopic = true;
     let currentRow;
     for (let i = 0; i < allSubTopics.length; i++) {
@@ -59,29 +58,6 @@ const addSampleHitsToWorkbook = async (
       worksheet.getColumn(1).width = 20;
       worksheet.getColumn(2).width = 75;
 
-      if (allSubTopics[i].subTopic != currentSubTopic && !isFirstSubTopic) {
-        currentSubTopic = allSubTopics[i].subTopic;
-        const sumRow = worksheet.addRow();
-        sumRow.getCell(3).value = {
-          formula: `COUNTIF(C${currentRow-subTopicHits.length}:C${currentRow-1},"x")/${subTopicHits.length}`,
-        };
-        sumRow.getCell(3).numFmt = "0%";
-        const masterRow = xlsWorkbook.worksheets[0].getRow(
-          allSubTopics[i].rowNumber
-        );
-        masterRow.getCell(9).value = {
-          formula: `'${currentTopic}'!C${currentRow}`,
-        };
-        masterRow.getCell(9).numFmt = "0%";
-        masterRow.getCell(7).value = hitResults.totalHits;
-        masterRow.getCell(7).numFmt = "#,##0";
-        worksheet.addRow();
-        currentRow += 2;
-      } else {
-        isFirstSubTopic = false;
-      }
-
-      currentSubTopic = allSubTopics[i].subTopic;
 
       let lastRow;
 
@@ -92,6 +68,22 @@ const addSampleHitsToWorkbook = async (
         currentRow++;
       }
 
+      const sumRow = worksheet.addRow();
+      sumRow.getCell(3).value = {
+        formula: `COUNTIF(C${currentRow-subTopicHits.length}:C${currentRow-1},"x")/${subTopicHits.length}`,
+      };
+      sumRow.getCell(3).numFmt = "0%";
+      const masterRow = xlsWorkbook.worksheets[0].getRow(
+        allSubTopics[i].rowNumber
+      );
+      masterRow.getCell(9).value = {
+        formula: `'${currentTopic}'!C${currentRow}`,
+      };
+      masterRow.getCell(9).numFmt = "0%";
+      masterRow.getCell(7).value = hitResults.totalHits;
+      masterRow.getCell(7).numFmt = "#,##0";
+      worksheet.addRow();
+      currentRow += 2;
     }
 
     resolve();

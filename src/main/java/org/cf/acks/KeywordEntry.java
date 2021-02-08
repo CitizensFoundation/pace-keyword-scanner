@@ -167,7 +167,7 @@ class KeywordEntry {
             Reader in = new FileReader(configFile);
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
             for (CSVRecord record : records) {
-                if (!record.get(4).isEmpty() && !record.get(5).isEmpty() && record.getRecordNumber()>2) {
+                if (!record.get(4).isEmpty() && !record.get(9).isEmpty() && record.getRecordNumber()>2) {
                     String language = record.get(0);
                     String idealogyType = record.get(1);
                     String topic = record.get(2);
@@ -176,7 +176,7 @@ class KeywordEntry {
                     String validationParagraph = record.get(4);
                     List<String> scanExpressions = new ArrayList<String>();
 
-                    for (int i=8; i<record.size(); i++) {
+                    for (int i=9; i<record.size(); i++) {
                         if (record.get(i)!="") {
                             String expressionPart = record.get(i);
                             expressionPart = expressionPart.toLowerCase().trim();
