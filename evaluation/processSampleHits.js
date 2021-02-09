@@ -1,11 +1,82 @@
 const elasticsearch = require("elasticsearch");
-const async = require("async");
 
 const esClient = new elasticsearch.Client({
   host:
-    "https://search-ec-ac-pace-dev-wyysxnkri3j5ohunwbd4lb6zju.us-east-1.es.amazonaws.com",
+    "https://search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com/",
   log: "error",
 });
+
+const search = (index, body) => {
+  return esClient.search({ index: index, body: body });
+};
+
+const count = (index, body) => {
+  return esClient.count({ index: index, body: body });
+};
+
+const getBaseQuery = (topic, subTopic, language, numberOfSampleHits) => {
+  console.log("Searching for: " + topic);
+  console.log("Searching for: " + subTopic);
+  console.log("Searching for: " + language);
+  console.log("Searching for: " + numberOfSampleHits);
+  return {
+    query: {
+      function_score: {
+        query: {
+          bool: {
+            must: [
+              {
+                term: { "subTopic.keyword": subTopic },
+              },
+              {
+                term: { "topic.keyword": topic },
+              },
+              {
+                term: { "language.keyword": language },
+              },
+              {
+                range: {
+                  pageRank: {
+                    lt: 100000000,
+                  },
+                },
+              },
+              {
+                range: {
+                  pageRank: {
+                    gt: 0,
+                  },
+                },
+              },
+            ],
+          },
+        },
+        random_score: {},
+      },
+    },
+    size: numberOfSampleHits,
+  };
+};
+
+const getCountQuery = (topic, subTopic, language) => {
+  return {
+    query: {
+      bool: {
+        must: [
+          {
+            term: { "subTopic.keyword": subTopic },
+          },
+          {
+            term: { "topic.keyword": topic },
+          },
+          {
+            term: { "language.keyword": language },
+          },
+        ],
+      },
+    },
+  };
+};
 
 const createRandomHundred = async () => {
   const arr = [];
@@ -22,9 +93,39 @@ const createRandomHundred = async () => {
   };
 };
 
-const getEsSubTopicHits = async (subTopic, language, numberOfSampleHits) => {
+const getEsSubTopicHits = async (
+  topic,
+  subTopic,
+  language,
+  numberOfSampleHits
+) => {
   return new Promise((resolve, reject) => {
-    resolve(createRandomHundred());
+    count("urls", getCountQuery(topic, subTopic, language))
+      .then((countResults) => {
+        console.log(countResults.count);
+        search(
+          "urls",
+          getBaseQuery(topic, subTopic, language, numberOfSampleHits)
+        )
+          .then((results) => {
+            console.log(
+              `found ${results.hits.total} items in ${results.took}ms`
+            );
+            console.log(results);
+            const returnResults = {
+              totalHits: countResults.count,
+              subTopicHits: [],
+            };
+            results.hits.hits.forEach((hitIn) => {
+              const hit = hitIn._source;
+              //console.log(hit.paragraph);
+              returnResults.subTopicHits.push({ paragraph: hit.paragraph });
+            });
+            resolve(returnResults);
+          })
+          .catch(console.error);
+      })
+      .catch(console.error);
   });
 };
 
@@ -48,6 +149,7 @@ const addSampleHitsToWorkbook = async (
       }
 
       const hitResults = await getEsSubTopicHits(
+        currentTopic,
         subTopic,
         language,
         numberOfSampleHits
@@ -55,33 +157,39 @@ const addSampleHitsToWorkbook = async (
       const subTopicHits = hitResults.subTopicHits;
 
       const worksheet = xlsWorkbook.getWorksheet(currentTopic);
-      worksheet.getColumn(1).width = 20;
+      worksheet.getColumn(1).width = 17;
       worksheet.getColumn(2).width = 75;
-
+      worksheet.getColumn(3).width = 15;
+      worksheet.getColumn(4).width = 75;
 
       let lastRow;
 
+      console.log(`\n\n${subTopicHits.length}\n\n`);
+
       for (let n = 0; n < subTopicHits.length; n++) {
         lastRow = worksheet.addRow([subTopic, subTopicHits[n].paragraph]);
+        //console.log(subTopicHits[n].paragraph);
         lastRow.getCell(2).alignment = { wrapText: true };
-        lastRow.height = 100;
+        lastRow.height = 125;
         currentRow++;
       }
 
       const sumRow = worksheet.addRow();
       sumRow.getCell(3).value = {
-        formula: `COUNTIF(C${currentRow-subTopicHits.length}:C${currentRow-1},"x")/${subTopicHits.length}`,
+        formula: `COUNTIF(C${currentRow - subTopicHits.length}:C${
+          currentRow - 1
+        },"x")/${subTopicHits.length}`,
       };
       sumRow.getCell(3).numFmt = "0%";
       const masterRow = xlsWorkbook.worksheets[0].getRow(
         allSubTopics[i].rowNumber
       );
-      masterRow.getCell(9).value = {
+      masterRow.getCell(7).value = {
         formula: `'${currentTopic}'!C${currentRow}`,
       };
-      masterRow.getCell(9).numFmt = "0%";
-      masterRow.getCell(7).value = hitResults.totalHits;
-      masterRow.getCell(7).numFmt = "#,##0";
+      masterRow.getCell(7).numFmt = "0%";
+      masterRow.getCell(6).value = hitResults.totalHits;
+      masterRow.getCell(6).numFmt = "#,##0";
       worksheet.addRow();
       currentRow += 2;
     }

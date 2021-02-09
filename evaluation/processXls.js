@@ -1,4 +1,5 @@
 const numberOfSampleHits = 100;
+const language = "en";
 const allTopics = [];
 const allSubTopics = [];
 
@@ -14,6 +15,8 @@ const xlsWorkbook = new Excel.Workbook();
 const setupTopicsAndSheets = () => {
   const firstSheet = xlsWorkbook.worksheets[0];
 
+  firstSheet.pageSetup.showGridLines = true;
+
   if (xlsWorkbook.worksheets.length > 1) {
     for (let i = 1; i < xlsWorkbook.worksheets.length; i++) {
       xlsWorkbook.removeWorksheet(xlsWorkbook.worksheets[i].id);
@@ -28,10 +31,11 @@ const setupTopicsAndSheets = () => {
       row.getCell(3).value != null &&
       row.getCell(4).value != null
     ) {
-      let keywords;
-      for (let n = 9; n < row.cellCount; n++) {
-        if (row.getCell(n) != null) {
-          keywords += ` ${row.getCell(n)}`;
+      let keywords = "";
+      for (let n = 8; n < row.cellCount; n++) {
+        if (row.getCell(n).text != null && row.getCell(n).text.length>0) {
+          keywords += ` ${row.getCell(n).text}`;
+          console.log(row.getCell(n).text)
         }
       }
 
@@ -53,10 +57,10 @@ const setupTopicsAndSheets = () => {
         allTopics.push(topic);
         console.log(topic);
         const worksheet = xlsWorkbook.addWorksheet(topic);
-        const topicRow = worksheet.addRow([`Topic: ${topic}`]);
+        const topicRow = worksheet.addRow(["",`${topic}`]);
         topicRow.font = { bold: true, size: 20 };
         topicRow.height = 42.5;
-        worksheet.addRow(["Sub Topic","Paragraph","Relevant?"]);
+        worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Notes for potential fixes"]);
       }
       console.log(row.getCell(4).value);
     } else {
@@ -69,8 +73,7 @@ const run = async () => {
   await xlsWorkbook.xlsx.readFile(xlsInFileName);
   setupTopicsAndSheets();
 
-  await addSampleHitsToWorkbook(xlsWorkbook, allSubTopics, numberOfSampleHits);
-  //await addGooleSearchResults(xlsWorkbook);
+  await addSampleHitsToWorkbook(xlsWorkbook, allSubTopics, language, numberOfSampleHits);
 
   await xlsWorkbook.xlsx.writeFile(xlsOutFileName);
 }

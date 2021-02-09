@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "elasticsearch": "^16.7.2",
-    "exceljs": "^4.2.0"
+    "exceljs": "^4.2.0",
+    "googleapis": "^67.0.0"
   },
   "devDependencies": {},
   "scripts": {
