@@ -57,7 +57,7 @@ const setupTopicsAndSheets = () => {
         allTopics.push(topic);
         console.log(topic);
         const worksheet = xlsWorkbook.addWorksheet(topic);
-        const topicRow = worksheet.addRow(["",`${topic}`]);
+        const topicRow = worksheet.addRow([`${topic}`]);
         topicRow.font = { bold: true, size: 20 };
         topicRow.height = 42.5;
         worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Notes for potential fixes"]);

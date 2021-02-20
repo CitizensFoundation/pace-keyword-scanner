@@ -28,8 +28,10 @@ class XlsManager:
             for sheet in xlsx.sheet_names:
                 round.append(xlsx.parse(sheet))
             self.xlsDataRounds.append(round)
+            #print(round)
         self.keywordsSheet = self.xlsDataRounds[-1][0]
-        print(self.keywordsSheet)
+        self.read_in_topics()
+        #print(self.keywordsSheet)
 
     def read_in_topics(self):
         topicNames = []
@@ -41,18 +43,77 @@ class XlsManager:
                     self.topics[topic] = {}
                 elif (not subTopic in self.topics[topic]):
                    self.topics[topic][subTopic] = subTopic
-#        pp = pprint.PrettyPrinter(indent=4)
-#        pp.pprint(self.topics)
 
+    def skip_sheet(self, sheet, options):
+        if options.get("topic"):
+            sheetTopic = sheet.head(0).columns[0]
+            sheetTopic = sheetTopic.strip()
+            if sheetTopic==options["topic"]:
+                return False
+            else:
+                return True
+        return False
+
+    def add_out_data_from_row(self, row, outData, options):
+        subTopic = row[0].strip()
+        text = row[1].strip()
+        rating = row[2]
+
+        if isinstance(rating, str):
+            rating = rating.strip()
+
+        if options.get("subTopic") and options.get("subTopic")!=subTopic:
+            return
+
+        if rating=="x":
+            outData.append([text, 0])
+        else:
+            outData.append([text, 1])
+
+    def get_training_data(self, options):
+        outData = []
+        #print(self.xlsDataRounds[0]);
+        for round in self.xlsDataRounds:
+            #print(round)
+            first = True
+            for sheet in round:
+                # Skip the first keyword sheets
+                if not first:
+                    if not self.skip_sheet(sheet, options):
+                        for index, row in sheet.iterrows():
+                            if index>1 and not pd.isnull(row[0]) and not pd.isnull(row[1]) and not pd.isnull(row[2]):
+                                self.add_out_data_from_row(row,outData,options)
+                else:
+                    first = False
+        return outData
+
+
+    def example_iterate_over_topis(self):
         for topic in self.topics:
             print(topic)
             for subTopic in self.topics.get(topic):
                 print(f"     {subTopic}")
 
+    def basic_test(self, options):
+        self.setup_all_from_xls()
+        trainingData = self.get_training_data(options)
+
+        relevant = []
+        notRelevant= []
+
+        for entry in trainingData:
+            if (entry[1]==1):
+                relevant.append(entry)
+            else:
+                notRelevant.append(entry)
+
+        print(len(trainingData))
+        print(len(relevant))
+        print(len(notRelevant))
+
 test = XlsManager("en")
-test.setup_all_from_xls()
-test.read_in_topics()
+test.basic_test({"topic": "Left behind", "subTopic": "Economics"})
 
-
-
+#test.setup_all_from_xls()
+#trainingData = test.get_training_data({})
 
