@@ -25,7 +25,7 @@ class ModelTraining:
 
         random.shuffle(trainingData, random_seed)
 
-        splitIndex = int(length*0.8)
+        splitIndex = int(length*0.9)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
