@@ -1,4 +1,4 @@
 cache_dir/
-outputs/
+outputs*/
 runs/
-xls/
+__pycache__/

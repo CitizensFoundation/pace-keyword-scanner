@@ -56,7 +56,7 @@ class XlsManager:
 
     def add_out_data_from_row(self, row, outData, options):
         subTopic = row[0].strip()
-        text = row[1].strip()
+        text = row[1].strip().lower()
         rating = row[2]
 
         if isinstance(rating, str):
@@ -111,9 +111,4 @@ class XlsManager:
         print(len(relevant))
         print(len(notRelevant))
 
-test = XlsManager("en")
-test.basic_test({"topic": "Left behind", "subTopic": "Economics"})
-
-#test.setup_all_from_xls()
-#trainingData = test.get_training_data({})
 
