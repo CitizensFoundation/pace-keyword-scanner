@@ -64,7 +64,7 @@ class ModelTraining:
         if options.get("onlyRelevant"):
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
-                reprocess_input_data: True,
+                reprocess_input_data = True,
                 wandb_project="pace-test-large-binary")
             model_class = "bert"
             model_type = "bert-large-uncased"
