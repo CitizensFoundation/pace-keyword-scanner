@@ -38,7 +38,9 @@ class ModelTraining:
 
         random.shuffle(trainingData, random_seed)
 
-        splitIndex = int(length*0.8)
+        wandb.log({"Train data len": len(trainingData)})
+
+        splitIndex = int(length*0.9)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
