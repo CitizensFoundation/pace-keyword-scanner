@@ -60,11 +60,10 @@ class ModelTraining:
         eval_df = pd.DataFrame(eval_data)
         eval_df.columns = ["text", "labels"]
 
-        # Optional model configuration
-        num_epochs = 1
 
         # Create a ClassificationModel
         if options.get("trainOnlyRelevant"):
+            num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
                 reprocess_input_data = True,
@@ -75,6 +74,7 @@ class ModelTraining:
                 model_class, model_type, num_labels=3, args=model_args, use_cuda = True
             )
         else:
+            num_epochs = 1
             model_args = ClassificationArgs(overwrite_output_dir = True, num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
             model_class = "bert"
             model_type = "bert-large-uncased"
