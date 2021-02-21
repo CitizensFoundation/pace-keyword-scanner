@@ -13,7 +13,9 @@ transformers_logger.setLevel(logging.WARNING)
 
 class ModelTraining:
     def train_model(self, options):
-        wandb.init(project="pace-test-large-binary", entity="citizensfoundation")
+        wandaProject = "pace-test-large-only-relevant"
+        #wandaProject = "pace-large-only-relevant"
+        wandb.init(project=wandaProject, entity="citizensfoundation")
         wandb.log({"Options": options})
         #torch.cuda.empty_cache()
         manager = XlsManager("en")
@@ -57,14 +59,25 @@ class ModelTraining:
 
         # Optional model configuration
         num_epochs = 1
-        model_args = ClassificationArgs(overwrite_output_dir = True, num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
 
         # Create a ClassificationModel
-        model_class = "bert"
-        model_type = "bert-large-uncased"
-        model = ClassificationModel(
-            model_class, model_type, args=model_args, use_cuda = True
-        )
+        if options.get("onlyRelevant"):
+            model_args = ClassificationArgs(overwrite_output_dir = True,
+                num_train_epochs=num_epochs,
+                reprocess_input_data: True,
+                wandb_project="pace-test-large-binary")
+            model_class = "bert"
+            model_type = "bert-large-uncased"
+            model = ClassificationModel(
+                model_class, model_type, num_labels=3, args=model_args, use_cuda = True
+            )
+        else:
+            model_args = ClassificationArgs(overwrite_output_dir = True, num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
+            model_class = "bert"
+            model_type = "bert-large-uncased"
+            model = ClassificationModel(
+                model_class, model_type, args=model_args, use_cuda = True
+            )
 
         # Train the model
         model.train_model(train_df)
@@ -82,5 +95,5 @@ class ModelTraining:
         #print(predictions)
 
 training = ModelTraining()
-training.train_model({})
+training.train_model({ "trainOnlyRelevant": True })
 #training.train_model({"topic": "Left behind"})
