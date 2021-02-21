@@ -41,14 +41,14 @@ class ModelTraining:
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
-        print(len(train_data))
+        print(f"Training items: {len(train_data)}")
         train_df = pd.DataFrame(train_data)
         train_df.columns = ["text", "labels"]
 
         # Preparing eval data
         eval_data =  trainingData[splitIndex:]
         print(len(eval_data))
-        
+
         eval_df = pd.DataFrame(eval_data)
         eval_df.columns = ["text", "labels"]
 

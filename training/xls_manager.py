@@ -11,6 +11,8 @@ class XlsManager:
     outFilesPath = None
     xlsDataRounds = []
     keywordsSheet = None
+    xCount = 0
+    notXCount = 0
 
     # default constructor
     def __init__(self, language):
@@ -66,12 +68,16 @@ class XlsManager:
             return
 
         if rating=="x":
+            xCount += 1
             outData.append([text, 0])
         else:
+            notXCount += 1
             outData.append([text, 1])
 
     def get_training_data(self, options):
         outData = []
+        self.xCount = 0
+        self.notXCount = 0
         #print(self.xlsDataRounds[0]);
         for round in self.xlsDataRounds:
             #print(round)
@@ -85,6 +91,8 @@ class XlsManager:
                                 self.add_out_data_from_row(row,outData,options)
                 else:
                     first = False
+        print(f"x coded: {self.xCount}")
+        print(f"Not x coded: {self.notXCount}")
         return outData
 
 
