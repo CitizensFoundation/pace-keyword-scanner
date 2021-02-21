@@ -67,12 +67,15 @@ class XlsManager:
         if options.get("subTopic") and options.get("subTopic")!=subTopic:
             return
 
-        if rating=="x":
+        if rating=="x" and not options.get("onlyRelevant"):
             self.xCount += 1
             outData.append([text, 0])
         else:
             self.notXCount += 1
-            outData.append([text, 1])
+            if options.get("onlyRelevant"):
+                outData.append([text, rating])
+            else:
+                outData.append([text, 1])
 
     def get_training_data(self, options):
         outData = []
