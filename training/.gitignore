@@ -1,4 +1,5 @@
 cache_dir/
 outputs*/
 runs/
+wandb/
 __pycache__/

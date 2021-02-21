@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 import torch
 import random
+import wandb
 
 from xls_manager import XlsManager
 
@@ -11,11 +12,12 @@ transformers_logger = logging.getLogger("transformers")
 transformers_logger.setLevel(logging.WARNING)
 
 class ModelTraining:
-    def train_model(self):
+    def train_model(self, options):
+        wandb.init(project="pace-test-1", entity="citizensfoundation")
         #torch.cuda.empty_cache()
         manager = XlsManager("en")
         manager.setup_all_from_xls()
-        trainingData = manager.get_training_data({})
+        trainingData = manager.get_training_data(options)
         #trainingData = manager.get_training_data({"topic": "Left behind", "subTopic": "Economics"})
         #trainingData = manager.get_training_data({"topic": "Left behind"})
 
@@ -39,7 +41,7 @@ class ModelTraining:
         eval_df.columns = ["text", "labels"]
 
         # Optional model configuration
-        model_args = ClassificationArgs(num_train_epochs=1, train_batch_size = 2)
+        model_args = ClassificationArgs(num_train_epochs=1, wandb_project="pace-test-1")
 
         # Create a ClassificationModel
         model = ClassificationModel(
@@ -57,9 +59,8 @@ class ModelTraining:
         print(result)
 
         # Make predictions with the model
-        predictions, raw_outputs = model.predict(["Those people were left behind because the government did not understand them"])
-
-        print(predictions)
+        #predictions, raw_outputs = model.predict(["Those people were left behind because the government did not understand them"])
+        #print(predictions)
 
 training = ModelTraining()
-training.train_model()
+training.train_model({"topic": "Left behind"})
