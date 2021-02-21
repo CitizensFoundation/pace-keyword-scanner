@@ -48,7 +48,7 @@ class ModelTraining:
 
         # Preparing eval data
         eval_data =  trainingData[splitIndex:]
-        print(len(eval_data))
+        print(f"Eval items: {len(eval_data)}")
 
         eval_df = pd.DataFrame(eval_data)
         eval_df.columns = ["text", "labels"]
