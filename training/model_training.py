@@ -13,7 +13,7 @@ transformers_logger.setLevel(logging.WARNING)
 
 class ModelTraining:
     def train_model(self, options):
-        wandb.init(project="pace-test-1", entity="citizensfoundation")
+        wandb.init(project="pace-test-large-binary", entity="citizensfoundation")
         #torch.cuda.empty_cache()
         manager = XlsManager("en")
         manager.setup_all_from_xls()
@@ -28,24 +28,30 @@ class ModelTraining:
 
         random.shuffle(trainingData, random_seed)
 
-        splitIndex = int(length*0.8)
+        splitIndex = int(length*0.9)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
+        print(len(train_data))
         train_df = pd.DataFrame(train_data)
         train_df.columns = ["text", "labels"]
 
         # Preparing eval data
         eval_data =  trainingData[splitIndex:]
+        print(len(eval_data))
+        
         eval_df = pd.DataFrame(eval_data)
         eval_df.columns = ["text", "labels"]
 
         # Optional model configuration
-        model_args = ClassificationArgs(num_train_epochs=1, wandb_project="pace-test-1")
+        num_epochs = 2
+        model_args = ClassificationArgs(overwrite_output_dir = True, num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
 
         # Create a ClassificationModel
+        model_class = "bert"
+        model_type = "bert-large-uncased"
         model = ClassificationModel(
-            "bert", "bert-base-uncased", args=model_args, use_cuda = True
+            model_class, model_type, args=model_args, use_cuda = True
         )
 
         # Train the model
@@ -54,13 +60,15 @@ class ModelTraining:
         # Evaluate the model
         result, model_outputs, wrong_predictions = model.eval_model(eval_df)
 
-        print(model_outputs)
+        #print(model_outputs)
         #print(wrong_predictions)
         print(result)
-
+        wandb.log({"Eval loss": result.get("eval_loss"), "Epochs": num_epochs })
+        wandb.log({"Model class": model_class, "Model type": model_type})
         # Make predictions with the model
         #predictions, raw_outputs = model.predict(["Those people were left behind because the government did not understand them"])
         #print(predictions)
 
 training = ModelTraining()
-training.train_model({"topic": "Left behind"})
+training.train_model({})
+#training.train_model({"topic": "Left behind"})
