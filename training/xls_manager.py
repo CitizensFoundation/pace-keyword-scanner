@@ -70,7 +70,7 @@ class XlsManager:
         if rating=="x" and not options.get("trainOnlyRelevant"):
             self.xCount += 1
             outData.append([text, 0])
-        else:
+        elif not rating=="x":
             self.notXCount += 1
             if options.get("trainOnlyRelevant"):
                 outData.append([text, rating])
