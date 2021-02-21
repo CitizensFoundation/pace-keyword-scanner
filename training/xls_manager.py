@@ -74,7 +74,7 @@ class XlsManager:
             self.notXCount += 1
             if options.get("trainOnlyRelevant"):
                 if isinstance(rating, int):
-                    rating =- 1
+                    rating -= 1
                     if rating==0 or rating==1 or rating==2:
                         outData.append([text, rating])
                     else:
