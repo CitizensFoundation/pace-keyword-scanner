@@ -62,7 +62,7 @@ class XlsManager:
         rating = row[2]
 
         if isinstance(rating, str):
-            rating = rating.strip()
+            rating = rating.strip().lower()
 
         if options.get("subTopic") and options.get("subTopic")!=subTopic:
             return
