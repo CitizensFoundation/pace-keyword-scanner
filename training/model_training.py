@@ -13,7 +13,10 @@ transformers_logger.setLevel(logging.WARNING)
 
 class ModelTraining:
     def train_model(self, options):
-        wandaProject = "pace-test-large-only-relevant"
+        if (options.get("trainOnlyRelevant")):
+          wandaProject = "pace-test-large-only-relevant":
+        else:
+          wandaProject = "pace-test-large-binary":
         #wandaProject = "pace-large-only-relevant"
         wandb.init(project=wandaProject, entity="citizensfoundation")
         wandb.log({"Options": options})
@@ -61,7 +64,7 @@ class ModelTraining:
         num_epochs = 1
 
         # Create a ClassificationModel
-        if options.get("onlyRelevant"):
+        if options.get("trainOnlyRelevant"):
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
                 reprocess_input_data = True,

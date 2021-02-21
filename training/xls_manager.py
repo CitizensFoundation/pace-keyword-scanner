@@ -67,12 +67,12 @@ class XlsManager:
         if options.get("subTopic") and options.get("subTopic")!=subTopic:
             return
 
-        if rating=="x" and not options.get("onlyRelevant"):
+        if rating=="x" and not options.get("trainOnlyRelevant"):
             self.xCount += 1
             outData.append([text, 0])
         else:
             self.notXCount += 1
-            if options.get("onlyRelevant"):
+            if options.get("trainOnlyRelevant"):
                 outData.append([text, rating])
             else:
                 outData.append([text, 1])
