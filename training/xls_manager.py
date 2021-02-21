@@ -74,6 +74,7 @@ class XlsManager:
             self.notXCount += 1
             if options.get("trainOnlyRelevant"):
                 if isinstance(rating, int):
+                    rating =- 1
                     outData.append([text, rating])
                 else:
                     print(f"Wrong rating format {rating}")
