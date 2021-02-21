@@ -75,7 +75,10 @@ class XlsManager:
             if options.get("trainOnlyRelevant"):
                 if isinstance(rating, int):
                     rating =- 1
-                    outData.append([text, rating])
+                    if rating==0 or rating==1 or rating==2:
+                        outData.append([text, rating])
+                    else:
+                        print(f"Wrong rating value {rating}")
                 else:
                     print(f"Wrong rating format {rating}")
             else:
