@@ -100,3 +100,4 @@ class ModelTraining:
 training = ModelTraining()
 training.train_model({ "trainOnlyRelevant": True })
 #training.train_model({"topic": "Left behind"})
+#training.train_model({"topic": "Left behind", "trainOnlyRelevant": True})
