@@ -54,7 +54,7 @@ class ModelTraining:
         eval_df.columns = ["text", "labels"]
 
         # Optional model configuration
-        num_epochs = 2
+        num_epochs = 1
         model_args = ClassificationArgs(overwrite_output_dir = True, num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
 
         # Create a ClassificationModel
