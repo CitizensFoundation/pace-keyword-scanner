@@ -14,9 +14,9 @@ transformers_logger.setLevel(logging.WARNING)
 class ModelTraining:
     def train_model(self, options):
         if (options.get("trainOnlyRelevant")):
-          wandaProject = "pace-test-large-only-relevant":
+          wandaProject = "pace-test-large-only-relevant"
         else:
-          wandaProject = "pace-test-large-binary":
+          wandaProject = "pace-test-large-binary"
         #wandaProject = "pace-large-only-relevant"
         wandb.init(project=wandaProject, entity="citizensfoundation")
         wandb.log({"Options": options})
