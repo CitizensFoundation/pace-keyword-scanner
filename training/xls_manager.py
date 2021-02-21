@@ -68,10 +68,10 @@ class XlsManager:
             return
 
         if rating=="x":
-            xCount += 1
+            self.xCount += 1
             outData.append([text, 0])
         else:
-            notXCount += 1
+            self.notXCount += 1
             outData.append([text, 1])
 
     def get_training_data(self, options):
