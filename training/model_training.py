@@ -24,11 +24,20 @@ class ModelTraining:
         def random_seed():
             return 0.5
 
+        foundText = []
+        newTrainingData = []
+        for item in trainingData:
+            if item[0] not in foundText:
+                foundText.append(item[0])
+                newTrainingData.append(item)
+
+        traininData = newTrainingData
+
         length = len(trainingData)
 
         random.shuffle(trainingData, random_seed)
 
-        splitIndex = int(length*0.9)
+        splitIndex = int(length*0.8)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
