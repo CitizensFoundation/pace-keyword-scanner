@@ -14,6 +14,7 @@ transformers_logger.setLevel(logging.WARNING)
 class ModelTraining:
     def train_model(self, options):
         wandb.init(project="pace-test-large-binary", entity="citizensfoundation")
+        wandb.log({"Options": options})
         #torch.cuda.empty_cache()
         manager = XlsManager("en")
         manager.setup_all_from_xls()
