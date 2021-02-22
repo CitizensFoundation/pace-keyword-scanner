@@ -43,7 +43,7 @@ class ModelPrediction:
         else:
             print(f"Training {topic}")
             model_class = "bert"
-            model_path = "models/{modelName}"
+            model_path = f"models/{modelName}"
             model = ClassificationModel(
                 model_class, model_path, use_cuda = True
             )
