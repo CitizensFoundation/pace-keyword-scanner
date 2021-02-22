@@ -3,6 +3,7 @@ import pathlib
 import os
 import pprint
 from openpyxl import load_workbook
+import sys
 
 class XlsManager:
     topics = {}
@@ -26,7 +27,6 @@ class XlsManager:
         self.inFileNames = sorted(os.listdir(self.inFilesPath))
         self.outFilesPath = f"{currentPath}/xls/toXls/{self.language}/"
         self.outFileNames = sorted(os.listdir(self.outFilesPath))
-        self.outFileName =
         print(self.outFilesPath )
 
     def setup_all_from_xls(self):
@@ -40,39 +40,50 @@ class XlsManager:
         self.keywordsSheet = self.fromXlsDataRounds[-1][0]
         self.read_in_topics()
 
-        if len(self.inFileNames)>1:
-            print(f"Too many files in the {outFilesPath} folder")
+        if len(self.outFileNames)>1:
+            print(f"Too many files in the {self.outFileNames} folder")
             sys.exit()
-        elif len(self.inFileNames)==1:
-            self.outFilePath = f"{self.inFilesPath}/{fileName}"
+        elif len(self.outFileNames)==1:
+            self.outFilePath = f"{self.outFilesPath}{self.outFileNames[0]}"
+            print(f"Loading out xls from {self.outFilePath}")
             self.toXlsWorkbook = load_workbook(self.outFilePath)
+            print(f"Loaded {self.toXlsWorkbook}")
 
     def get_items_to_rate(self):
         self.itemsToRate = []
-        for index, worksheet in self.toXlsWorkbook:
+        index = 0
+        print(f"Do I have {self.toXlsWorkbook}")
+        for worksheet in self.toXlsWorkbook.worksheets:
             if index>0:
-                for rowIndex, row in worksheet.iter_rows():
+                rowIndex = 0
+                for row in worksheet.iter_rows():
                     subTopic = None
                     text = None
                     rateAble = False
-                    if rowIndex>1 and row[0] and row[1] and row[2]:
-                        subTopic = row[0].strip()
-                        text = row[1].strip().lower()
+                    if rowIndex>1 and row[0].value and row[1].value:
+                        subTopic = row[0].value.strip()
+                        text = row[1].value.strip().lower()
                         rateAble = True
 
-                    self.itemsToRate.append({
-                        "topic": sheetInfo.get("topic"),
-                        "sheet": sheetInfo,
+                    newItem = {
+                        "topic": worksheet.title,
+                        "sheet": worksheet,
                         "row": row,
                         "index": rowIndex,
-                        "rating": "",
+                        "ratingCol": row[2],
                         "text": text,
                         "subTopic": subTopic,
                         "rateAble": rateAble
-                        })
+                        }
+                    #print(newItem)
+                    self.itemsToRate.append(newItem)
+                    rowIndex+=1
+            index+=1
+        #return self.itemsToRate[:2000]
         return self.itemsToRate
 
     def save_predicted_items(self):
+        print(f"Saving {self.outFilePath}")
         self.toXlsWorkbook.save(self.outFilePath)
 
     def read_in_topics(self):
