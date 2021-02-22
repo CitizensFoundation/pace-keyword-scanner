@@ -85,7 +85,7 @@ class ModelTraining:
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
                 reprocess_input_data = True,
-                wandb_project="pace-test-large-binary")
+                wandb_project=wandaProject)
             model_class = "bert"
             model_type = f"bert-{MODEL_SIZE}-uncased"
             model = ClassificationModel(
@@ -95,7 +95,7 @@ class ModelTraining:
             num_epochs = 1
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 reprocess_input_data = True,
-                num_train_epochs=num_epochs, wandb_project="pace-test-large-binary")
+                num_train_epochs=num_epochs, wandb_project=wandaProject)
             model_class = "bert"
             model_type = f"bert-{MODEL_SIZE}-uncased"
             model = ClassificationModel(
