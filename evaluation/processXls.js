@@ -18,9 +18,15 @@ const setupTopicsAndSheets = () => {
   firstSheet.pageSetup.showGridLines = true;
 
   if (xlsWorkbook.worksheets.length > 1) {
-    for (let i = 1; i < xlsWorkbook.worksheets.length; i++) {
-      xlsWorkbook.removeWorksheet(xlsWorkbook.worksheets[i].id);
+    const worksheetsLength = xlsWorkbook.worksheets.length;
+    console.log(`Many worksheets ${worksheetsLength}`)
+    while (xlsWorkbook.worksheets.length>1) {
+      if (xlsWorkbook.worksheets[1]) {
+        console.log(`Removed worksheet id ${xlsWorkbook.worksheets[1].id}`)
+        xlsWorkbook.removeWorksheet(xlsWorkbook.worksheets[1].id);
+      }
     }
+    console.log(`After worksheet removals ${xlsWorkbook.worksheets.length}`)
   }
 
   for (let rowNumber = 3; rowNumber < firstSheet.rowCount; rowNumber++) {

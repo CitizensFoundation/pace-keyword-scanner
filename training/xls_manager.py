@@ -2,6 +2,7 @@ import pandas as pd
 import pathlib
 import os
 import pprint
+from openpyxl import load_workbook
 
 class XlsManager:
     topics = {}
@@ -9,10 +10,13 @@ class XlsManager:
     inFileNames = []
     inFilesPath = None
     outFilesPath = None
-    xlsDataRounds = []
+    outFilePath = None
+    fromXlsDataRounds = []
+    toXlsWorkbook = None
     keywordsSheet = None
     xCount = 0
     notXCount = 0
+    itemsToRate = []
 
     # default constructor
     def __init__(self, language):
@@ -21,6 +25,8 @@ class XlsManager:
         self.inFilesPath = f"{currentPath}/xls/fromXls/{self.language}/"
         self.inFileNames = sorted(os.listdir(self.inFilesPath))
         self.outFilesPath = f"{currentPath}/xls/toXls/{self.language}/"
+        self.outFileNames = sorted(os.listdir(self.outFilesPath))
+        self.outFileName =
         print(self.outFilesPath )
 
     def setup_all_from_xls(self):
@@ -29,11 +35,45 @@ class XlsManager:
             xlsx = pd.ExcelFile(f"{self.inFilesPath}/{fileName}")
             for sheet in xlsx.sheet_names:
                 round.append(xlsx.parse(sheet))
-            self.xlsDataRounds.append(round)
+            self.fromXlsDataRounds.append(round)
             #print(round)
-        self.keywordsSheet = self.xlsDataRounds[-1][0]
+        self.keywordsSheet = self.fromXlsDataRounds[-1][0]
         self.read_in_topics()
-        #print(self.keywordsSheet)
+
+        if len(self.inFileNames)>1:
+            print(f"Too many files in the {outFilesPath} folder")
+            sys.exit()
+        elif len(self.inFileNames)==1:
+            self.outFilePath = f"{self.inFilesPath}/{fileName}"
+            self.toXlsWorkbook = load_workbook(self.outFilePath)
+
+    def get_items_to_rate(self):
+        self.itemsToRate = []
+        for index, worksheet in self.toXlsWorkbook:
+            if index>0:
+                for rowIndex, row in worksheet.iter_rows():
+                    subTopic = None
+                    text = None
+                    rateAble = False
+                    if rowIndex>1 and row[0] and row[1] and row[2]:
+                        subTopic = row[0].strip()
+                        text = row[1].strip().lower()
+                        rateAble = True
+
+                    self.itemsToRate.append({
+                        "topic": sheetInfo.get("topic"),
+                        "sheet": sheetInfo,
+                        "row": row,
+                        "index": rowIndex,
+                        "rating": "",
+                        "text": text,
+                        "subTopic": subTopic,
+                        "rateAble": rateAble
+                        })
+        return self.itemsToRate
+
+    def save_predicted_items(self):
+        self.toXlsWorkbook.save(self.outFilePath)
 
     def read_in_topics(self):
         topicNames = []
@@ -88,8 +128,8 @@ class XlsManager:
         outData = []
         self.xCount = 0
         self.notXCount = 0
-        #print(self.xlsDataRounds[0]);
-        for round in self.xlsDataRounds:
+        #print(self.fromXlsDataRounds[0]);
+        for round in self.fromXlsDataRounds:
             #print(round)
             first = True
             for sheet in round:

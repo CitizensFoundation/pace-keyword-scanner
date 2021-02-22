@@ -1,5 +1,6 @@
 cache_dir/
 outputs*/
+models/
 runs/
 wandb/
 __pycache__/
