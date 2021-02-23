@@ -24,7 +24,11 @@ class MultiTraining:
         xlsManager = XlsManager("en")
         xlsManager.setup_all_from_xls()
 
-        trainingOptions = [{"modelName": "binary" }]
+        trainingOptions = [
+            {"modelName": "populismrelevant", "trainOnlyRelevant": True, "skipTopics": ["Citizen Engagement", "Democratic Innovation"] },
+            {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": ["Citizen Engagement", "Democratic Innovation"] },
+            {"modelName": "binary" }
+        ]
 
         for topic in xlsManager.topics:
             trainingOptions.append({"modelName": topic.replace(' ','').lower(),

@@ -38,6 +38,8 @@ class ModelTraining:
           wandaProject = f"pace-{WANDB_MODE}-binary-{MODEL_ROUND}"
         #wandaProject = "pace-large-only-relevant"
         wandb.init(project=wandaProject, entity="citizensfoundation")
+        wandb.run.name = f"{options.get('modelName')}-{wandb.run.id}"
+        wandb.run.save()
         wandb.log({"Options": options})
         gc.collect()
         self.free_gpu_cache()
