@@ -53,7 +53,7 @@ class ModelPrediction:
                     if item.get("topic")==topic and not item.get("ratingCol").value=="x":
                         predictions, raw_outputs = model.predict([item.get("text")])
                         item.get("ratingCol").value=predictions[0]+1
-                        print(f"Prediction {predictions[0]} {item.get('text')}")
+                        print(f"Prediction {predictions[0]+1} {item.get('text')}")
 
         manager.save_predicted_items()
 
