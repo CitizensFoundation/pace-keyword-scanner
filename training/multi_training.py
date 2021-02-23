@@ -12,6 +12,7 @@ from GPUtil import showUtilization as gpu_usage
 from numba import cuda
 import sys
 import subprocess
+import json
 
 from xls_manager import XlsManager
 
@@ -25,20 +26,23 @@ class MultiTraining:
         xlsManager.setup_all_from_xls()
 
         trainingOptions = [
-            {"modelName": "populismrelevant", "trainOnlyRelevant": True, "skipTopics": ["Citizen Engagement", "Democratic Innovation"] },
-            {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": ["Citizen Engagement", "Democratic Innovation"] },
-            {"modelName": "binary" }
+            {"modelName": "populismrelevant", "trainOnlyRelevant": True, "skipTopics": [
+                "Citizen Engagement", "Democratic Innovation"
+                ], "wandbProject": "populism-relevant" },
+            {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": [
+                "Citizen Engagement", "Democratic Innovation"
+                ], "wandbProject": "civic-relevant" },
+            {"modelName": "binary", "wandbProject": "all-exes" }
         ]
 
         for topic in xlsManager.topics:
             trainingOptions.append({"modelName": topic.replace(' ','').lower(),
-                "topic": topic, "trainOnlyRelevant": True})
+                "topic": topic, "trainOnlyRelevant": True, "wandbProject": "topic-relevant"})
 
         for options in trainingOptions:
-            if (options.get("topic")):
-                p = subprocess.Popen(["python", "model_training.py",f"{options.get('modelName')}",f"{options.get('topic')}",f"{options.get('trainOnlyRelevant')}"])
-            else:
-                p = subprocess.Popen(["python", "model_training.py",f"{options.get('modelName')}"])
+            optionsString=json.dumps(options)
+            print(optionsString)
+            p = subprocess.Popen(["python", "model_training.py",f"{optionsString}"])
             p.wait()
 
 multi = MultiTraining()

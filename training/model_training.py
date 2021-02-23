@@ -11,6 +11,7 @@ import gc
 from GPUtil import showUtilization as gpu_usage
 from numba import cuda
 import sys
+import json
 
 from xls_manager import XlsManager
 
@@ -31,11 +32,7 @@ class ModelTraining:
         gpu_usage()
 
     def train_model(self, xlsManager, options):
-        print(options)
-        if (options.get("trainOnlyRelevant")):
-          wandaProject = f"pace-{WANDB_MODE}-only-relevant-{MODEL_ROUND}"
-        else:
-          wandaProject = f"pace-{WANDB_MODE}-binary-{MODEL_ROUND}"
+        wandaProject = f"pace-{WANDB_MODE}-{options.get('wandbProject')}-{MODEL_ROUND}"
         #wandaProject = "pace-large-only-relevant"
         wandb.init(project=wandaProject, entity="citizensfoundation")
         wandb.run.name = f"{options.get('modelName')}-{wandb.run.id}"
@@ -197,16 +194,11 @@ trainOnlyRelevant = None
 
 print(sys.argv)
 
-if (len(sys.argv)>2):
-    topic=sys.argv[2]
-    if (sys.argv[3]=="True"):
-        trainOnlyRelevant = True
+options = json.loads(sys.argv[1])
 
+print(options)
 
 xlsManager = XlsManager("en")
 xlsManager.setup_all_from_xls()
 trainer = ModelTraining()
-if (topic):
-    trainer.train_model(xlsManager, { "modelName": modelName, "topic": topic, "trainOnlyRelevant": trainOnlyRelevant })
-else:
-    trainer.train_model(xlsManager, { "modelName": modelName })
+trainer.train_model(xlsManager, options)

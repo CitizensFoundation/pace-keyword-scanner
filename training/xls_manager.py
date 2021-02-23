@@ -98,14 +98,19 @@ class XlsManager:
                    self.topics[topic][subTopic] = subTopic
 
     def skip_sheet(self, sheet, options):
+        sheetTopic = sheet.head(0).columns[0]
+        sheetTopic = sheetTopic.strip()
         if options.get("topic"):
-            sheetTopic = sheet.head(0).columns[0]
-            sheetTopic = sheetTopic.strip()
             if sheetTopic==options["topic"]:
                 return False
             else:
                 return True
-        return False
+        elif options.get('onlyTopics'):
+            return sheetTopic not in options.get('onlyTopics')
+        elif options.get('skipTopics'):
+            return sheetTopic in options.get('skipTopics')
+        else:
+          return False
 
     def add_out_data_from_row(self, row, outData, options):
         subTopic = row[0].strip()
