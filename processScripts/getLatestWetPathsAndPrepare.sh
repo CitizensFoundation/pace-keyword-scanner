@@ -58,4 +58,3 @@ do
   echo "$masterpath/${line##*/}" >> $masterfile.importList
 done < "$masterfile.truncated"
 
-#xargs -P 6 -n 1 -I {} bash -c "mywget '{}'" < $masterfile.downloadList
