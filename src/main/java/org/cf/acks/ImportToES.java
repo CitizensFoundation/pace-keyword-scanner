@@ -24,8 +24,7 @@ import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.CreateRequest;
-import org.elasticsearch.action.update.CreateResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -53,7 +52,7 @@ public class ImportToES implements Runnable {
     private final String esHostname;
     private final Integer esPort;
     private final String esProtocol;
-    private List<CreateRequest> bulkUpdateQueue;
+    private List<IndexRequest> bulkUpdateQueue;
 
     // private Integer esPort=9200;
     // private String esProtocol="http";
@@ -78,7 +77,7 @@ public class ImportToES implements Runnable {
         this.pageRanks = pageRanks;
         this.keywordsMap = keywordsMap;
         this.keywordEntries = keywordEntries;
-        this.bulkUpdateQueue = new ArrayList<CreateRequest>();
+        this.bulkUpdateQueue = new ArrayList<IndexRequest>();
     }
 
     @Override
@@ -199,7 +198,7 @@ public class ImportToES implements Runnable {
             BulkRequest request = new BulkRequest();
             //TODO: Get this working so it will only save the same url+pHash once
             //request.opType = OpType.CREATE;
-            for (CreateRequest update : this.bulkUpdateQueue) {
+            for (IndexRequest update : this.bulkUpdateQueue) {
                 request.add(update);
             }
             try {
@@ -315,8 +314,10 @@ public class ImportToES implements Runnable {
                         //System.out.println(jsonString);
 
                         //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
-                        CreateRequest esRequest = new CreateRequest("urls", urlIdHash);
-                        esRequest.doc(jsonString, XContentType.JSON);
+                        IndexRequest esRequest = new IndexRequest("urls").
+                            id(urlIdHash).
+                            source(XContentType.JSON,jsonString);
+
                         this.bulkUpdateQueue.add(esRequest);
                     } else {
                         System.out.println("ERROR: Can't find keywordEntry for ES Import");
