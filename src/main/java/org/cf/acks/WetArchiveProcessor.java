@@ -220,6 +220,6 @@ public class WetArchiveProcessor implements Runnable {
 
     private String getFilename(String path) {
         String[] paths = path.split("/");
-        return paths[paths.length-1];
+        return paths[paths.length-1]+"."+path.hashCode();
     }
 }
