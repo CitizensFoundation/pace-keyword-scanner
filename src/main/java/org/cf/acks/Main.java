@@ -35,15 +35,15 @@ public class Main {
 
     // TEST
 
-    /*private static final String esHostname="127.0.0.1";
+    private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
-    private static final String esProtocol="http";*/
+    private static final String esProtocol="http";
 
 
     // PRODUCTION
-    private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
+    /*private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
-    private static final String esProtocol="https";
+    private static final String esProtocol="https";*/
 
     private static ArrayList<KeywordEntry> keywordEntries;
     private static HashMap<Expression, Integer> expressionToKeywordEntries = new HashMap<Expression, Integer>();
@@ -182,7 +182,7 @@ public class Main {
 
     private static void importToEs(String[] args) throws Throwable {
         String path = args[1];
-        String downloadFile = path+"downloadFile";
+        String downloadFile = path+"downloadList";
         final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(downloadFile));
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());

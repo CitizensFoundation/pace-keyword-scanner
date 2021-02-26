@@ -22,9 +22,14 @@ import java.util.zip.GZIPInputStream;
 
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -70,8 +75,7 @@ public class ImportToES implements Runnable {
             HashMap<String,KeywordEntry> keywordsMap,
             ArrayList<KeywordEntry> keywordEntries) {
         this.schedulingSemaphore = schedulingSemaphore;
-        String[] archiveParts = archive.split("/");
-        this.archive = "results/" + archiveParts[archiveParts.length - 1];
+        this.archive = archive;
         this.esHostname = esHostname;
         this.esPort = esPort;
         this.esProtocol = esProtocol;
@@ -88,13 +92,17 @@ public class ImportToES implements Runnable {
         long startTime = System.currentTimeMillis();
 
         String[] paths = archive.split("/");
-        String fileNameWithHashCode = this.path+paths[paths.length-1]+"."+path.hashCode()+".scanned";
+        String fileNameWithHashCode = "results/"+paths[paths.length-1]+"."+archive.hashCode()+".scanned";
+
+        String filename = fileNameWithHashCode;
 
         File file = new File(fileNameWithHashCode);
 
         //TODO: Remove this hack after this round
         if (file.exists() == false) {
-            String fileNameWithoutHashCode = this.path+paths[paths.length-1]+".scanned";
+            System.out.println("Not found: "+fileNameWithHashCode);
+            String fileNameWithoutHashCode = "results/"+paths[paths.length-1]+".scanned";
+            filename = fileNameWithoutHashCode;
             file = new File(fileNameWithoutHashCode);
         }
 
@@ -116,11 +124,11 @@ public class ImportToES implements Runnable {
         }
 
         if (file.exists()) {
-            System.out.println("Importing: " + file.getName());
-            if (!hasBeenImported(archive)) {
+            System.out.println("Importing: " + filename);
+            if (!hasBeenImported(filename)) {
                 BufferedReader contentReader = null;
                 try {
-                    final InputStream objectStream = new FileInputStream(new File(archive));
+                    final InputStream objectStream = new FileInputStream(new File(filename));
                     contentReader = new BufferedReader(new InputStreamReader(objectStream, StandardCharsets.UTF_8),
                             BUFFER_SIZE);
                     this.esClient = new RestHighLevelClient(
@@ -167,14 +175,14 @@ public class ImportToES implements Runnable {
                     }
                     contentReader.close();
                     esClient.close();
-                    setState(archive, "completed");
+                    setState(filename, "completed");
                     /*
                      * if (file.delete()) { System.out.println(archive+" deleted after ESImport"); }
                      * else { System.out.println(archive+" FAILED! after ESImport"); }
                      */
                 } catch (IOException io) {
                     logger.catching(io);
-                    setState(archive, io.getMessage());
+                    setState(filename, io.getMessage());
                 } finally {
                     try {
                         contentReader.close();
@@ -185,11 +193,11 @@ public class ImportToES implements Runnable {
                     schedulingSemaphore.release();
                 }
             } else {
-                System.out.println("File already imported: " + archive);
+                System.out.println("File already imported: " + filename);
                 schedulingSemaphore.release();
             }
         } else {
-            System.out.println("Timeout on file: " + archive);
+            System.out.println("Timeout on file: " + filename);
             schedulingSemaphore.release();
         }
     }
@@ -205,6 +213,18 @@ public class ImportToES implements Runnable {
         return paths[paths.length - 1];
     }
 
+    private void checkBulkFailures(BulkResponse bulkResponse) {
+        if (bulkResponse.hasFailures()) {
+            System.out.println("Had bulk failures");
+            for (BulkItemResponse bulkItemResponse : bulkResponse) {
+                if (bulkItemResponse.isFailed()) {
+                    BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
+                    System.out.println(failure.toString());
+                }
+            }
+        }
+    }
+
     private void pumpBulkUpdateQueue() {
         if (this.bulkUpdateQueue.size() > 0) {
             BulkRequest request = new BulkRequest();
@@ -214,13 +234,15 @@ public class ImportToES implements Runnable {
                 request.add(update);
             }
             try {
-                esClient.bulk(request, RequestOptions.DEFAULT);
+                BulkResponse bulkResponse = esClient.bulk(request, RequestOptions.DEFAULT);
+                this.checkBulkFailures(bulkResponse);
             } catch (IOException ioex) {
                 try {
-                    System.out.println("Sleeping because of IOException");
+                    System.out.println("Sleeping because of IOException "+ioex.getMessage());
                     Thread.sleep(5 * 1000);
                     System.out.println("Retrying after IOException");
-                    esClient.bulk(request, RequestOptions.DEFAULT);
+                    BulkResponse bulkResponse = esClient.bulk(request, RequestOptions.DEFAULT);
+                    this.checkBulkFailures(bulkResponse);
                 } catch (Exception ex) {
                     System.out.println("ERROR: pumpBulkUpdateQueue: " + ex.getMessage());
                 }
@@ -329,11 +351,10 @@ public class ImportToES implements Runnable {
                         //System.out.println(jsonString);
 
                         //TODO: Make sure not to override the same found paragraph so we have dates for new content - see TODO above
-                        IndexRequest esRequest = new IndexRequest("urls").
-                            id(urlIdHash).
-                            source(XContentType.JSON,jsonString);
-
-                        this.bulkUpdateQueue.add(esRequest);
+                        this.bulkUpdateQueue.add(new IndexRequest("urls").
+                                            id(urlIdHash).
+                                            source(jsonString, XContentType.JSON).
+                                            opType(DocWriteRequest.OpType.CREATE));
                     } else {
                         System.out.println("ERROR: Can't find keywordEntry for ES Import");
                     }
