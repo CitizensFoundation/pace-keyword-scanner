@@ -15,8 +15,8 @@ def add_matching_from_original(filename):
 
 for line in DupLines:
     filename = line.split('/')[-1]
-    print(filename)
     add_matching_from_original(filename)
+    print(len(newDownloadList))
 
 # writing to file
 outFile = open('newDownloadlist', 'w')
