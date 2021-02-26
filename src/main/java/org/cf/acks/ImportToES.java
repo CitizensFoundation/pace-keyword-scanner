@@ -52,6 +52,7 @@ public class ImportToES implements Runnable {
     private final String esHostname;
     private final Integer esPort;
     private final String esProtocol;
+    private final String path;
     private List<IndexRequest> bulkUpdateQueue;
 
     // private Integer esPort=9200;
@@ -64,7 +65,7 @@ public class ImportToES implements Runnable {
     private HashMap<String,KeywordEntry> keywordsMap;
     private ArrayList<KeywordEntry> keywordEntries;
 
-    ImportToES(Semaphore schedulingSemaphore, String archive, String esHostname, Integer esPort, String esProtocol,
+    ImportToES(Semaphore schedulingSemaphore, String path, String archive, String esHostname, Integer esPort, String esProtocol,
             HashMap<Long, Long> pageRanks,
             HashMap<String,KeywordEntry> keywordsMap,
             ArrayList<KeywordEntry> keywordEntries) {
@@ -74,6 +75,7 @@ public class ImportToES implements Runnable {
         this.esHostname = esHostname;
         this.esPort = esPort;
         this.esProtocol = esProtocol;
+        this.path = path;
         this.pageRanks = pageRanks;
         this.keywordsMap = keywordsMap;
         this.keywordEntries = keywordEntries;
@@ -84,9 +86,18 @@ public class ImportToES implements Runnable {
     public void run() {
         String currentURL = null; // Should never be null in practice.
         long startTime = System.currentTimeMillis();
-        System.out.println("Importing: " + archive);
 
-        File file = new File(archive);
+        String[] paths = archive.split("/");
+        String fileNameWithHashCode = this.path+paths[paths.length-1]+"."+path.hashCode()+".scanned";
+
+        File file = new File(fileNameWithHashCode);
+
+        //TODO: Remove this hack after this round
+        if (file.exists() == false) {
+            String fileNameWithoutHashCode = this.path+paths[paths.length-1]+".scanned";
+            file = new File(fileNameWithoutHashCode);
+        }
+
         while (file.exists() == false) {
             try {
                 Random rand = new Random();
@@ -105,6 +116,7 @@ public class ImportToES implements Runnable {
         }
 
         if (file.exists()) {
+            System.out.println("Importing: " + file.getName());
             if (!hasBeenImported(archive)) {
                 BufferedReader contentReader = null;
                 try {
@@ -282,23 +294,20 @@ public class ImportToES implements Runnable {
 
                         jsonString += "\"paragraph\":\"" + paragraph + "\",\"keywordIds\":[";
 
-                        String domainRoot = domainName;
-                        String[] domainParts = domainName.split(".");
-                        if (domainParts.length>1) {
-                            domainRoot = domainParts[domainParts.length-1];
-                        }
-
                         for (String entrySaveId : entryIds.split(",")) {
                             jsonString += entrySaveId + ",";
                         }
+
                         jsonString = jsonString.substring(0, jsonString.length() - 1);
 
                         jsonString += "],";
 
-                        jsonString += "\"totalKwCount\":" + entryIds.split(",").length + ",";
-                        jsonString += "\"extRepostCount\": 0,";
+                        jsonString += "\"foundInSubtopicsCount\":" + entryIds.split(",").length + ",";
+                        jsonString += "\"extRepostCount\": -1,";
                         jsonString += "\"intRepostCount\": 1,";
-                        jsonString += "\"relevanceScore\": 0.0,";
+                        jsonString += "\"relevanceScore\": -1.0,";
+                        jsonString += "\"toxicityScore\": -1.0,";
+                        jsonString += "\"sentimentScore\": -1.0,";
                         jsonString += "\"pHash\":" + pHash + ",";
 
                         jsonString += "\"pageRank\":" + pageRank + ",";
@@ -306,6 +315,12 @@ public class ImportToES implements Runnable {
 
                         //TODO: Get working by reading in files with URLs to match and check url endings for unis
                         //jsonString += "\"websiteType\":\"" + ["media","blogs","politicalParties","academia","other"] + "\"";
+
+                        String domainRoot = domainName;
+                        String[] domainParts = domainName.split(".");
+                        if (domainParts.length>1) {
+                            domainRoot = domainParts[domainParts.length-1];
+                        }
 
                         jsonString += "\"domainName\":\"" + domainName + "\",";
                         jsonString += "\"domainRoot\":\"" + domainRoot + "\"";

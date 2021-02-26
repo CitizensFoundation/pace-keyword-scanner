@@ -181,7 +181,9 @@ public class Main {
     }
 
     private static void importToEs(String[] args) throws Throwable {
-        final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(args[1]));
+        String path = args[1];
+        String downloadFile = path+"downloadFile";
+        final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(downloadFile));
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 
@@ -214,7 +216,8 @@ public class Main {
 
                 try {
                     executorService.submit(new ImportToES(schedulingSemaphore,
-                                                          file+".scanned",
+                                                          path,
+                                                          file,
                                                           Main.esHostname,
                                                           Main.esPort,
                                                           Main.esProtocol,

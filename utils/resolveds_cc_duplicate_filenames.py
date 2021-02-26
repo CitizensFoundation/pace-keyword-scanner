@@ -11,7 +11,8 @@ newDownloadList = []
 def add_matching_from_original(filename):
     for line in OriginalDownloadLines:
         if filename in line:
-          newDownloadList.append(line)
+            if line not in newDownloadList:
+                newDownloadList.append(line)
 
 for line in DupLines:
     filename = line.split('/')[-1]
