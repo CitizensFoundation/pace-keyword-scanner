@@ -215,11 +215,15 @@ public class ImportToES implements Runnable {
 
     private void checkBulkFailures(BulkResponse bulkResponse) {
         if (bulkResponse.hasFailures()) {
-            System.out.println("Had bulk failures");
             for (BulkItemResponse bulkItemResponse : bulkResponse) {
                 if (bulkItemResponse.isFailed()) {
                     BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
-                    System.out.println(failure.toString());
+                    if (failure.getStatus().getStatus()==409) {
+                        System.out.println("Not saving duplicate paragraph index key");
+
+                    } else {
+                        System.out.println(failure.toString());
+                    }
                 }
             }
         }
@@ -306,7 +310,7 @@ public class ImportToES implements Runnable {
                     KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
                     if (keywordEntry!=null) {
-                        String urlIdHash = entryId+"-"+Long.toString(LongHashFunction.xx().hashChars(url)) +"-"+pHash;
+                        String urlIdHash = entryId+"-"+paragraphNumber+"-"+Long.toString(LongHashFunction.xx().hashChars(url)) +"-"+pHash;
 
                         String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
                         jsonString +=  "\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";

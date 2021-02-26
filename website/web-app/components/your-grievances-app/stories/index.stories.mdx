@@ -1,0 +1,55 @@
+import { Story, Preview, Meta, Props, html } from '@open-wc/demoing-storybook';
+
+import '../your-grievances-app.js';
+
+<Meta 
+  title="YourGrievancesApp"
+  parameters={{
+    component: "your-grievances-app",
+    options: { selectedPanel: "storybookjs/knobs/panel" }
+  }}
+/>
+
+# YourGrievancesApp
+
+A component for...
+
+## Features:
+
+- a
+- b
+- ...
+
+## How to use
+
+### Installation
+
+```bash
+yarn add your-grievances-app
+```
+
+```js
+import 'your-grievances-app/your-grievances-app.js';
+```
+
+<Preview withToolbar>
+  <Story name="Simple">
+    {html`
+      <your-grievances-app></your-grievances-app>
+    `}
+  </Story>
+</Preview>
+
+## API
+
+<Props of="your-grievances-app" />
+
+## Variations
+
+###### Custom Title
+
+<Story name="Custom Title">
+  {html`
+    <your-grievances-app .title=${'Hello World'}></your-grievances-app>
+  `}
+</Story>
