@@ -123,22 +123,30 @@ class XlsManager:
         if options.get("subTopic") and options.get("subTopic")!=subTopic:
             return
 
-        if rating=="x" and not options.get("trainOnlyRelevant"):
-            self.xCount += 1
-            outData.append([text, 0])
-        elif not rating=="x":
-            self.notXCount += 1
-            if options.get("trainOnlyRelevant"):
-                if isinstance(rating, int):
-                    rating -= 1
-                    if rating==0 or rating==1 or rating==2:
-                        outData.append([text, rating])
-                    else:
-                        print(f"Wrong rating value {rating}")
-                else:
-                    print(f"Wrong rating format {rating}")
-            else:
+        if options.get('onlyOnes'):
+            if isinstance(rating, int) and rating==1:
                 outData.append([text, 1])
+                self.notXCount += 1
+            else:
+                outData.append([text, 0])
+                self.xCount += 1
+        else:
+            if rating=="x" and not options.get("trainOnlyRelevant"):
+                self.xCount += 1
+                outData.append([text, 0])
+            elif not rating=="x":
+                self.notXCount += 1
+                if options.get("trainOnlyRelevant"):
+                    if isinstance(rating, int):
+                        rating -= 1
+                        if rating==0 or rating==1 or rating==2:
+                            outData.append([text, rating])
+                        else:
+                            print(f"Wrong rating value {rating}")
+                    else:
+                        print(f"Wrong rating format {rating}")
+                else:
+                    outData.append([text, 1])
 
     def get_training_data(self, options):
         outData = []
@@ -157,8 +165,13 @@ class XlsManager:
                                 self.add_out_data_from_row(row,outData,options)
                 else:
                     first = False
-        print(f"x coded: {self.xCount}")
-        print(f"Not x coded: {self.notXCount}")
+
+        if options.get('onlyOnes'):
+            print(f"Not one coded: {self.xCount}")
+            print(f"One coded: {self.notXCount}")
+        else:
+            print(f"x coded: {self.xCount}")
+            print(f"Not x coded: {self.notXCount}")
         return outData
 
 

@@ -83,7 +83,7 @@ class ModelTraining:
             num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
-                reprocess_input_data = True,
+#                reprocess_input_data = True,
                 wandb_project=wandaProject)
             model_class = "bert"
             model_type = f"bert-{MODEL_SIZE}-uncased"
@@ -93,7 +93,7 @@ class ModelTraining:
         else:
             num_epochs = 1
             model_args = ClassificationArgs(overwrite_output_dir = True,
-                reprocess_input_data = True,
+ #               reprocess_input_data = True,
                 num_train_epochs=num_epochs, wandb_project=wandaProject)
             model_class = "bert"
             model_type = f"bert-{MODEL_SIZE}-uncased"
@@ -149,7 +149,6 @@ class ModelTraining:
         xlsManager = XlsManager("en")
         xlsManager.setup_all_from_xls()
 
-        #trainingOptions = [{"modelName": "binary" }]
         trainingOptions = []
 
         for topic in xlsManager.topics:

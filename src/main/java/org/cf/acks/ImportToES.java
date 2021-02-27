@@ -331,9 +331,9 @@ public class ImportToES implements Runnable {
                         jsonString += "\"foundInSubtopicsCount\":" + entryIds.split(",").length + ",";
                         jsonString += "\"extRepostCount\": -1,";
                         jsonString += "\"intRepostCount\": 1,";
-                        jsonString += "\"relevanceScore\": -1.0,";
+                        jsonString += "\"relevanceScore\": -1,";
                         jsonString += "\"toxicityScore\": -1.0,";
-                        jsonString += "\"sentimentScore\": -1.0,";
+                        jsonString += "\"sentimentScore\": -999.0,";
                         jsonString += "\"pHash\":" + pHash + ",";
 
                         jsonString += "\"pageRank\":" + pageRank + ",";

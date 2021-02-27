@@ -26,13 +26,14 @@ class MultiTraining:
         xlsManager.setup_all_from_xls()
 
         trainingOptions = [
+            {"modelName": "binaryOnes", "wandbProject": "all-ones", "onlyOnes": True },
             {"modelName": "populismrelevant", "trainOnlyRelevant": True, "skipTopics": [
                 "Citizen Engagement", "Democratic Innovation"
                 ], "wandbProject": "populism-relevant" },
             {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": [
                 "Citizen Engagement", "Democratic Innovation"
                 ], "wandbProject": "civic-relevant" },
-            {"modelName": "binary", "wandbProject": "all-exes" }
+            {"modelName": "binary", "wandbProject": "all-exes" },
         ]
 
         for topic in xlsManager.topics:
