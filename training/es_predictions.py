@@ -25,41 +25,58 @@ class EsPredictions:
     exesModel = None
     onesModel = None
     predictionQueue = []
+    esBulkUpdateQueue = []
+    maxBulkUpdateQueueSize = 1000
     maxPredictionQueueSize = 1000
     totalProcessed = 0
 
     def updateRelevanceScore(self, id, score):
-        update = {
-            "doc": {
-                "relevanceScore": -1#score
-                }
-            }
-        es.update(index="urls", id=id, body=update)
+        doc = {
+            "relevanceScore": score
+        }
+
+        self.esBulkUpdateQueue.append(
+             {
+                '_op_type': 'update',
+                '_index': "urls",
+                '_id': id,
+                'doc': doc
+        })
+        #es.update(index="urls", id=id, body=update)
         print(f"Updated {id} relevance to {score}")
 
-    def pump_queue(self):
-        ids = []
-        paragraphs = []
-        for predictFor in self.predictionQueue:
-            ids.append(predictFor.get("id"))
-            paragraphs.append(predictFor.get("paragraph"))
+        if len(self.esBulkUpdateQueue)>=self.maxBulkUpdateQueueSize:
+            self.pump_es_update_queue()
 
-        exesPredictions, tmpA = self.exesModel.predict(paragraphs)
-        onesPredictions, tmpB = self.onesModel.predict(paragraphs)
+    def pump_es_update_queue(self):
+        if len(self.esBulkUpdateQueue)>0:
+            helpers.bulk(es, self.esBulkUpdateQueue)
+            self.esBulkUpdateQueue = []
 
-        if len(exesPredictions)!=len(paragraphs):
-            raise Exception("len(exesPredictions)!=len(paragraphs)")
+    def pump_prediction_queue(self):
+        if len(self.predictionQueue)>0:
+            ids = []
+            paragraphs = []
+            for predictFor in self.predictionQueue:
+                ids.append(predictFor.get("id"))
+                paragraphs.append(predictFor.get("paragraph"))
 
-        for i in range(len(ids)):
-            if exesPredictions[i]==0:
-                self.updateRelevanceScore(ids[i], 0)
-            else:
-                if onesPredictions[i]==1:
-                    self.updateRelevanceScore(ids[i], 1)
+            exesPredictions, tmpA = self.exesModel.predict(paragraphs)
+            onesPredictions, tmpB = self.onesModel.predict(paragraphs)
+
+            if len(exesPredictions)!=len(paragraphs):
+                raise Exception("len(exesPredictions)!=len(paragraphs)")
+
+            for i in range(len(ids)):
+                if exesPredictions[i]==0:
+                    self.updateRelevanceScore(ids[i], 0)
                 else:
-                    self.updateRelevanceScore(ids[i], 3)
+                    if onesPredictions[i]==1:
+                        self.updateRelevanceScore(ids[i], 1)
+                    else:
+                        self.updateRelevanceScore(ids[i], 3)
 
-        self.predictionQueue = []
+            self.predictionQueue = []
 
     def process_es_hit(self, hit):
         id = hit["_id"]
@@ -68,12 +85,12 @@ class EsPredictions:
         relevanceScore = source.get("relevanceScore")
         topic = source.get("topic")
 
-        print(f"Processing {id} - {topic}")
+        #print(f"Processing {id} - {topic}")
 
         self.predictionQueue.append({ "id": id, "paragraph": paragraph })
 
         if len(self.predictionQueue)>=self.maxPredictionQueueSize:
-            self.pump_queue()
+            self.pump_prediction_queue()
 
     def predict_all_for_topic(self, topic):
         print(f"Predicting for {topic}")
@@ -86,12 +103,13 @@ class EsPredictions:
             }
         }
 
-        hits = helpers.scan(es, index="urls", query=query, size=50)
+        hits = helpers.scan(es, index="urls", query=query, size=1000)
 
         for hit in hits:
             self.process_es_hit(hit)
 
-        self.pump_queue()
+        self.pump_prediction_queue()
+        self.pump_es_update_queue()
 
     def predict_for_topics(self, topics):
         print("Loading exes model")
