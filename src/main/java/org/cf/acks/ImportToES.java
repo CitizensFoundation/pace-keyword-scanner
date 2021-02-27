@@ -315,13 +315,15 @@ public class ImportToES implements Runnable {
                     KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
                     if (keywordEntry!=null) {
-                        String urlIdHash = entryId+"-"+paragraphNumber+"-"+Long.toString(LongHashFunction.xx().hashChars(url)) +"-"+pHash;
+                        String urlHash = Long.toString(LongHashFunction.xx().hashChars(url));
+                        String urlIdHash = entryId+"-"+paragraphNumber+"-"+urlHash+"-"+pHash;
 
                         String jsonString = "{\"createdAt\":\"" + currentDate + "\",";
                         jsonString +=  "\"idealogyType\":\"" + keywordEntry.idealogyType + "\",";
                         jsonString +=  "\"topic\":\"" + keywordEntry.topic + "\",";
                         jsonString +=  "\"subTopic\":\"" + keywordEntry.subTopic + "\",";
                         jsonString +=  "\"language\":\"" + keywordEntry.language + "\",";
+                        jsonString +=  "\"urlHash\":\"" + urlHash + "\",";
 
                         jsonString += "\"paragraph\":\"" + paragraph + "\",\"keywordIds\":[";
 
