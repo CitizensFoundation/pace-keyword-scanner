@@ -213,20 +213,23 @@ public class ImportToES implements Runnable {
         return paths[paths.length - 1];
     }
 
-    private void checkBulkFailures(BulkResponse bulkResponse) {
+    private int checkBulkFailures(BulkResponse bulkResponse) {
+        int count = 0;
         if (bulkResponse.hasFailures()) {
             for (BulkItemResponse bulkItemResponse : bulkResponse) {
                 if (bulkItemResponse.isFailed()) {
                     BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
                     if (failure.getStatus().getStatus()==409) {
-                        System.out.println("Not saving duplicate paragraph index key");
-
+                        //
                     } else {
                         System.out.println(failure.toString());
                     }
+                    count += 1;
                 }
             }
         }
+
+        return count;
     }
 
     private void pumpBulkUpdateQueue() {
@@ -239,14 +242,16 @@ public class ImportToES implements Runnable {
             }
             try {
                 BulkResponse bulkResponse = esClient.bulk(request, RequestOptions.DEFAULT);
-                this.checkBulkFailures(bulkResponse);
-            } catch (IOException ioex) {
+                int failureCount = this.checkBulkFailures(bulkResponse);
+                System.out.println("+"+this.bulkUpdateQueue.size()+" -"+failureCount);
+        } catch (IOException ioex) {
                 try {
                     System.out.println("Sleeping because of IOException "+ioex.getMessage());
                     Thread.sleep(5 * 1000);
                     System.out.println("Retrying after IOException");
                     BulkResponse bulkResponse = esClient.bulk(request, RequestOptions.DEFAULT);
-                    this.checkBulkFailures(bulkResponse);
+                    int failureCount = this.checkBulkFailures(bulkResponse);
+                    System.out.println("After failure +"+this.bulkUpdateQueue.size()+" -"+failureCount);
                 } catch (Exception ex) {
                     System.out.println("ERROR: pumpBulkUpdateQueue: " + ex.getMessage());
                 }
