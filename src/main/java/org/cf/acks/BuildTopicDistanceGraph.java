@@ -269,7 +269,27 @@ public class BuildTopicDistanceGraph implements Runnable {
         Map<String, Object> fieldMap = hit.getSourceAsMap();
 
         this.processDomain((String) fieldMap.get("domainName"));
-        this.processUrl((String) fieldMap.get("urlHash"));
+
+
+        String id = hit.getId();
+
+        int firstDash = id.indexOf("-");
+        int secondDash = id.indexOf("-", firstDash + 1);
+        int thirdDash = id.indexOf("-", secondDash + 1);
+        int fourthDash = id.indexOf("-", thirdDash + 1);
+
+        String urlHash = null;
+
+        if (secondDash==(thirdDash+1)) {
+            urlHash = id.substring(secondDash, fourthDash-1);
+        } else {
+            urlHash = id.substring(secondDash, thirdDash-1);
+        }
+
+        System.out.println("Id: "+id);
+        System.out.println("urlHash: "+urlHash);
+
+        this.processUrl(urlHash);
     }
 
 
@@ -336,6 +356,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
     private void processDomain(String domainName) {
         if (!this.alreadyProcessedDomains.contains(domainName)) {
+            System.out.println(domainName);
             HashMap<String, Float> topicDomainPairStrengths = new HashMap<String, Float>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
