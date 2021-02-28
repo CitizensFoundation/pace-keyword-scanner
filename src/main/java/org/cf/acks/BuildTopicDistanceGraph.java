@@ -334,7 +334,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     }
 
     private void processDomain(String domainName) {
-        if (!this.alreadyProcessedDomains.get(domainName)) {
+        if (!this.alreadyProcessedDomains.contains(domainName)) {
             HashMap<String, Float> topicDomainPairStrengths = new HashMap<String, Float>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
@@ -368,7 +368,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
 
     private void processUrl(String urlHash) {
-        if (!this.alreadyProcessedUrls.get(urlHash)) {
+        if (!this.alreadyProcessedUrls.contains(urlHash)) {
             HashMap<String, Float> topicUrlPairStrengths = new HashMap<String, Float>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
