@@ -125,11 +125,13 @@ class EsPredictions:
         for topic in topics:
             self.predict_all_for_topic(topic)
 
-topics = ["Left behind","Family disintegration","Loss of religion",
-"Evolving social mores","Technology and alienation","Losing cultural identity",
-"Income inequality","Resentment of elite","Qanon","Desire for strong man","Feeling ignored","Distrust of media",
-"False accusations of racism","Nanny state","Call to vigilante action","Dehumanization of opponents",
-"Restrictions on free speech","Loss of sovereignty","Undeserving support",""
-           "Citizen Engagement","Democratic Innovation","UKIP"]
+topics1 = ["Left behind","Family disintegration","Loss of religion",
+        "Evolving social mores","Technology and alienation","Losing cultural identity",
+        "Income inequality","Resentment of elite","Qanon","Desire for strong man","Feeling ignored","Distrust of media"]
+
+topics2 = ["False accusations of racism","Nanny state","Call to vigilante action","Dehumanization of opponents",
+        "Restrictions on free speech","Loss of sovereignty","Undeserving support",""
+        "Citizen Engagement","Democratic Innovation","UKIP"]
+
 esPredictions = EsPredictions()
 esPredictions.predict_for_topics(topics)
