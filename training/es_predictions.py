@@ -134,4 +134,5 @@ topics2 = ["False accusations of racism","Nanny state","Call to vigilante action
         "Citizen Engagement","Democratic Innovation","UKIP"]
 
 esPredictions = EsPredictions()
-esPredictions.predict_for_topics(topics)
+esPredictions.predict_for_topics(topics1)
+#esPredictions.predict_for_topics(topics2)
