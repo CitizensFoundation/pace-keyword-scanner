@@ -35,15 +35,15 @@ public class Main {
 
     // TEST
 
-    private static final String esHostname="127.0.0.1";
+    /*private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
-    private static final String esProtocol="http";
+    private static final String esProtocol="http";*/
 
 
     // PRODUCTION
-    /*private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
+    private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
     private static final Integer esPort=443;
-    private static final String esProtocol="https";*/
+    private static final String esProtocol="https";
 
     private static ArrayList<KeywordEntry> keywordEntries;
     private static HashMap<Expression, Integer> expressionToKeywordEntries = new HashMap<Expression, Integer>();
@@ -289,6 +289,13 @@ public class Main {
         }
     }
 
+    private static void buildTopicDistanceGraph(String[] args) throws Throwable {
+        BuildTopicDistanceGraph graphBuilder = new BuildTopicDistanceGraph(Main.esHostname, Main.esPort, Main.esProtocol, "en");
+        graphBuilder.run();
+        logger.info("findReoccurringParagraphsES complete.");
+        System.out.println("findReoccurringParagraphsES complete");
+    }
+
     private static void processHostRanksFile(String[] args) throws Throwable {
 
         long startTime = System.currentTimeMillis();
@@ -382,6 +389,8 @@ public class Main {
             processHostRanksFile(args);
         } else if (args[0].equals("validateKeywords")) {
             validateKeywords(args);
+        } else if (args[0].equals("buildTopicDistanceGraph")) {
+            buildTopicDistanceGraph(args);
         } else if (args[0].equals("enableESIndexRefreshAndReplicas")) {
             enableESIndexRefreshAndReplicas();
         } else {
