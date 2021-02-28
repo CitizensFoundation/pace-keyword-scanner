@@ -29,6 +29,8 @@ import java.util.Arrays;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -160,6 +162,15 @@ public class BuildTopicDistanceGraph implements Runnable {
             }
         }
 
+        try {
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = this.esClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            boolean succeeded = clearScrollResponse.isSucceeded();
+        } catch (IOException ex) {
+            System.out.println("ES Scroll second: "+ex.getMessage());
+        }
+
         this.normalizeTopicStrengths();
 
         LinkedHashMap<String, Integer> topics = new LinkedHashMap<String, Integer>();
@@ -250,6 +261,15 @@ public class BuildTopicDistanceGraph implements Runnable {
                     hasHits=false;
                 }
             }
+        }
+
+        try {
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = this.esClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            boolean succeeded = clearScrollResponse.isSucceeded();
+        } catch (IOException ex) {
+            System.out.println("ES Scroll second: "+ex.getMessage());
         }
 
         return searchHits;
