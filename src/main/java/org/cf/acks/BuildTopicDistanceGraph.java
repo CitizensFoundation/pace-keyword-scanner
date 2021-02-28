@@ -294,7 +294,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             this.topicPairStrengths.put(topic,currentStrength+strength);
             System.out.println(topic);
-            System.out.printf("%.2f", currentStrength+strength);
+            System.out.printf("%.0f\n", currentStrength+strength);
         }
     }
 
