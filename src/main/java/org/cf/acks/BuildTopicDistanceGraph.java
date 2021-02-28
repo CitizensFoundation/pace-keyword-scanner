@@ -126,7 +126,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 searchSourceBuilder.query(new MatchAllQueryBuilder());
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(60L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(5L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -223,7 +223,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 searchSourceBuilder.fetchSource(new String[]{"id", "topic", "paragraphNumber"}, null);
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(60L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(5L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
