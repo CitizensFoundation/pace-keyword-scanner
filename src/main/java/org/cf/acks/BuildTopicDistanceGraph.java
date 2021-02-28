@@ -277,7 +277,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         List<String> topicList = Arrays.asList(topicA, topicB);
         List<String> sortedList = topicList.stream().sorted().collect(Collectors.toList());
         String topicPairKey = String.join("-", sortedList);
-        System.out.println(topicPairKey);
+        //System.out.println(topicPairKey);
         return topicPairKey;
     }
 
