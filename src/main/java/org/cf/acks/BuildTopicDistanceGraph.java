@@ -269,27 +269,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         Map<String, Object> fieldMap = hit.getSourceAsMap();
 
         this.processDomain((String) fieldMap.get("domainName"));
-        //this.processDomain((String) fieldMap.get("domainName"));
-
-        /*String id = hit.getId();
-
-        int firstDash = id.indexOf("-");
-        int secondDash = id.indexOf("-", firstDash + 1);
-        int thirdDash = id.indexOf("-", secondDash + 1);
-        int fourthDash = id.indexOf("-", thirdDash + 1);
-
-        String urlHash = null;
-
-        if (thirdDash==(secondDash+1)) {
-            urlHash = id.substring(secondDash+1, fourthDash);
-        } else {
-            urlHash = id.substring(secondDash+1, thirdDash);
-        }
-
-        System.out.println("Id: "+id);
-        System.out.println("urlHash: "+urlHash);
-
-        this.processUrl(fieldMap.get("urlHash"));*/
+        this.processUrl(fieldMap.get("urlHash"));
     }
 
 
