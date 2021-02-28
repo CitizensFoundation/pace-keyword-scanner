@@ -84,7 +84,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     private final String locale;
     private Hashtable<String, Boolean> alreadyProcessedDomains;
     private Hashtable<String, Boolean> alreadyProcessedUrls;
-    private HashMap<String, Float> topicPairStrengths;
+    private HashMap<String, Double> topicPairStrengths;
 
  //   private Hashtable<Long, Boolean> isUpdatingInt;
  //   private Hashtable<Long, Boolean> isUpdatingExt;
@@ -101,7 +101,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         this.locale = locale;
         this.alreadyProcessedDomains = new Hashtable<String, Boolean>();
         this.alreadyProcessedUrls =  new Hashtable<String, Boolean>();
-        this.topicPairStrengths = new HashMap<String, Float>();
+        this.topicPairStrengths = new HashMap<String, Double>();
         System.out.println(""+esProtocol+esHostname+esPort);
         this.esClient = new RestHighLevelClient(
             RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
@@ -165,11 +165,11 @@ public class BuildTopicDistanceGraph implements Runnable {
         LinkedHashMap<String, Integer> topics = new LinkedHashMap<String, Integer>();
 
         Integer idCounter = 1;
-        for (Map.Entry<String, Float> entry : topicPairStrengths.entrySet()) {
+        for (Map.Entry<String, Double> entry : topicPairStrengths.entrySet()) {
             String[] topicPair = entry.getKey().split("-");
             String topicA = topicPair[0];
             String topicB = topicPair[1];
-            Float value = entry.getValue();
+            Double value = entry.getValue();
 
             Integer topicAId = topics.get(topicA);
 
@@ -281,30 +281,30 @@ public class BuildTopicDistanceGraph implements Runnable {
         return topicPairKey;
     }
 
-    private void addToTopicPairStrengs(HashMap<String, Float> newStrengthsToAdd) {
-        for (Map.Entry<String, Float> entry : newStrengthsToAdd.entrySet()) {
+    private void addToTopicPairStrengs(HashMap<String, Double> newStrengthsToAdd) {
+        for (Map.Entry<String, Double> entry : newStrengthsToAdd.entrySet()) {
             String topic = entry.getKey();
-            Float strength = entry.getValue();
+            Double strength = entry.getValue();
 
-            Float currentStrength = this.topicPairStrengths.get(topic);
+            Double currentStrength = this.topicPairStrengths.get(topic);
             if (currentStrength==null) {
-                this.topicPairStrengths.put(topic, 0.0f);
-                currentStrength = 0.0f;
+                this.topicPairStrengths.put(topic, 0.0);
+                currentStrength = 0.0;
             }
 
             this.topicPairStrengths.put(topic,currentStrength+strength);
             System.out.println(topic);
-            System.out.printf("%.0f\n", currentStrength+strength);
+            System.out.printf("%.0\n", currentStrength+strength);
         }
     }
 
     private void normalizeTopicStrengths() {
-        Float min=null, max=null;
+        Double min=null, max=null;
 
         // Find max and min
-        for (Map.Entry<String, Float> entry : topicPairStrengths.entrySet()) {
+        for (Map.Entry<String, Double> entry : topicPairStrengths.entrySet()) {
             String topic = entry.getKey();
-            Float strength = entry.getValue();
+            Double strength = entry.getValue();
 
             if (max==null) {
                 max = strength;
@@ -323,11 +323,11 @@ public class BuildTopicDistanceGraph implements Runnable {
             }
         }
 
-        for (Map.Entry<String, Float> entry : topicPairStrengths.entrySet()) {
+        for (Map.Entry<String, Double> entry : topicPairStrengths.entrySet()) {
             String topic = entry.getKey();
-            Float strength = entry.getValue();
+            Double strength = entry.getValue();
 
-            Float normalizedStrength = (strength-min)/(max-min);
+            Double normalizedStrength = (strength-min)/(max-min);
 
             this.topicPairStrengths.put(topic,normalizedStrength);
             System.out.println(topic+" new strength is "+normalizedStrength);
@@ -337,7 +337,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     private void processDomain(String domainName) {
         if (!this.alreadyProcessedDomains.contains(domainName)) {
             System.out.println(domainName);
-            HashMap<String, Float> topicDomainPairStrengths = new HashMap<String, Float>();
+            HashMap<String, Double> topicDomainPairStrengths = new HashMap<String, Double>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
             bQuery.must(QueryBuilders.termQuery("domainName", domainName));
@@ -355,11 +355,11 @@ public class BuildTopicDistanceGraph implements Runnable {
                     if (!domainTopic.equals(innerDomainTopic)) {
                         String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
                         //System.out.println("PROCESSING: "+topicPairKey);
-                        Float currentStrength = topicDomainPairStrengths.get(topicPairKey);
+                        Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
                         if (currentStrength==null) {
-                            topicDomainPairStrengths.put(topicPairKey, 5.0f);
+                            topicDomainPairStrengths.put(topicPairKey, 0.5);
                         } else {
-                            topicDomainPairStrengths.put(topicPairKey, currentStrength += 5.0f);
+                            topicDomainPairStrengths.put(topicPairKey, currentStrength += 0.5);
                         }
                     }
                 }
@@ -372,7 +372,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
     private void processUrl(String urlHash) {
         if (!this.alreadyProcessedUrls.contains(urlHash)) {
-            HashMap<String, Float> topicUrlPairStrengths = new HashMap<String, Float>();
+            HashMap<String, Double> topicUrlPairStrengths = new HashMap<String, Double>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
             bQuery.must(QueryBuilders.termQuery("urlHash", urlHash));
@@ -391,21 +391,21 @@ public class BuildTopicDistanceGraph implements Runnable {
                     if (!urlTopic.equals(innerUrlTopic)) {
                         String topicPairKey = this.getTopicPairKey(urlTopic, innerUrlTopic);
 
-                        Float urlAndParagraphBonus = 15.0f;
+                        Double urlAndParagraphBonus = 0.15;
 
                         Integer paragraphDistance = Math.abs((int) urlHitMap.get("paragraphNumber")-(int)innerUrlHitMap.get("paragraphNumber"));
 
                         if (paragraphDistance==0) {
-                            urlAndParagraphBonus += 15.0f;
+                            urlAndParagraphBonus += 0.15;
                         } else if (paragraphDistance<5) {
-                            urlAndParagraphBonus += 10.0f;
+                            urlAndParagraphBonus += .1;
                         } else if (paragraphDistance<10) {
-                            urlAndParagraphBonus += 5.0f;
+                            urlAndParagraphBonus += 0.05;
                         } else if (paragraphDistance<20) {
-                            urlAndParagraphBonus += 2.0f;
+                            urlAndParagraphBonus += 0.02;
                         }
 
-                        Float currentStrength = topicUrlPairStrengths.get(topicPairKey);
+                        Double currentStrength = topicUrlPairStrengths.get(topicPairKey);
                         if (currentStrength==null) {
                             topicUrlPairStrengths.put(topicPairKey, urlAndParagraphBonus);
                         } else {
