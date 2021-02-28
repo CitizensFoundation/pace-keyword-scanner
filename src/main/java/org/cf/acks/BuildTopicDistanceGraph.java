@@ -280,10 +280,10 @@ public class BuildTopicDistanceGraph implements Runnable {
 
         String urlHash = null;
 
-        if (secondDash==(thirdDash+1)) {
-            urlHash = id.substring(secondDash, fourthDash-1);
+        if (thirdDash==(secondDash+1)) {
+            urlHash = id.substring(secondDash, fourthDash);
         } else {
-            urlHash = id.substring(secondDash, thirdDash-1);
+            urlHash = id.substring(secondDash, thirdDash);
         }
 
         System.out.println("Id: "+id);
