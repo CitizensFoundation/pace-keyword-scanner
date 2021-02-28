@@ -281,9 +281,9 @@ public class BuildTopicDistanceGraph implements Runnable {
         String urlHash = null;
 
         if (thirdDash==(secondDash+1)) {
-            urlHash = id.substring(secondDash, fourthDash);
+            urlHash = id.substring(secondDash+1, fourthDash);
         } else {
-            urlHash = id.substring(secondDash, thirdDash);
+            urlHash = id.substring(secondDash+1, thirdDash);
         }
 
         System.out.println("Id: "+id);
