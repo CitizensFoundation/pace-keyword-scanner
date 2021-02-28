@@ -376,7 +376,7 @@ public class BuildTopicDistanceGraph implements Runnable {
             HashMap<String, Double> topicUrlPairStrengths = new HashMap<String, Double>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
-            bQuery.must(QueryBuilders.termQuery("urlHash", urlHash));
+            bQuery.must(QueryBuilders.termQuery("urlHash", Integer.parseInt(urlHash)));
 
             List<SearchHit> allUrlHits = this.getAllHitsForQuery(bQuery);
             System.out.println("Found url hits: "+allUrlHits.size());
