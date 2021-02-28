@@ -17,7 +17,7 @@ from xls_manager import XlsManager
 
 MODEL_SIZE = "base"
 WANDB_MODE = "test"
-MODEL_ROUND = "1"
+MODEL_ROUND = "2"
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")

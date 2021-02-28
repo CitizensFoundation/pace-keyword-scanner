@@ -33,11 +33,13 @@ class XlsManager:
         for fileName in self.inFileNames:
             round = []
             xlsx = pd.ExcelFile(f"{self.inFilesPath}/{fileName}")
+            print(fileName)
             for sheet in xlsx.sheet_names:
                 round.append(xlsx.parse(sheet))
             self.fromXlsDataRounds.append(round)
             #print(round)
         self.keywordsSheet = self.fromXlsDataRounds[-1][0]
+        print(f"LEN ROUNDS {len(self.fromXlsDataRounds)}")
         self.read_in_topics()
 
         if len(self.outFileNames)>1:
@@ -114,39 +116,45 @@ class XlsManager:
 
     def add_out_data_from_row(self, row, outData, options):
         subTopic = row[0].strip()
-        text = row[1].strip().lower()
-        rating = row[2]
+        text = row[1]
 
-        if isinstance(rating, str):
-            rating = rating.strip().lower()
+        if isinstance(text, str):
+            text = row[1].strip().lower()
 
-        if options.get("subTopic") and options.get("subTopic")!=subTopic:
-            return
+            rating = row[2]
 
-        if options.get('onlyOnes'):
-            if isinstance(rating, int) and rating==1:
-                outData.append([text, 1])
-                self.notXCount += 1
-            else:
-                outData.append([text, 0])
-                self.xCount += 1
-        else:
-            if rating=="x" and not options.get("trainOnlyRelevant"):
-                self.xCount += 1
-                outData.append([text, 0])
-            elif not rating=="x":
-                self.notXCount += 1
-                if options.get("trainOnlyRelevant"):
-                    if isinstance(rating, int):
-                        rating -= 1
-                        if rating==0 or rating==1 or rating==2:
-                            outData.append([text, rating])
-                        else:
-                            print(f"Wrong rating value {rating}")
-                    else:
-                        print(f"Wrong rating format {rating}")
-                else:
+            if isinstance(rating, str):
+                rating = rating.strip().lower()
+
+            if options.get("subTopic") and options.get("subTopic")!=subTopic:
+                return
+
+            if options.get('onlyOnes'):
+                if isinstance(rating, int) and rating==1:
                     outData.append([text, 1])
+                    self.notXCount += 1
+                else:
+                    outData.append([text, 0])
+                    self.xCount += 1
+            else:
+                if rating=="x" and not options.get("trainOnlyRelevant"):
+                    self.xCount += 1
+                    outData.append([text, 0])
+                elif not rating=="x":
+                    self.notXCount += 1
+                    if options.get("trainOnlyRelevant"):
+                        if isinstance(rating, int):
+                            rating -= 1
+                            if rating==0 or rating==1 or rating==2:
+                                outData.append([text, rating])
+                            else:
+                                print(f"Wrong rating value {rating}")
+                        else:
+                            print(f"Wrong rating format {rating}")
+                    else:
+                        outData.append([text, 1])
+        else:
+            print(f"WARNING: Found non text element in training data {subTopic} text {row[1]} rating {row[2]}")
 
     def get_training_data(self, options):
         outData = []
@@ -159,6 +167,7 @@ class XlsManager:
             for sheet in round:
                 # Skip the first keyword sheets
                 if not first:
+                    #print(sheet)
                     if not self.skip_sheet(sheet, options):
                         for index, row in sheet.iterrows():
                             if index>1 and not pd.isnull(row[0]) and not pd.isnull(row[1]) and not pd.isnull(row[2]):
