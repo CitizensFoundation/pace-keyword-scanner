@@ -399,7 +399,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                         if (paragraphDistance==0) {
                             urlAndParagraphBonus += 0.15;
                         } else if (paragraphDistance<5) {
-                            urlAndParagraphBonus += .1;
+                            urlAndParagraphBonus += 0.1;
                         } else if (paragraphDistance<10) {
                             urlAndParagraphBonus += 0.05;
                         } else if (paragraphDistance<20) {
