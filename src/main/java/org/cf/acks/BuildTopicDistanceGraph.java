@@ -372,6 +372,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
     private void processUrl(String urlHash) {
         if (!this.alreadyProcessedUrls.contains(urlHash)) {
+            System.out.println("Processing url: "+urlHash);
             HashMap<String, Double> topicUrlPairStrengths = new HashMap<String, Double>();
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
