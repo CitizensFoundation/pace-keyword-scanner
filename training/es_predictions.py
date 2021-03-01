@@ -170,11 +170,10 @@ while True:
         if not isinstance(ex, ex_type):
             raise ex
         if 0 < limit <= attempt:
-            if logger:
-                print("no more attempts")
+            print("no more attempts")
             raise ex
 
-        print("failed execution attempt #%d", attempt, exc_info=ex)
+        print("failed execution attempt", attempt)
 
         attempt += 1
         time.sleep(wait_ms / 1000)
