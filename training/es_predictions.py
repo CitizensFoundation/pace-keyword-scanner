@@ -27,7 +27,7 @@ class EsPredictions:
     predictionQueue = []
     esBulkUpdateQueue = []
     maxBulkUpdateQueueSize = 1000
-    maxPredictionQueueSize = 1000
+    maxPredictionQueueSize = 2000
     totalProcessed = 0
 
     def updateRelevanceScore(self, id, score):
@@ -97,11 +97,17 @@ class EsPredictions:
 
         #relevanceFilter = [{"relevanceScore": {"value": {"gte": 0 }}}]
         #onlyNotRatedFilter = [{"relevanceScore": {"value": -1 }}]
-        query= {
+        query={
             "query": {
-                "match": { "topic": topic }
-            }
+                "bool": {
+                    "must": [
+                        { "match": { "topic": topic } },
+                        { "match": { "relevanceScore": -1 } }
+                    ]
+                 }
+             }
         }
+
 
         hits = helpers.scan(es, index="urls", query=query, size=1000)
 
@@ -130,9 +136,49 @@ topics1 = ["Left behind","Family disintegration","Loss of religion",
         "Income inequality","Resentment of elite","Qanon","Desire for strong man","Feeling ignored","Distrust of media"]
 
 topics2 = ["False accusations of racism","Nanny state","Call to vigilante action","Dehumanization of opponents",
-        "Restrictions on free speech","Loss of sovereignty","Undeserving support",""
+        "Restrictions on free speech","Loss of sovereignty","Undeserving support"]
+
+topics3 = ["Undeserving support",
         "Citizen Engagement","Democratic Innovation","UKIP"]
 
+topics4 = ["Qanon","Desire for strong man","Feeling ignored","Distrust of media","Undeserving support","Democratic Innovation","UKIP"]
+
+topics5 = ["Resentment of elite"]
+
 esPredictions = EsPredictions()
-esPredictions.predict_for_topics(topics1)
-#esPredictions.predict_for_topics(topics2)
+
+ex_type=Exception
+limit=0
+wait_ms=250
+wait_increase_ratio=1
+attempt = 0
+option = sys.argv[1]
+
+while True:
+    try:
+        if option=="1":
+            esPredictions.predict_for_topics(topics1)
+        elif option=="2":
+            esPredictions.predict_for_topics(topics2)
+        elif option=="3":
+            esPredictions.predict_for_topics(topics3)
+        elif option=="4":
+            esPredictions.predict_for_topics(topics4)
+        elif option=="5":
+            esPredictions.predict_for_topics(topics5)
+    except Exception as ex:
+        if not isinstance(ex, ex_type):
+            raise ex
+        if 0 < limit <= attempt:
+            if logger:
+                print("no more attempts")
+            raise ex
+
+        print("failed execution attempt #%d", attempt, exc_info=ex)
+
+        attempt += 1
+        time.sleep(wait_ms / 1000)
+        wait_ms *= wait_increase_ratio
+
+
+
