@@ -132,19 +132,35 @@ class EsPredictions:
         for topic in topics:
             self.predict_all_for_topic(topic)
 
-topics1 = ["Left behind","Family disintegration","Loss of religion",
-        "Evolving social mores","Technology and alienation","Losing cultural identity",
-        "Income inequality","Resentment of elite","Qanon","Desire for strong man","Feeling ignored","Distrust of media"]
+topics1 = [
+    "Left behind",
+    "Family disintegration",
+    "Loss of religion",
+    "Evolving social mores",
+    "Technology and alienation",
+    "Losing cultural identity",
+    "Income inequality",
+    "Qanon",
+    "Desire for strong man",
+    "Feeling ignored",
+    "Distrust of media"]
 
-topics2 = ["False accusations of racism","Nanny state","Call to vigilante action","Dehumanization of opponents",
-        "Restrictions on free speech","Loss of sovereignty","Undeserving support"]
+topics2 = [
+    "False accusations of racism",
+    "Nanny state",
+    "Call to vigilante action",
+    "Dehumanization of opponents",
+    "Restrictions on free speech",
+    "Loss of sovereignty",
+    "Undeserving support"
+    ]
 
-topics3 = ["Undeserving support",
-        "Citizen Engagement","Democratic Innovation","UKIP"]
+topics3 = [
+    "Citizen Engagement",
+    "Democratic Innovation"
+    ]
 
-topics4 = ["Qanon","Desire for strong man","Feeling ignored","Distrust of media","Undeserving support","Democratic Innovation","UKIP"]
-
-topics5 = ["Resentment of elite"]
+topics4 = ["Resentment of elite"]
 
 esPredictions = EsPredictions()
 
