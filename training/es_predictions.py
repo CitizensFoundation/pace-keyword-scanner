@@ -140,12 +140,13 @@ topics1 = [
     "Technology and alienation",
     "Losing cultural identity",
     "Income inequality",
-    "Qanon",
-    "Desire for strong man",
-    "Feeling ignored",
-    "Distrust of media"]
+    "Qanon"
+    ]
 
 topics2 = [
+    "Desire for strong man",
+    "Feeling ignored",
+    "Distrust of media"
     "False accusations of racism",
     "Nanny state",
     "Call to vigilante action",
