@@ -55,7 +55,7 @@ class ModelTraining:
                 foundText.append(item[0])
                 newTrainingData.append(item)
 
-        traininData = newTrainingData
+        trainingData = newTrainingData
 
         length = len(trainingData)
 
