@@ -26,19 +26,23 @@ class MultiTraining:
         xlsManager.setup_all_from_xls()
 
         trainingOptions = [
-            {"modelName": "binaryOnes", "wandbProject": "all-ones", "onlyOnes": True },
+         #   {"modelName": "binaryOnes", "wandbProject": "all-ones", "onlyOnes": True },
          #   {"modelName": "populismrelevant", "trainOnlyRelevant": True, "skipTopics": [
          #       "Citizen Engagement", "Democratic Innovation"
          #       ], "wandbProject": "populism-relevant" },
          #   {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": [
          #       "Citizen Engagement", "Democratic Innovation"
          #       ], "wandbProject": "civic-relevant" },
-            {"modelName": "binary", "wandbProject": "all-exes" },
+         #   {"modelName": "binary", "wandbProject": "all-exes" },
         ]
 
         #for topic in xlsManager.topics:
         #    trainingOptions.append({"modelName": topic.replace(' ','').lower(),
         #        "topic": topic, "trainOnlyRelevant": True, "wandbProject": "topic-relevant"})
+
+        for topic in xlsManager.topics:
+            trainingOptions.append({"modelName": f"binaryOnesTopic{topic.replace(' ','').lower()}",
+                "topic": topic, "onlyOnes": True, "wandbProject": "topic-only-ones"})
 
         for options in trainingOptions:
             optionsString=json.dumps(options)

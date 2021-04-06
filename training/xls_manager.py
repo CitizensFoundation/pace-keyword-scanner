@@ -102,8 +102,9 @@ class XlsManager:
     def skip_sheet(self, sheet, options):
         sheetTopic = sheet.head(0).columns[0]
         sheetTopic = sheetTopic.strip()
+        #print(f"SheetTopic {sheetTopic}")
         if options.get("topic"):
-            if sheetTopic==options["topic"]:
+            if sheetTopic.lower()==options["topic"].lower():
                 return False
             else:
                 return True

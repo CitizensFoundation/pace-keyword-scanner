@@ -31,9 +31,9 @@ class EsPredictions:
     maxPredictionQueueSize = 2000
     totalProcessed = 0
 
-    def updateRelevanceScore(self, id, score):
+    def updateScore(self, id, score, fieldName="relevanceScore"):
         doc = {
-            "relevanceScore": score
+            f"{fieldName}": score
         }
 
         self.esBulkUpdateQueue.append(
@@ -44,7 +44,7 @@ class EsPredictions:
                 'doc': doc
         })
         #es.update(index="urls", id=id, body=update)
-        print(f"Updated {id} relevance to {score}")
+        print(f"Updated {fieldName} {id} relevance to {score}")
 
         if len(self.esBulkUpdateQueue)>=self.maxBulkUpdateQueueSize:
             self.pump_es_update_queue()
@@ -70,12 +70,12 @@ class EsPredictions:
 
             for i in range(len(ids)):
                 if exesPredictions[i]==0:
-                    self.updateRelevanceScore(ids[i], 0)
+                    self.updateScore(ids[i], 0)
                 else:
                     if onesPredictions[i]==1:
-                        self.updateRelevanceScore(ids[i], 1)
+                        self.updateScore(ids[i], 1)
                     else:
-                        self.updateRelevanceScore(ids[i], 3)
+                        self.updateScore(ids[i], 3)
 
             self.predictionQueue = []
 
@@ -83,7 +83,6 @@ class EsPredictions:
         id = hit["_id"]
         source = hit["_source"]
         paragraph = source.get("paragraph").lower().strip()
-        relevanceScore = source.get("relevanceScore")
         topic = source.get("topic")
 
         #print(f"Processing {id} - {topic}")
@@ -132,70 +131,6 @@ class EsPredictions:
         for topic in topics:
             self.predict_all_for_topic(topic)
 
-topics1 = [
-    "Left behind",
-    "Family disintegration",
-    "Loss of religion",
-    "Evolving social mores",
-    "Technology and alienation",
-    "Losing cultural identity",
-    "Income inequality",
-    "Qanon"
-    ]
-
-topics2 = [
-    "Desire for strong man",
-    "Feeling ignored",
-    "Distrust of media"
-    "False accusations of racism",
-    "Nanny state",
-    "Call to vigilante action",
-    "Dehumanization of opponents",
-    "Restrictions on free speech",
-    "Loss of sovereignty",
-    "Undeserving support"
-    ]
-
-topics3 = [
-    "Citizen Engagement",
-    "Democratic Innovation"
-    ]
-
-topics4 = ["Resentment of elite"]
-
-esPredictions = EsPredictions()
-
-ex_type=Exception
-limit=0
-wait_ms=250
-wait_increase_ratio=1
-attempt = 0
-option = sys.argv[1]
-
-while True:
-    try:
-        if option=="1":
-            esPredictions.predict_for_topics(topics1)
-        elif option=="2":
-            esPredictions.predict_for_topics(topics2)
-        elif option=="3":
-            esPredictions.predict_for_topics(topics3)
-        elif option=="4":
-            esPredictions.predict_for_topics(topics4)
-        elif option=="5":
-            esPredictions.predict_for_topics(topics5)
-    except Exception as ex:
-        if not isinstance(ex, ex_type):
-            raise ex
-        if 0 < limit <= attempt:
-            print("no more attempts")
-            raise ex
-
-        print("failed execution attempt", attempt)
-
-        attempt += 1
-        time.sleep(wait_ms / 1000)
-        wait_ms *= wait_increase_ratio
 
 
 

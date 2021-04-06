@@ -17,7 +17,7 @@ from xls_manager import XlsManager
 
 MODEL_SIZE = "base"
 WANDB_MODE = "test"
-MODEL_ROUND = "2"
+MODEL_ROUND = "2d"
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
@@ -63,13 +63,14 @@ class ModelTraining:
 
         wandb.log({"Train data len": len(trainingData)})
 
-        splitIndex = int(length*0.9)
+        splitIndex = int(length*0.80)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
         print(f"Training items: {len(train_data)}")
         train_df = pd.DataFrame(train_data)
         train_df.columns = ["text", "labels"]
+        print(train_df)
 
         # Preparing eval data
         eval_data =  trainingData[splitIndex:]
@@ -77,9 +78,11 @@ class ModelTraining:
 
         eval_df = pd.DataFrame(eval_data)
         eval_df.columns = ["text", "labels"]
+        print(eval_df)
 
         # Create a ClassificationModel
         if options.get("trainOnlyRelevant"):
+            print("Using multi label model")
             num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 num_train_epochs=num_epochs,
@@ -92,7 +95,8 @@ class ModelTraining:
                 model_class, model_type, num_labels=3, args=model_args, use_cuda = True
             )
         else:
-            num_epochs = 1
+            print("Using binary model")
+            num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
                 reprocess_input_data=True,
                 do_lower_case=True,
