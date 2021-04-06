@@ -137,6 +137,13 @@ class XlsManager:
                 else:
                     outData.append([text, 0])
                     self.xCount += 1
+            elif options.get('onlyOneTwo'):
+                if isinstance(rating, int) and (rating==1 or rating==2):
+                    outData.append([text, 1])
+                    self.notXCount += 1
+                else:
+                    outData.append([text, 0])
+                    self.xCount += 1
             else:
                 if rating=="x" and not options.get("trainOnlyRelevant"):
                     self.xCount += 1
@@ -179,6 +186,9 @@ class XlsManager:
         if options.get('onlyOnes'):
             print(f"Not one coded: {self.xCount}")
             print(f"One coded: {self.notXCount}")
+        elif options.get('onlyOneTwo'):
+            print(f"Not oneTwo coded: {self.xCount}")
+            print(f"OneTwo coded: {self.notXCount}")
         else:
             print(f"x coded: {self.xCount}")
             print(f"Not x coded: {self.notXCount}")

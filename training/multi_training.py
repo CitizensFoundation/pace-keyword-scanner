@@ -40,9 +40,13 @@ class MultiTraining:
         #    trainingOptions.append({"modelName": topic.replace(' ','').lower(),
         #        "topic": topic, "trainOnlyRelevant": True, "wandbProject": "topic-relevant"})
 
+        #for topic in xlsManager.topics:
+        #    trainingOptions.append({"modelName": f"binaryOnesTopic{topic.replace(' ','').lower()}",
+        #        "topic": topic, "onlyOnes": True, "wandbProject": "topic-only-ones"})
+
         for topic in xlsManager.topics:
             trainingOptions.append({"modelName": f"binaryOnesTopic{topic.replace(' ','').lower()}",
-                "topic": topic, "onlyOnes": True, "wandbProject": "topic-only-ones"})
+                "topic": topic, "onlyOneTwo": True, "wandbProject": "topic-only-one-two"})
 
         for options in trainingOptions:
             optionsString=json.dumps(options)
