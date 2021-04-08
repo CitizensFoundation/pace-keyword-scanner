@@ -5,6 +5,8 @@ import pprint
 from openpyxl import load_workbook
 import sys
 
+TO_LOWER = False
+
 class XlsManager:
     topics = {}
     language = None
@@ -64,7 +66,10 @@ class XlsManager:
                     rateAble = False
                     if rowIndex>1 and row[0].value and row[1].value:
                         subTopic = row[0].value.strip()
-                        text = row[1].value.strip().lower()
+                        if TO_LOWER:
+                          text = row[1].value.strip().lower()
+                        else:
+                          text = row[1].value.strip()
                         rateAble = True
 
                     newItem = {
@@ -120,7 +125,10 @@ class XlsManager:
         text = row[1]
 
         if isinstance(text, str):
-            text = row[1].strip().lower()
+            if TO_LOWER:
+                text = row[1].strip().lower()
+            else:
+                text = row[1].strip()
 
             rating = row[2]
 
