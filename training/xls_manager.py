@@ -6,7 +6,7 @@ from openpyxl import load_workbook
 import sys
 import re
 
-TO_LOWER = False
+TO_LOWER = True
 
 class XlsManager:
     topics = {}
