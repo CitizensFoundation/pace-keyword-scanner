@@ -34,7 +34,7 @@ class XlsManager:
 
     def cleanup_text(self, sentence):
         #return sentence
-        sentence = re.sub('[^a-zA-Z]', '', sentence)
+        sentence = re.sub('[^a-zA-Z]', ' ', sentence)
 
         # Single character removal
         #sentence = re.sub(r"\s+[a-zA-Z]\s+", ' ', sentence)
