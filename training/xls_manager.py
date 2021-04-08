@@ -4,6 +4,7 @@ import os
 import pprint
 from openpyxl import load_workbook
 import sys
+import re
 
 TO_LOWER = False
 
