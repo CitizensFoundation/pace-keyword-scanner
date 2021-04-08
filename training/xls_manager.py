@@ -141,7 +141,7 @@ class XlsManager:
                 if isinstance(rating, int) and (rating==1 or rating==2):
                     outData.append([text, 1])
                     self.notXCount += 1
-                else:
+                elif isinstance(rating, int) and (rating==3):
                     outData.append([text, 0])
                     self.xCount += 1
             else:
