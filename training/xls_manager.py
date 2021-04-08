@@ -33,15 +33,16 @@ class XlsManager:
         print(self.outFilesPath )
 
     def cleanup_text(self, sentence):
-        sentence = re.sub('[^a-zA-Z]', ' ', sentence)
+        return sentence
+        #sentence = re.sub('[^a-zA-Z]', ' ', sentence)
 
         # Single character removal
-        sentence = re.sub(r"\s+[a-zA-Z]\s+", ' ', sentence)
+        #sentence = re.sub(r"\s+[a-zA-Z]\s+", ' ', sentence)
 
         # Removing multiple spaces
-        sentence = re.sub(r'\s+', ' ', sentence)
+        #sentence = re.sub(r'\s+', ' ', sentence)
 
-        return sentence
+        #return sentence
 
     def setup_all_from_xls(self):
         for fileName in self.inFileNames:
