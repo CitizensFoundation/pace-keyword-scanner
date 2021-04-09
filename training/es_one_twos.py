@@ -46,7 +46,7 @@ class EsOneTwos(EsPredictions):
                         { "match": { "topic": topic } }
                     ],
                     "must_not": [
-                        { "exists": {"field": "oneTwoRelevanceScore"} }
+                        { "exists": {"field": "oneTwoRelevanceScore"} },
                         { "match": { "relevanceScore": -1 } }
                     ]
                  }
