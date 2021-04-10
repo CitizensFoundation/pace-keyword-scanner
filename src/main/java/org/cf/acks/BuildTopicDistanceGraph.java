@@ -136,7 +136,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         this.stateResultsList = new ArrayList<UpdateData>();
 
         BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
-        //bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
+        bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
 
         if (this.year!=null && this.year!="") {
             bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))
@@ -184,7 +184,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 if (scrollId!=null && hits!=null && hits.getHits().length>0) {
                     processHits(hits);
                 } else {
-                    System.out.println("Reoccurring NO MORE HITS");
+                    System.out.println("No more main hits");
                     hasHits=false;
                 }
             }
@@ -307,7 +307,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                         searchHits.add(hit);
                     }
                 } else {
-                    System.out.println("Reoccurring");
+                    System.out.println("No more domain hits");
                     hasHits=false;
                 }
             }
@@ -412,6 +412,12 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
             bQuery.must(QueryBuilders.termQuery("domainName", domainName));
+            bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
+
+            if (this.year!=null && this.year!="") {
+                bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))
+                .must(QueryBuilders.rangeQuery("createdAt").lte(this.year+"-12-31T23:59:59.990Z"));
+            }
 
             List<SearchHit> allDomainHits = this.getAllHitsForQuery(bQuery);
             System.out.println("Found domain hits: "+allDomainHits.size());
