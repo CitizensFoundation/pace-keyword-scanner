@@ -34,11 +34,9 @@ public class Main {
     public static final int BUFFER_SIZE = 128_000;
 
     // TEST
-
     /*private static final String esHostname="127.0.0.1";
     private static final Integer esPort=9200;
     private static final String esProtocol="http";*/
-
 
     // PRODUCTION
     private static final String esHostname="search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com";
@@ -290,10 +288,10 @@ public class Main {
     }
 
     private static void buildTopicDistanceGraph(String[] args) throws Throwable {
-        BuildTopicDistanceGraph graphBuilder = new BuildTopicDistanceGraph(Main.esHostname, Main.esPort, Main.esProtocol, "en");
+        BuildTopicDistanceGraph graphBuilder = new BuildTopicDistanceGraph(Main.esHostname, Main.esPort, Main.esProtocol, "en", args[1]);
         graphBuilder.run();
-        logger.info("findReoccurringParagraphsES complete.");
-        System.out.println("findReoccurringParagraphsES complete");
+        logger.info("buildTopicDistanceGraph complete.");
+        System.out.println("buildTopicDistanceGraph complete");
     }
 
     private static void processHostRanksFile(String[] args) throws Throwable {

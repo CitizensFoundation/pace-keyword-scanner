@@ -2,6 +2,7 @@ package org.cf.acks;
 
 import com.amazonaws.transform.StaxUnmarshallerContext;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gliwka.hyperscan.wrapper.Database;
 import com.gliwka.hyperscan.wrapper.Match;
 import com.gliwka.hyperscan.wrapper.Scanner;
@@ -62,6 +63,22 @@ import net.openhft.hashing.LongHashFunction;
 
 //TODO: Use same method to calculate connection strengths
 
+class Node {
+    public String id;
+}
+
+class Link {
+    public String source;
+    public String target;
+    public Double value;
+}
+
+class ForceGraph {
+    public List<Node> nodes;
+    public List<Link> links;
+}
+
+
 public class BuildTopicDistanceGraph implements Runnable {
 
     class UpdateData {
@@ -84,6 +101,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     private final Integer esPort;
     private final String esProtocol;
     private final String locale;
+    private final String year;
     private Hashtable<String, Boolean> alreadyProcessedDomains;
     private Hashtable<String, Boolean> alreadyProcessedUrls;
     private HashMap<String, Double> topicPairStrengths;
@@ -96,17 +114,17 @@ public class BuildTopicDistanceGraph implements Runnable {
     final static int MAX_DOCUMENT_RESULTS=1000;
     private RestHighLevelClient esClient;
 
-    BuildTopicDistanceGraph(String esHostname, Integer esPort, String esProtocol, String locale) {
+    BuildTopicDistanceGraph(String esHostname, Integer esPort, String esProtocol, String locale, String year) {
         this.esHostname = esHostname;
         this.esPort = esPort;
         this.esProtocol = esProtocol;
         this.locale = locale;
+        this.year = year;
         this.alreadyProcessedDomains = new Hashtable<String, Boolean>();
         this.alreadyProcessedUrls =  new Hashtable<String, Boolean>();
         this.topicPairStrengths = new HashMap<String, Double>();
-        System.out.println(""+esProtocol+esHostname+esPort);
-        this.esClient = new RestHighLevelClient(
-            RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
+        System.out.println("ESHost: "+esProtocol+"://"+esHostname+":"+esPort);
+        this.esClient = new RestHighLevelClient(RestClient.builder(new HttpHost(this.esHostname, this.esPort, this.esProtocol)));
     }
 
     @Override
@@ -117,13 +135,23 @@ public class BuildTopicDistanceGraph implements Runnable {
         int testCount=0;
         this.stateResultsList = new ArrayList<UpdateData>();
 
-        while (hasHits && testCount<38000) {
+        BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
+        bQuery.must(QueryBuilders.termQuery("oneTwosRelevance", 1));
+
+       if (this.year!=null && this.year!="") {
+            bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))
+            .must(QueryBuilders.rangeQuery("createdAt").lte(this.year+"-12-31T23:59:59.990Z"));
+        }
+
+        System.out.println("Year: "+this.year);
+
+        while (hasHits) {
             testCount+=1;
             System.out.println("Nr: "+testCount);
             if (scrollId==null) {
                 SearchRequest searchRequest = new SearchRequest("urls");
                 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-                searchSourceBuilder.query(new MatchAllQueryBuilder());
+                searchSourceBuilder.query(bQuery);
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
                 searchRequest.scroll(TimeValue.timeValueMinutes(5L));
@@ -175,6 +203,10 @@ public class BuildTopicDistanceGraph implements Runnable {
 
         LinkedHashMap<String, Integer> topics = new LinkedHashMap<String, Integer>();
 
+        ForceGraph graph = new ForceGraph();
+        graph.links = new ArrayList<Link>();
+        graph.nodes = new ArrayList<Node>();
+
         Integer idCounter = 1;
         for (Map.Entry<String, Double> entry : topicPairStrengths.entrySet()) {
             String[] topicPair = entry.getKey().split("-");
@@ -187,6 +219,9 @@ public class BuildTopicDistanceGraph implements Runnable {
             if (topicAId==null) {
                 topics.put(topicA, idCounter);
                 topicAId = idCounter++;
+                Node node = new Node();
+                node.id = topicA;
+                graph.nodes.add(node);
             }
 
             Integer topicBId = topics.get(topicB);
@@ -194,10 +229,25 @@ public class BuildTopicDistanceGraph implements Runnable {
             if (topicBId==null) {
                 topics.put(topicB, idCounter);
                 topicBId = idCounter++;
+                Node node = new Node();
+                node.id = topicB;
+                graph.nodes.add(node);
             }
 
             System.out.println(topicA+" - "+topicB+" = "+value);
-            System.out.println(topicAId+" - "+topicBId+" = "+value);
+
+            Link link = new Link();
+            link.source = topicA;
+            link.target = topicB;
+            link.value = value;
+            graph.links.add(link);
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            objectMapper.writeValue(new File(this.year+"distanceGraph.json"), graph);
+        } catch (IOException ex) {
+            System.out.println("ES Error: "+ex.getMessage());
         }
 
         try {
@@ -288,8 +338,8 @@ public class BuildTopicDistanceGraph implements Runnable {
     private void processHit(SearchHit hit) {
         Map<String, Object> fieldMap = hit.getSourceAsMap();
 
-        //this.processDomain((String) fieldMap.get("domainName"));
-        this.processUrl((String) fieldMap.get("urlHash"));
+        this.processDomain((String) fieldMap.get("domainName"));
+        //this.processUrl((String) fieldMap.get("urlHash"));
     }
 
 
