@@ -136,9 +136,9 @@ public class BuildTopicDistanceGraph implements Runnable {
         this.stateResultsList = new ArrayList<UpdateData>();
 
         BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
-        bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
+        //bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
 
-       if (this.year!=null && this.year!="") {
+        if (this.year!=null && this.year!="") {
             bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))
             .must(QueryBuilders.rangeQuery("createdAt").lte(this.year+"-12-31T23:59:59.990Z"));
         }
@@ -406,7 +406,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     }
 
     private void processDomain(String domainName) {
-        if (!this.alreadyProcessedDomains.contains(domainName)) {
+        if (this.alreadyProcessedDomains.get(domainName)==null) {
             System.out.println(domainName);
             HashMap<String, Double> topicDomainPairStrengths = new HashMap<String, Double>();
 
@@ -437,6 +437,8 @@ public class BuildTopicDistanceGraph implements Runnable {
             }
             this.addToTopicPairStrengs(topicDomainPairStrengths);
             this.alreadyProcessedDomains.put(domainName, true);
+        } else {
+            System.out.println("Already processed: "+domainName);
         }
     }
 
