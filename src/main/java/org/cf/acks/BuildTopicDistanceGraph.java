@@ -421,23 +421,32 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             List<SearchHit> allDomainHits = this.getAllHitsForQuery(bQuery);
             System.out.println("Found domain hits: "+allDomainHits.size());
+            Hashtable<String, Boolean> alreadyProcessedPairs = new Hashtable<String, Boolean>();
 
             for (SearchHit domainHit : allDomainHits) {
                 for (SearchHit innerDomainHit : allDomainHits) {
                     Map<String, Object> domainHitMap = domainHit.getSourceAsMap();
                     Map<String, Object> innerDomainHitMap = innerDomainHit.getSourceAsMap();
-                    String domainTopic = (String) domainHitMap.get("topic");
-                    String innerDomainTopic = (String) innerDomainHitMap.get("topic");
+                    String alreadyProcessedKey = this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId());
 
-                    if (!domainTopic.equals(innerDomainTopic)) {
-                        String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
-                        //System.out.println("PROCESSING: "+topicPairKey);
-                        Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
-                        if (currentStrength==null) {
-                            topicDomainPairStrengths.put(topicPairKey, 0.5);
-                        } else {
-                            topicDomainPairStrengths.put(topicPairKey, currentStrength += 0.5);
+                    if (alreadyProcessedPairs.get(alreadyProcessedKey)==null) {
+                        //System.out.println("Processing...");
+                        alreadyProcessedPairs.put(alreadyProcessedKey, true);
+                        String domainTopic = (String) domainHitMap.get("topic");
+                        String innerDomainTopic = (String) innerDomainHitMap.get("topic");
+
+                        if (!domainTopic.equals(innerDomainTopic)) {
+                            String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
+                            //System.out.println("PROCESSING: "+topicPairKey);
+                            Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
+                            if (currentStrength==null) {
+                                topicDomainPairStrengths.put(topicPairKey, 0.5);
+                            } else {
+                                topicDomainPairStrengths.put(topicPairKey, currentStrength += 0.5);
+                            }
                         }
+                    } else {
+                        //System.out.println("Already...p...");
                     }
                 }
             }
