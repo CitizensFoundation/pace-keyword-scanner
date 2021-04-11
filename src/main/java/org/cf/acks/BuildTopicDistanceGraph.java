@@ -444,8 +444,8 @@ public class BuildTopicDistanceGraph implements Runnable {
                                 currentStrength = 0.05;
                             }
 
-                            System.out.println((String) domainHit.getSourceAsMap().get("urlHash"));
-                            System.out.println((String) innerDomainHit.getSourceAsMap().get("urlHash"));
+                            System.out.println("URLHASH1"+(String) domainHit.getSourceAsMap().get("urlHash"));
+                            System.out.println("URLHASH2"+(String) innerDomainHit.getSourceAsMap().get("urlHash"));
 
                             if ((String) domainHit.getSourceAsMap().get("urlHash")==(String) innerDomainHit.getSourceAsMap().get("urlHash")) {
                                 currentStrength += 0.5;
