@@ -270,7 +270,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
                 SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
                 searchSourceBuilder.query(bQuery);
-                searchSourceBuilder.fetchSource(new String[]{"id", "topic", "paragraphNumber"}, null);
+                searchSourceBuilder.fetchSource(new String[]{"id", "topic", "paragraphNumber","urlHash"}, null);
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
                 searchRequest.scroll(TimeValue.timeValueMinutes(5L));
@@ -426,29 +426,47 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             for (SearchHit domainHit : allDomainHits) {
                 for (SearchHit innerDomainHit : allDomainHits) {
-                    Map<String, Object> domainHitMap = domainHit.getSourceAsMap();
-                    Map<String, Object> innerDomainHitMap = innerDomainHit.getSourceAsMap();
-
                     Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
 
                     if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
                         //System.out.println("Processing...");
                         alreadyProcessedPairs.put(alreadyProcessedHash, true);
-                        String domainTopic = (String) domainHitMap.get("topic");
-                        String innerDomainTopic = (String) innerDomainHitMap.get("topic");
+                        String domainTopic = (String) domainHit.getSourceAsMap().get("topic");
+                        String innerDomainTopic = (String) innerDomainHit.getSourceAsMap().get("topic");
 
                         if (!domainTopic.equals(innerDomainTopic)) {
                             String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
                             //System.out.println("PROCESSING: "+topicPairKey);
                             Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
+
                             if (currentStrength==null) {
-                                topicDomainPairStrengths.put(topicPairKey, 0.5);
-                            } else {
-                                topicDomainPairStrengths.put(topicPairKey, currentStrength += 0.5);
+                                currentStrength = 0.05;
                             }
+
+                            if (domainHit.getSourceAsMap().get("urlHash")==innerDomainHit.getSourceAsMap().get("urlHash")) {
+                                currentStrength += 0.5;
+                                System.out.println("URL bonus");
+                                Integer paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
+
+                                if (paragraphDistance==0) {
+                                    currentStrength += 0.5;
+                                    System.out.println("PARAGRAPH 0 bonus");
+                                } else if (paragraphDistance<5) {
+                                    currentStrength += 0.4;
+                                    System.out.println("PARAGRAPH 5 bonus");
+                                } else if (paragraphDistance<10) {
+                                    currentStrength += 0.3;
+                                    System.out.println("PARAGRAPH 10 bonus");
+                                } else if (paragraphDistance<20) {
+                                    System.out.println("PARAGRAPH 20 bonus");
+                                    currentStrength += 0.2;
+                                }
+                            }
+
+                            topicDomainPairStrengths.put(topicPairKey, currentStrength);
                         }
                     } else {
-                        //System.out.println("Already...p...");
+                        System.out.println("Already...p...");
                     }
                 }
             }
