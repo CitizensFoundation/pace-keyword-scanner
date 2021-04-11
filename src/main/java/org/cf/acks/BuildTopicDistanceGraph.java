@@ -424,7 +424,15 @@ public class BuildTopicDistanceGraph implements Runnable {
             System.out.println("Found domain hits: "+allDomainHits.size());
             Hashtable<Long, Boolean> alreadyProcessedPairs = new Hashtable<Long, Boolean>();
 
+            int gcCounter = 0;
             for (SearchHit domainHit : allDomainHits) {
+                System.out.print(".");
+                gcCounter += 1;
+                if (gcCounter==10000) {
+                    System.gc();
+                    gcCounter = 0;
+                    System.out.println("GC at 10,000");
+                }
                 for (SearchHit innerDomainHit : allDomainHits) {
                     Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
                     //System.out.println(alreadyProcessedHash);
