@@ -444,7 +444,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                                 currentStrength = 0.05;
                             }
 
-                            if ((Long) domainHit.getSourceAsMap().get("urlHash")==(Long) innerDomainHit.getSourceAsMap().get("urlHash")) {
+                            if ((String) domainHit.getSourceAsMap().get("urlHash")==(String) innerDomainHit.getSourceAsMap().get("urlHash")) {
                                 currentStrength += 0.5;
                                 System.out.println("URL bonus");
                                 Integer paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
