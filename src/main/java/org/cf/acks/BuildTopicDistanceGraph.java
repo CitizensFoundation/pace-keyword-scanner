@@ -437,12 +437,15 @@ public class BuildTopicDistanceGraph implements Runnable {
 
                         if (!domainTopic.equals(innerDomainTopic)) {
                             String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
-                            //System.out.println("PROCESSING: "+topicPairKey);
+                            System.out.println("DOMAIN Bonus: "+topicPairKey);
                             Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
 
                             if (currentStrength==null) {
                                 currentStrength = 0.05;
                             }
+
+                            System.out.println((String) domainHit.getSourceAsMap().get("urlHash"));
+                            System.out.println((String) innerDomainHit.getSourceAsMap().get("urlHash"));
 
                             if ((String) domainHit.getSourceAsMap().get("urlHash")==(String) innerDomainHit.getSourceAsMap().get("urlHash")) {
                                 currentStrength += 0.5;
