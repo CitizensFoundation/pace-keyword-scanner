@@ -339,6 +339,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         Map<String, Object> fieldMap = hit.getSourceAsMap();
 
         this.processDomain((String) fieldMap.get("domainName"));
+        System.gc();
         //this.processUrl((String) fieldMap.get("urlHash"));
     }
 
@@ -421,17 +422,19 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             List<SearchHit> allDomainHits = this.getAllHitsForQuery(bQuery);
             System.out.println("Found domain hits: "+allDomainHits.size());
-            Hashtable<String, Boolean> alreadyProcessedPairs = new Hashtable<String, Boolean>();
+            Hashtable<Long, Boolean> alreadyProcessedPairs = new Hashtable<Long, Boolean>();
 
             for (SearchHit domainHit : allDomainHits) {
                 for (SearchHit innerDomainHit : allDomainHits) {
                     Map<String, Object> domainHitMap = domainHit.getSourceAsMap();
                     Map<String, Object> innerDomainHitMap = innerDomainHit.getSourceAsMap();
-                    String alreadyProcessedKey = this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId());
 
-                    if (alreadyProcessedPairs.get(alreadyProcessedKey)==null) {
+                    String alreadyProcessedKey = this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId());
+                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(alreadyProcessedKey);
+
+                    if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
                         //System.out.println("Processing...");
-                        alreadyProcessedPairs.put(alreadyProcessedKey, true);
+                        alreadyProcessedPairs.put(alreadyProcessedHash, true);
                         String domainTopic = (String) domainHitMap.get("topic");
                         String innerDomainTopic = (String) innerDomainHitMap.get("topic");
 
