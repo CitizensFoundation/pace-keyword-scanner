@@ -429,8 +429,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                     Map<String, Object> domainHitMap = domainHit.getSourceAsMap();
                     Map<String, Object> innerDomainHitMap = innerDomainHit.getSourceAsMap();
 
-                    String alreadyProcessedKey = this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId());
-                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(alreadyProcessedKey);
+                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
 
                     if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
                         //System.out.println("Processing...");
