@@ -425,6 +425,15 @@ public class BuildTopicDistanceGraph implements Runnable {
             Hashtable<Long, Boolean> alreadyProcessedPairs = new Hashtable<Long, Boolean>();
 
             int gcCounter = 0;
+
+            // Declare here for memory optimization
+            String domainTopic;
+            String innerDomainTopic;
+            String topicPairKey;
+            Double currentStrength;
+            Integer paragraphDistance;
+            Long alreadyProcessedHash;
+
             for (SearchHit domainHit : allDomainHits) {
                 System.out.print(".");
                 gcCounter += 1;
@@ -434,19 +443,19 @@ public class BuildTopicDistanceGraph implements Runnable {
                     System.out.println("GC at 1,000");
                 }
                 for (SearchHit innerDomainHit : allDomainHits) {
-                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
+                    alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
                     //System.out.println(alreadyProcessedHash);
 
                     if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
                         //System.out.println("Processing...");
                         alreadyProcessedPairs.put(alreadyProcessedHash, true);
-                        String domainTopic = (String) domainHit.getSourceAsMap().get("topic");
-                        String innerDomainTopic = (String) innerDomainHit.getSourceAsMap().get("topic");
+                        domainTopic = (String) domainHit.getSourceAsMap().get("topic");
+                        innerDomainTopic = (String) innerDomainHit.getSourceAsMap().get("topic");
 
                         if (!domainTopic.equals(innerDomainTopic)) {
-                            String topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
+                            topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
                             //System.out.println("DOMAIN Bonus: "+topicPairKey);
-                            Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
+                            currentStrength = topicDomainPairStrengths.get(topicPairKey);
 
                             if (currentStrength==null) {
                                 currentStrength = 0.0;
@@ -460,7 +469,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                             if (((String) domainHit.getSourceAsMap().get("urlHash")).equals((String) innerDomainHit.getSourceAsMap().get("urlHash"))) {
                                 currentStrength += 0.5;
                                 //System.out.println("URL bonus");
-                                Integer paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
+                                paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
 
                                 if (paragraphDistance==0) {
                                     currentStrength += 0.5;
