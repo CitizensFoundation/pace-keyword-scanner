@@ -443,53 +443,44 @@ public class BuildTopicDistanceGraph implements Runnable {
                     System.out.println("GC at 1,000");
                 }
                 for (SearchHit innerDomainHit : allDomainHits) {
-                    alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
-                    //System.out.println(alreadyProcessedHash);
+                    domainTopic = (String) domainHit.getSourceAsMap().get("topic");
+                    innerDomainTopic = (String) innerDomainHit.getSourceAsMap().get("topic");
 
-                    if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
-                        //System.out.println("Processing...");
-                        alreadyProcessedPairs.put(alreadyProcessedHash, true);
-                        domainTopic = (String) domainHit.getSourceAsMap().get("topic");
-                        innerDomainTopic = (String) innerDomainHit.getSourceAsMap().get("topic");
+                    if (!domainTopic.equals(innerDomainTopic)) {
+                        topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
+                        //System.out.println("DOMAIN Bonus: "+topicPairKey);
+                        currentStrength = topicDomainPairStrengths.get(topicPairKey);
 
-                        if (!domainTopic.equals(innerDomainTopic)) {
-                            topicPairKey = this.getTopicPairKey(domainTopic, innerDomainTopic);
-                            //System.out.println("DOMAIN Bonus: "+topicPairKey);
-                            currentStrength = topicDomainPairStrengths.get(topicPairKey);
-
-                            if (currentStrength==null) {
-                                currentStrength = 0.0;
-                            }
-
-                            currentStrength += 0.05;
-
-                            //System.out.println("URLHASH1"+(String) domainHit.getSourceAsMap().get("urlHash"));
-                            //System.out.println("URLHASH2"+(String) innerDomainHit.getSourceAsMap().get("urlHash"));
-
-                            if (((String) domainHit.getSourceAsMap().get("urlHash")).equals((String) innerDomainHit.getSourceAsMap().get("urlHash"))) {
-                                currentStrength += 0.5;
-                                //System.out.println("URL bonus");
-                                paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
-
-                                if (paragraphDistance==0) {
-                                    currentStrength += 0.5;
-                                  //  System.out.println("PARAGRAPH 0 bonus");
-                                } else if (paragraphDistance<5) {
-                                    currentStrength += 0.4;
-                                   // System.out.println("PARAGRAPH 5 bonus");
-                                } else if (paragraphDistance<10) {
-                                    currentStrength += 0.3;
-                                  //  System.out.println("PARAGRAPH 10 bonus");
-                                } else if (paragraphDistance<20) {
-                                   // System.out.println("PARAGRAPH 20 bonus");
-                                    currentStrength += 0.2;
-                                }
-                            }
-
-                            topicDomainPairStrengths.put(topicPairKey, currentStrength);
+                        if (currentStrength==null) {
+                            currentStrength = 0.0;
                         }
-                    } else {
-                        //System.out.println("Already...p...");
+
+                        currentStrength += 0.005;
+
+                        //System.out.println("URLHASH1"+(String) domainHit.getSourceAsMap().get("urlHash"));
+                        //System.out.println("URLHASH2"+(String) innerDomainHit.getSourceAsMap().get("urlHash"));
+
+                        if (((String) domainHit.getSourceAsMap().get("urlHash")).equals((String) innerDomainHit.getSourceAsMap().get("urlHash"))) {
+                            currentStrength += 0.05;
+                            //System.out.println("URL bonus");
+                            paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
+
+                            if (paragraphDistance==0) {
+                                currentStrength += 0.05;
+                              //  System.out.println("PARAGRAPH 0 bonus");
+                            } else if (paragraphDistance<5) {
+                                currentStrength += 0.04;
+                               // System.out.println("PARAGRAPH 5 bonus");
+                            } else if (paragraphDistance<10) {
+                                currentStrength += 0.03;
+                              //  System.out.println("PARAGRAPH 10 bonus");
+                            } else if (paragraphDistance<20) {
+                               // System.out.println("PARAGRAPH 20 bonus");
+                                currentStrength += 0.02;
+                            }
+                        }
+
+                        topicDomainPairStrengths.put(topicPairKey, currentStrength);
                     }
                 }
             }
