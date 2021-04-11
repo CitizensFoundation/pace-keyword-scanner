@@ -426,7 +426,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             for (SearchHit domainHit : allDomainHits) {
                 for (SearchHit innerDomainHit : allDomainHits) {
-                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getSourceAsMap().get("id"),innerDomainHit.getSourceAsMap().get("id")));
+                    Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey((String) domainHit.getSourceAsMap().get("id"),(String) innerDomainHit.getSourceAsMap().get("id")));
                     System.out.println(alreadyProcessedHash);
 
                     if (alreadyProcessedPairs.get(alreadyProcessedHash)==null) {
@@ -444,7 +444,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                                 currentStrength = 0.05;
                             }
 
-                            if (domainHit.getSourceAsMap().get("urlHash")==innerDomainHit.getSourceAsMap().get("urlHash")) {
+                            if ((Long) domainHit.getSourceAsMap().get("urlHash")==(Long) innerDomainHit.getSourceAsMap().get("urlHash")) {
                                 currentStrength += 0.5;
                                 System.out.println("URL bonus");
                                 Integer paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
