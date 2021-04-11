@@ -428,10 +428,10 @@ public class BuildTopicDistanceGraph implements Runnable {
             for (SearchHit domainHit : allDomainHits) {
                 System.out.print(".");
                 gcCounter += 1;
-                if (gcCounter==10000) {
+                if (gcCounter==1000) {
                     System.gc();
                     gcCounter = 0;
-                    System.out.println("GC at 10,000");
+                    System.out.println("GC at 1,000");
                 }
                 for (SearchHit innerDomainHit : allDomainHits) {
                     Long alreadyProcessedHash = LongHashFunction.xx().hashChars(this.getTopicPairKey(domainHit.getId(),innerDomainHit.getId()));
