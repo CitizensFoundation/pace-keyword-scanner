@@ -154,7 +154,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 searchSourceBuilder.query(bQuery);
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(5L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(60L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
