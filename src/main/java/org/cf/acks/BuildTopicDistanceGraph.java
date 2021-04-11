@@ -441,28 +441,30 @@ public class BuildTopicDistanceGraph implements Runnable {
                             Double currentStrength = topicDomainPairStrengths.get(topicPairKey);
 
                             if (currentStrength==null) {
-                                currentStrength = 0.05;
+                                currentStrength = 0.0;
                             }
+
+                            currentStrength += 0.05;
 
                             //System.out.println("URLHASH1"+(String) domainHit.getSourceAsMap().get("urlHash"));
                             //System.out.println("URLHASH2"+(String) innerDomainHit.getSourceAsMap().get("urlHash"));
 
                             if (((String) domainHit.getSourceAsMap().get("urlHash")).equals((String) innerDomainHit.getSourceAsMap().get("urlHash"))) {
                                 currentStrength += 0.5;
-                                System.out.println("URL bonus");
+                                //System.out.println("URL bonus");
                                 Integer paragraphDistance = Math.abs((int) domainHit.getSourceAsMap().get("paragraphNumber")-(int)innerDomainHit.getSourceAsMap().get("paragraphNumber"));
 
                                 if (paragraphDistance==0) {
                                     currentStrength += 0.5;
-                                    System.out.println("PARAGRAPH 0 bonus");
+                                  //  System.out.println("PARAGRAPH 0 bonus");
                                 } else if (paragraphDistance<5) {
                                     currentStrength += 0.4;
-                                    System.out.println("PARAGRAPH 5 bonus");
+                                   // System.out.println("PARAGRAPH 5 bonus");
                                 } else if (paragraphDistance<10) {
                                     currentStrength += 0.3;
-                                    System.out.println("PARAGRAPH 10 bonus");
+                                  //  System.out.println("PARAGRAPH 10 bonus");
                                 } else if (paragraphDistance<20) {
-                                    System.out.println("PARAGRAPH 20 bonus");
+                                   // System.out.println("PARAGRAPH 20 bonus");
                                     currentStrength += 0.2;
                                 }
                             }
