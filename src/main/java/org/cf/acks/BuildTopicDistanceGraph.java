@@ -199,7 +199,7 @@ public class BuildTopicDistanceGraph implements Runnable {
             System.out.println("ES Scroll second: "+ex.getMessage());
         }
 
-        this.normalizeTopicStrengths();
+        //this.normalizeTopicStrengths();
 
         LinkedHashMap<String, Integer> topics = new LinkedHashMap<String, Integer>();
 
