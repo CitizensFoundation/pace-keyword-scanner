@@ -154,7 +154,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 searchSourceBuilder.query(bQuery);
                 searchSourceBuilder.size(MAX_DOCUMENT_RESULTS);
                 searchRequest.source(searchSourceBuilder);
-                searchRequest.scroll(TimeValue.timeValueMinutes(60L));
+                searchRequest.scroll(TimeValue.timeValueMinutes(30L));
                 SearchResponse searchResponse;
                 try {
                     searchResponse = this.esClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -171,7 +171,7 @@ public class BuildTopicDistanceGraph implements Runnable {
                 }
             } else {
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                scrollRequest.scroll(TimeValue.timeValueMinutes(60L));
+                scrollRequest.scroll(TimeValue.timeValueMinutes(30L));
                 SearchResponse searchScrollResponse;
                 try {
                     searchScrollResponse = this.esClient.scroll(scrollRequest, RequestOptions.DEFAULT);
@@ -336,10 +336,7 @@ public class BuildTopicDistanceGraph implements Runnable {
     }
 
     private void processHit(SearchHit hit) {
-        Map<String, Object> fieldMap = hit.getSourceAsMap();
-
-        this.processDomain((String) fieldMap.get("domainName"));
-        System.gc();
+        this.processDomain((String) hit.getSourceAsMap().get("domainName"));
         //this.processUrl((String) fieldMap.get("urlHash"));
     }
 
@@ -437,10 +434,10 @@ public class BuildTopicDistanceGraph implements Runnable {
             for (SearchHit domainHit : allDomainHits) {
                 System.out.print(".");
                 gcCounter += 1;
-                if (gcCounter==1000) {
+                if (gcCounter==10000) {
                     System.gc();
                     gcCounter = 0;
-                    System.out.println("GC at 1,000");
+                    System.out.println("GC at 10,000");
                 }
                 for (SearchHit innerDomainHit : allDomainHits) {
                     domainTopic = (String) domainHit.getSourceAsMap().get("topic");
