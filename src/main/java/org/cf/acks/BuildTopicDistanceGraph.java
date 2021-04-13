@@ -484,7 +484,7 @@ public class BuildTopicDistanceGraph implements Runnable {
             this.addToTopicPairStrengs(topicDomainPairStrengths);
             this.alreadyProcessedDomains.put(domainName, true);
         } else {
-            System.out.println("Already processed: "+domainName);
+            //System.out.println("Already processed: "+domainName);
         }
     }
 
