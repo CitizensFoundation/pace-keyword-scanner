@@ -136,7 +136,7 @@ public class BuildTopicDistanceGraph implements Runnable {
         this.stateResultsList = new ArrayList<UpdateData>();
 
         BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
-        bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
+        bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScoreV2", 1));
 
         if (this.year!=null && this.year!="") {
             bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))
@@ -410,7 +410,7 @@ public class BuildTopicDistanceGraph implements Runnable {
 
             BoolQueryBuilder bQuery = QueryBuilders.boolQuery();
             bQuery.must(QueryBuilders.termQuery("domainName", domainName));
-            bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScore", 1));
+            bQuery.must(QueryBuilders.termQuery("oneTwoRelevanceScoreV2", 1));
 
             if (this.year!=null && this.year!="") {
                 bQuery.must(QueryBuilders.rangeQuery("createdAt").gte(this.year+"-01-01T00:00:00.000Z"))

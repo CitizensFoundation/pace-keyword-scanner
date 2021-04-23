@@ -39,7 +39,7 @@ class MultiEsOneTwos:
         evalOptions = []
 
         for topic in xlsManager.topics:
-            if topic!="Citizen Engagement" and topic!="Resentment of elite":
+            if topic!="Citizen Engagement" and topic!="Resentment of elite" and topic!="UKIP" and topic!="Loss of sovereignty":
                 evalOptions.append({"topic": topic, "modelName": topic.replace(' ','').lower()})
 
         chunkedList = list(self.chunks(evalOptions, int(len(evalOptions)/2)))

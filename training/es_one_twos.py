@@ -32,7 +32,7 @@ class EsOneTwos(EsPredictions):
     totalProcessedParagraphs = 0
 
     def updateScore(self, id, score):
-         super(EsOneTwos, self).updateScore(id, score, "oneTwoRelevanceScore")
+         super(EsOneTwos, self).updateScore(id, score, "oneTwoRelevanceScoreV2")
 
     def predict_all_for_ones_topic(self, topic):
         print(f"Predicting for {topic}")
@@ -46,8 +46,8 @@ class EsOneTwos(EsPredictions):
                         { "match": { "topic": topic } }
                     ],
                     "must_not": [
-                        { "exists": {"field": "oneTwoRelevanceScore"} },
-                        { "match": { "relevanceScore": -1 } }
+                        { "exists": {"field": "oneTwoRelevanceScoreV2"} },
+                        #{ "match": { "relevanceScore": -1 } }
                     ]
                  }
              }
