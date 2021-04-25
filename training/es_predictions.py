@@ -41,6 +41,7 @@ class EsPredictions:
                 '_op_type': 'update',
                 '_index': "urls",
                 '_id': id,
+                'retry_on_conflict': 3,
                 'doc': doc
         })
         #es.update(index="urls", id=id, body=update)
