@@ -2,7 +2,7 @@ const elasticsearch = require("elasticsearch");
 
 const esClient = new elasticsearch.Client({
   host:
-    "https://search-pace-dev-1-jv4lkhrngfqvb3wiwkrcvpsr7m.us-east-1.es.amazonaws.com/",
+    "https://search-demos-v1-hujolmcnrbsjb3fh3pfhbvtsbu.us-east-1.es.amazonaws.com/",
   log: "error",
 });
 
