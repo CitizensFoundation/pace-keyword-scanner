@@ -106,20 +106,22 @@ public class ImportToES implements Runnable {
             file = new File(fileNameWithoutHashCode);
         }
 
-        while (file.exists() == false) {
-            try {
-                Random rand = new Random();
-                int n = rand.nextInt(2500);
-                n += 3500;
-                System.out.println("Waiting on file import: " + archive + " " + n / 1000 + "s");
-                long retryDuration = System.currentTimeMillis() - startTime;
-                if (retryDuration < 5 * 60 * 1000) {
-                    Thread.sleep(n);
-                } else {
-                    break;
+        if (false) {
+            while (file.exists() == false) {
+                try {
+                    Random rand = new Random();
+                    int n = rand.nextInt(2500);
+                    n += 3500;
+                    System.out.println("Waiting on file import: " + archive + " " + n / 1000 + "s");
+                    long retryDuration = System.currentTimeMillis() - startTime;
+                    if (retryDuration < 5 * 60 * 1000) {
+                        Thread.sleep(n);
+                    } else {
+                        break;
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Error sleeping in thread: " + ex.getMessage());
                 }
-            } catch (Exception ex) {
-                System.out.println("Error sleeping in thread: " + ex.getMessage());
             }
         }
 
