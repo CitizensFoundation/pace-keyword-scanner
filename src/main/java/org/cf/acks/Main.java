@@ -344,6 +344,7 @@ public class Main {
                     int matchesSize = matches.size();
                     for (int m=0;m<matchesSize;m++) {
                         matchedIndexes.add(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
+                        //System.out.println(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
                         //System.out.println(matches.get(m).getMatchedExpression().getExpression());
                     }
                     System.out.println("OK: ("+entry.topic+" "+entry.subTopic+")");
