@@ -34,8 +34,8 @@ public class WetArchiveProcessor implements Runnable {
     private static final Logger logger = LogManager.getLogger(WetArchiveProcessor.class);
 
     public final int BUFFER_SIZE = 5_000_000;
-    public final int MIN_LINE_LENGTH = 50;
-    public final int MAX_LINE_LENGTH = 2000;
+    public final int MIN_LINE_LENGTH = 25;
+    public final int MAX_LINE_LENGTH = 3500;
 
     final static String WARC_VERSION = "WARC/1.0";
     final static String REQUEST_MARKER = "WARC-Type: request";
