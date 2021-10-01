@@ -29,6 +29,7 @@ class KeywordEntry {
     public final List<String> scanExpressions;
     public final int index;
     public final String validationParagraph;
+    public final static boolean USE_START_WORD_BOUNDRY = false;
 
     KeywordEntry(String idealogyType, String topic, String subTopic,
                  Integer numberOfKeywords, String language,
@@ -46,7 +47,7 @@ class KeywordEntry {
     public static String transformExpression(int index, String expressionPart) {
         if (expressionPart.startsWith("*")) {
             expressionPart = expressionPart.substring(1);
-        } else {
+        } else if (USE_START_WORD_BOUNDRY) {
             expressionPart = "\\b"+expressionPart;
         }
         expressionPart = expressionPart.replaceAll("-",".");
