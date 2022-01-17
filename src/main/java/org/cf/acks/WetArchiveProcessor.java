@@ -76,88 +76,119 @@ public class WetArchiveProcessor implements Runnable {
 
             Scanner keywordHyperScanner = new Scanner();
             HttpURLConnection myURLConnection;
-            try {
-                keywordHyperScanner.allocScratch(keywordHyperDatabase);
-                URL archiveUrl = new URL(archive);
-                myURLConnection = (HttpURLConnection) archiveUrl.openConnection();
-                try (
-                    final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(myURLConnection.getInputStream()), BUFFER_SIZE);
-                    final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
 
-                    boolean processingEntry = false;
+            int maxRetry = 1000;
+            int retryCount = 0;
+            Boolean retry = true;
 
-                    String outPath = "results/"+getFilename(archive)+".scanned";
-                    Writer resultsWriter = new BufferedWriter(new FileWriter(new File(outPath+".working")));
 
-                    String line;
-                    String currentDate = null;
-                    int paragraphNumber = 1;
-                    String wholePage = "";
-                    while ((line = contentReader.readLine()) != null) {
-                        if (line.startsWith(CONVERSION_MARKER)) {
-                            if (PAGE_MODE && wholePage.length()>0) {
-                                processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
-                            }
-                            processingEntry = true;
-                            currentURL = null;
-                            currentDate = null;
-                            wholePage = "";
-                            paragraphNumber = 1;
-                            this.haveWrittenDomainLine = false;
-                        } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
-                            currentURL = line;
-                            currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
-                        } else if (processingEntry && line.startsWith(TARGET_DATE)) {
-                            currentDate = line;
-                            currentDate = currentDate.replace(TARGET_DATE+" ", "");
-                        } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
-                            line = contentReader.readLine();
-                            try {
-                                while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
-                                    if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
-                                        if (!hasTooManyCommas(line) &&
-                                            !line.startsWith("http") &&
-                                            !(line.contains("function") && line.contains("{"))) {
-                                                if (PAGE_MODE) {
-                                                    wholePage+=line.replaceAll("\\R"," ");
-                                                } else {
-                                                    processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
-                                                }
-                                            }
-                                    }
-                                    paragraphNumber++;
+            while (retry && retryCount<maxRetry) {
+                retryCount+=1;
+                try {
+                    keywordHyperScanner.allocScratch(keywordHyperDatabase);
+                    URL archiveUrl = new URL(archive);
+                    myURLConnection = (HttpURLConnection) archiveUrl.openConnection();
+                    try (
+                        final GZIPInputStream gzipObjectStream = new GZIPInputStream(new AlwaysAvailableStream(myURLConnection.getInputStream()), BUFFER_SIZE);
+                        final BufferedReader contentReader = new BufferedReader(new InputStreamReader(gzipObjectStream, StandardCharsets.UTF_8), BUFFER_SIZE);) {
+
+                        boolean processingEntry = false;
+
+                        String outPath = "results/"+getFilename(archive)+".scanned";
+                        Writer resultsWriter = new BufferedWriter(new FileWriter(new File(outPath+".working")));
+
+                        String line;
+                        String currentDate = null;
+                        int paragraphNumber = 1;
+                        String wholePage = "";
+                        while ((line = contentReader.readLine()) != null) {
+                            if (line.startsWith(CONVERSION_MARKER)) {
+                                if (PAGE_MODE && wholePage.length()>0) {
+                                    processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
                                 }
-                            } catch (Throwable t) {
-                                resultsWriter.close();
-                                throw new IOException(t);
+                                processingEntry = true;
+                                currentURL = null;
+                                currentDate = null;
+                                wholePage = "";
+                                paragraphNumber = 1;
+                                this.haveWrittenDomainLine = false;
+                            } else if (processingEntry && line.startsWith(TARGET_URI_MARKER)) {
+                                currentURL = line;
+                                currentURL = currentURL.replace(TARGET_URI_MARKER+" ", "");
+                            } else if (processingEntry && line.startsWith(TARGET_DATE)) {
+                                currentDate = line;
+                                currentDate = currentDate.replace(TARGET_DATE+" ", "");
+                            } else if (processingEntry && currentURL != null && currentDate != null && line.startsWith(CONTENT_LENGTH)) {
+                                line = contentReader.readLine();
+                                try {
+                                    while ((line = contentReader.readLine()) != null && ! line.equals(WARC_VERSION)) {
+                                        if (line.length()>MIN_LINE_LENGTH && line.length()<MAX_LINE_LENGTH) {
+                                            if (!hasTooManyCommas(line) &&
+                                                !line.startsWith("http") &&
+                                                !(line.contains("function") && line.contains("{"))) {
+                                                    if (PAGE_MODE) {
+                                                        wholePage+=line.replaceAll("\\R"," ");
+                                                    } else {
+                                                        processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, line, resultsWriter, currentDate);
+                                                    }
+                                                }
+                                        }
+                                        paragraphNumber++;
+                                    }
+                                } catch (Throwable t) {
+                                    resultsWriter.close();
+                                    throw new IOException(t);
+                                }
+                                processingEntry = false;
                             }
-                            processingEntry = false;
+                        }
+                        // Catch the end the WET file in page mode
+                        if (PAGE_MODE && wholePage.length()>0) {
+                            processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
+                        }
+                        keywordHyperScanner.close();
+                        long duration = System.currentTimeMillis() - startTime;
+                        resultsWriter.write("Duration\n");
+                        resultsWriter.write(duration + "\n");
+                        resultsWriter.close();
+                        File finalFile = new File(outPath+".working");
+                        boolean renameResult = finalFile.renameTo(new File(outPath));
+                        retry = false;
+                    } catch (IOException io) {
+                        if (retryCount<maxRetry) {
+                            System.out.println("Retry "+retryCount+" for: "+archive);
+                            try {
+                                Thread.sleep(500);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            retry = false;
+                            logger.catching(io);
+                            System.out.println("Error for: "+archive);
+                        }
+                    } finally {
+                        schedulingSemaphore.release();
+                    }
+                } catch (Throwable t) {
+                    if (retryCount<maxRetry) {
+                        System.out.println("Retry "+retryCount+" for: "+archive);
+                        try {
+                            Thread.sleep(500);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        retry = false;
+                        try {
+                            throw new IOException(t);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
-                    // Catch the end the WET file in page mode
-                    if (PAGE_MODE && wholePage.length()>0) {
-                        processStringForKeywords(expressionToKeywordEntries, keywordHyperScanner, keywordHyperDatabase, paragraphNumber, currentURL, wholePage, resultsWriter, currentDate);
-                    }
-                    keywordHyperScanner.close();
-                    long duration = System.currentTimeMillis() - startTime;
-                    resultsWriter.write("Duration\n");
-                    resultsWriter.write(duration + "\n");
-                    resultsWriter.close();
-                    File finalFile = new File(outPath+".working");
-                    boolean renameResult = finalFile.renameTo(new File(outPath));
-                } catch (IOException io) {
-                    logger.catching(io);
-                    System.out.println("Error for: "+archive);
-                } finally {
-                    schedulingSemaphore.release();
-                }
-            } catch (Throwable t) {
-                try {
-                    throw new IOException(t);
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
+
         } else {
             System.out.println("Empty: "+archive);
         }
