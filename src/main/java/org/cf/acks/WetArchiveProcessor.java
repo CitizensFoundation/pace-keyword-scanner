@@ -77,7 +77,7 @@ public class WetArchiveProcessor implements Runnable {
             Scanner keywordHyperScanner = new Scanner();
             HttpURLConnection myURLConnection;
 
-            int maxRetry = 1000;
+            int maxRetry = 25000;
             int retryCount = 0;
             Boolean retry = true;
 

@@ -102,6 +102,8 @@ public class Main {
         Path mainFilePath = Paths.get(args[1]);
         final List<String> allWetFiles = Files.readAllLines(mainFilePath);
 
+        // Shuffle the lines, because for example if searching 2013-2021 then the 2013 WET files are smaller
+        // so those CPUs will finish much earlier if not shuffled
         Collections.shuffle(allWetFiles);
 
         final List<List<String>> splitWetFiles = ListUtils.partition(allWetFiles, allWetFiles.size()/availableProcessors);
