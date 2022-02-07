@@ -101,6 +101,9 @@ public class Main {
         final int availableProcessors = Runtime.getRuntime().availableProcessors();
         Path mainFilePath = Paths.get(args[1]);
         final List<String> allWetFiles = Files.readAllLines(mainFilePath);
+
+        Collections.shuffle(allWetFiles);
+
         final List<List<String>> splitWetFiles = ListUtils.partition(allWetFiles, allWetFiles.size()/availableProcessors);
         final String filesPathName = mainFilePath.getParent().toAbsolutePath().toString();
 
@@ -191,10 +194,13 @@ public class Main {
         //final int maxScheduled = poolSize * 3;
 
         // Production
-        final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
-        final int maxScheduled = poolSize * 3;
+        //final int poolSize = Runtime.getRuntime().availableProcessors() - 1;
+        //final int maxScheduled = poolSize * 3;
 
-        logger.info("Allocating a thread pool of size {}.", poolSize);
+        final int poolSize = 1;
+        final int maxScheduled = poolSize * 1;
+
+         logger.info("Allocating a thread pool of size {}.", poolSize);
 
         final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
 

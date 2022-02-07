@@ -22,6 +22,7 @@ declare -a filePathsPACE=(
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2018-51/wet.paths.gz"
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2019-51/wet.paths.gz"
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz"
+  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-49/wet.paths.gz"
 )
 
 for Path in "${filePaths[@]}"
