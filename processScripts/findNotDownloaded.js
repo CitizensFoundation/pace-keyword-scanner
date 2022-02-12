@@ -38,4 +38,6 @@ try {
     console.log("File has been saved.");
 } catch (error) {
     console.error(err);
-}q
+}
+
+process.exit();
