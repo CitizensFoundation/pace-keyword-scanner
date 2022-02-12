@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.opensearch.action.admin.indices.create.CreateIndexRequest;
 import org.opensearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.opensearch.client.RequestOptions;
@@ -320,6 +321,8 @@ public class Main {
 
     private static void validateKeywords(String[] args) throws Throwable {
 
+        logger.info("Validating keywords.");
+
         long startTime = System.currentTimeMillis();
         expressionToKeywordEntries = new HashMap<Expression, Integer>();
         keywordEntries = new ArrayList<KeywordEntry>();
@@ -367,6 +370,12 @@ public class Main {
 
     // Throwable originates from the JNI interface to Hyperscan.
     public static void main(String[] args) throws Throwable {
+        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+        File file = new File("log4j2.xml");
+
+        // this will force a reconfiguration
+        context.setConfigLocation(file.toURI());
+        logger.info("Starting.");
         if (args[0].equals("scan")) {
             startScan(args);
         } else if (args[0].equals("scanPerCPU")) {

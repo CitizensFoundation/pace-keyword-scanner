@@ -69,6 +69,7 @@ public class WetArchiveProcessor implements Runnable {
     @Override
     public void run() {
         System.out.println("Scanning: " + archive);
+        logger.info("Scanning: " + archive);
         if (archive != null & archive.length() > 0) {
 
             String currentURL = null; // Should never be null in practice.
@@ -157,6 +158,7 @@ public class WetArchiveProcessor implements Runnable {
                     } catch (IOException io) {
                         if (retryCount<maxRetry) {
                             System.out.println("Retry "+retryCount+" for: "+archive);
+                            logger.info("Retry "+retryCount+" for: "+archive);
                             try {
                                 Thread.sleep(500);
                             } catch (Exception e) {
@@ -164,8 +166,9 @@ public class WetArchiveProcessor implements Runnable {
                             }
                         } else {
                             retry = false;
-                            logger.catching(io);
                             System.out.println("Error for: "+archive);
+                            logger.error("Error for: "+archive);
+                            logger.catching(io);
                         }
                     } finally {
                         schedulingSemaphore.release();
@@ -173,6 +176,7 @@ public class WetArchiveProcessor implements Runnable {
                 } catch (Throwable t) {
                     if (retryCount<maxRetry) {
                         System.out.println("Retry "+retryCount+" for: "+archive);
+                        logger.info("Retry "+retryCount+" for: "+archive);
                         try {
                             Thread.sleep(500);
                         } catch (Exception e) {
@@ -183,6 +187,7 @@ public class WetArchiveProcessor implements Runnable {
                         try {
                             throw new IOException(t);
                         } catch (IOException e) {
+                            logger.catching(e);
                             e.printStackTrace();
                         }
                     }
@@ -191,7 +196,9 @@ public class WetArchiveProcessor implements Runnable {
 
         } else {
             System.out.println("Empty: "+archive);
+            logger.error("Empty: "+archive);
         }
+        logger.info("Completed: " + archive);
     }
 
     private boolean hasTooManyCommas(String text) {
