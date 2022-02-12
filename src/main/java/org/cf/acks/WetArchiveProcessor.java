@@ -199,6 +199,7 @@ public class WetArchiveProcessor implements Runnable {
             logger.error("Empty: "+archive);
         }
         logger.info("Completed: " + archive);
+        System.gc();
     }
 
     private boolean hasTooManyCommas(String text) {
