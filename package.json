@@ -4,9 +4,11 @@
   "description": "Scans CommonCrawl datasets for keywords. Scans the whole month of CommonCrawl data using Amazon EC2 c5n.16xlarge instance for hundreds of keywords in about 4 hours. Developed with support from the EU and the Populism &amp; Civic Engagement H2020 project.",
   "main": "index.js",
   "dependencies": {
+    "@opensearch-project/opensearch": "^1.0.2",
     "elasticsearch": "^16.7.2",
     "exceljs": "^4.2.0",
-    "googleapis": "^67.0.0"
+    "googleapis": "^67.0.0",
+    "opensearch": "0.0.3"
   },
   "devDependencies": {},
   "scripts": {
