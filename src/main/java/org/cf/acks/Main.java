@@ -360,7 +360,7 @@ public class Main {
                     }
                     System.out.println("OK: ("+entry.topic+" "+entry.subTopic+")");
                 } else {
-                    System.out.println("ERROR: ("+entry.topic+" "+entry.subTopic+") "+entry.validationParagraph);
+                    System.out.println("ERROR: ("+entry.index+" - "+entry.topic+" "+entry.subTopic+") "+entry.validationParagraph);
                 }
             } else {
                 System.out.println("WARN: validateKeywords, no validation paragraph");

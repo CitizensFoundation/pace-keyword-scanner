@@ -29,7 +29,8 @@ class KeywordEntry {
     public final List<String> scanExpressions;
     public final int index;
     public final String validationParagraph;
-    public final static boolean USE_START_WORD_BOUNDRY = false;
+    public final static boolean USE_START_WORD_BOUNDRY = true;
+    public final static boolean SET_END_BOUNDRY = true;
 
     KeywordEntry(String idealogyType, String topic, String subTopic,
                  Integer numberOfKeywords, String language,
@@ -47,12 +48,17 @@ class KeywordEntry {
     public static String transformExpression(int index, String expressionPart) {
         if (expressionPart.startsWith("*")) {
             expressionPart = expressionPart.substring(1);
-        } else if (USE_START_WORD_BOUNDRY) {
+        } else if (USE_START_WORD_BOUNDRY && expressionPart.endsWith("ai")) {
             expressionPart = "\\b"+expressionPart;
         }
+
         expressionPart = expressionPart.replaceAll("-",".");
         expressionPart = expressionPart.replaceAll(" ",".");
         expressionPart = expressionPart.replaceAll("\\*",".");
+
+        if (SET_END_BOUNDRY && expressionPart.endsWith("ai")) {
+             expressionPart = expressionPart+" ";
+        }
 
         System.out.println(index+": "+expressionPart);
 

@@ -50,7 +50,7 @@ public class WetArchiveProcessor implements Runnable {
 
     private final Semaphore schedulingSemaphore;
     private boolean haveWrittenDomainLine = false;
-    private final String archive;
+    private String archive;
     private HashMap<Expression, Integer> expressionToKeywordEntries;
 
     private Database keywordHyperDatabase;
@@ -68,6 +68,7 @@ public class WetArchiveProcessor implements Runnable {
 
     @Override
     public void run() {
+        //archive = archive.replace("commoncrawl.s3.amazonaws.com", "data.commoncrawl.org");
         System.out.println("Scanning: " + archive);
         logger.info("Scanning: " + archive);
         if (archive != null & archive.length() > 0) {
@@ -156,6 +157,7 @@ public class WetArchiveProcessor implements Runnable {
                         boolean renameResult = finalFile.renameTo(new File(outPath));
                         retry = false;
                     } catch (IOException io) {
+                        System.out.println(io.getMessage());
                         if (retryCount<maxRetry) {
                             System.out.println("Retry "+retryCount+" for: "+archive);
                             logger.info("Retry "+retryCount+" for: "+archive);
