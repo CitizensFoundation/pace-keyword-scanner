@@ -68,7 +68,7 @@ public class WetArchiveProcessor implements Runnable {
 
     @Override
     public void run() {
-        //archive = archive.replace("commoncrawl.s3.amazonaws.com", "data.commoncrawl.org");
+        archive = archive.replace("commoncrawl.s3.amazonaws.com", "data.commoncrawl.org");
         System.out.println("Scanning: " + archive);
         logger.info("Scanning: " + archive);
         if (archive != null & archive.length() > 0) {
