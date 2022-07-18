@@ -189,7 +189,11 @@ public class Main {
     private static void importToEs(String[] args) throws Throwable {
         String path = args[1];
         String downloadFile = path+"downloadList";
-        final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(downloadFile));
+
+        File resultsFolder = new File("./results");
+        final List<String> scannedResultsFilesList = Arrays.asList(resultsFolder.list());
+
+        //final List<String> scannedResultsFilesList = Files.readAllLines(Paths.get(downloadFile));
 
         logger.info("CPU cores available: {}", Runtime.getRuntime().availableProcessors());
 

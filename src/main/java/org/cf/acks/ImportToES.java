@@ -93,7 +93,8 @@ public class ImportToES implements Runnable {
         long startTime = System.currentTimeMillis();
 
         String[] paths = archive.split("/");
-        String fileNameWithHashCode = "results/"+paths[paths.length-1]+"."+archive.hashCode()+".scanned";
+//      String fileNameWithHashCode = "results/"+paths[paths.length-1]+"."+archive.hashCode()+".scanned";
+        String fileNameWithHashCode = "results/"+paths[paths.length-1];
 
         String filename = fileNameWithHashCode;
 
