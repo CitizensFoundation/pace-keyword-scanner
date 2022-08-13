@@ -1,8 +1,10 @@
-const elasticsearch = require("elasticsearch");
+"use strict";
 
-const esClient = new elasticsearch.Client({
-  host:
-    "https://search-demos-v1-hujolmcnrbsjb3fh3pfhbvtsbu.us-east-1.es.amazonaws.com/",
+const { Client } = require("@opensearch-project/opensearch");
+
+const esClient = new Client({
+  node:
+    "https://search-popai-nlixyfy37n3b2zipuqzul6hklm.us-east-1.es.amazonaws.com/",
   log: "error",
 });
 
@@ -15,10 +17,10 @@ const count = (index, body) => {
 };
 
 const getBaseQuery = (topic, subTopic, language, numberOfSampleHits) => {
-  console.log("Searching for: " + topic);
-  console.log("Searching for: " + subTopic);
-  console.log("Searching for: " + language);
-  console.log("Searching for: " + numberOfSampleHits);
+  console.log("Searching topic: " + topic);
+  console.log("Searching subTopic: " + subTopic);
+  console.log("Searching language: " + language);
+  console.log("Searching number of hits: " + numberOfSampleHits);
   return {
     query: {
       function_score: {
@@ -26,10 +28,10 @@ const getBaseQuery = (topic, subTopic, language, numberOfSampleHits) => {
           bool: {
             must: [
               {
-                term: { "subTopic.keyword": subTopic },
+                term: { "subTopic.keyword": subTopic.trim() },
               },
               {
-                term: { "topic.keyword": topic },
+                term: { "topic.keyword": topic.trim() },
               },
               {
                 term: { "language.keyword": language },
@@ -102,21 +104,21 @@ const getEsSubTopicHits = async (
   return new Promise((resolve, reject) => {
     count("urls", getCountQuery(topic, subTopic, language))
       .then((countResults) => {
-        console.log(countResults.count);
+        console.log(countResults);
         search(
           "urls",
           getBaseQuery(topic, subTopic, language, numberOfSampleHits)
         )
           .then((results) => {
             console.log(
-              `found ${results.hits.total} items in ${results.took}ms`
+              `found ${countResults.body.count} items in ${results.body.took}ms`
             );
             console.log(results);
             const returnResults = {
-              totalHits: countResults.count,
+              totalHits: countResults.body.count,
               subTopicHits: [],
             };
-            results.hits.hits.forEach((hitIn) => {
+            results.body.hits.hits.forEach((hitIn) => {
               const hit = hitIn._source;
               //console.log(hit.paragraph);
               returnResults.subTopicHits.push({ paragraph: hit.paragraph });
@@ -156,7 +158,8 @@ const addSampleHitsToWorkbook = async (
       );
       const subTopicHits = hitResults.subTopicHits;
 
-      const worksheet = xlsWorkbook.getWorksheet(currentTopic);
+      console.log(`Current topic: ${currentTopic}`);
+      const worksheet = xlsWorkbook.getWorksheet(currentTopic.substring(0,30));
       worksheet.getColumn(1).width = 17;
       worksheet.getColumn(2).width = 75;
       worksheet.getColumn(3).width = 15;
@@ -184,10 +187,14 @@ const addSampleHitsToWorkbook = async (
       const masterRow = xlsWorkbook.worksheets[0].getRow(
         allSubTopics[i].rowNumber
       );
-      masterRow.getCell(7).value = {
-        formula: `'${currentTopic}'!C${currentRow}`,
-      };
-      masterRow.getCell(7).numFmt = "0%";
+
+      if (hitResults.totalHits > 0) {
+        masterRow.getCell(7).value = {
+          formula: `'${currentTopic.substring(0,30)}'!C${currentRow}`,
+        };
+        masterRow.getCell(7).numFmt = "0%";
+      }
+
       masterRow.getCell(6).value = hitResults.totalHits;
       masterRow.getCell(6).numFmt = "#,##0";
       worksheet.addRow();

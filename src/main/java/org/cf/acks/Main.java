@@ -349,25 +349,31 @@ public class Main {
 
         for (KeywordEntry entry: keywordEntries) {
             if (entry.validationParagraph!="") {
-                String lowerCaseLine = entry.validationParagraph.toLowerCase();
-                //System.out.println("P:"+entry.validationParagraph);
+                // Split the validation paragraph into sentences.
+                String[] validationParagraphs = entry.validationParagraph.split("\\|");
+                for (String validationParagraph : validationParagraphs) {
+                    String lowerCaseLine = validationParagraph.toLowerCase();
+                    lowerCaseLine = lowerCaseLine.trim();
+                    //System.out.println("P:"+entry.validationParagraph);
 
-                List<Integer> matchedIndexes = new ArrayList<Integer>();
+                    List<Integer> matchedIndexes = new ArrayList<Integer>();
 
-                List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
+                    List<Match> matches = keywordHyperScanner.scan(keywordHyperDatabase,lowerCaseLine);
 
-                if (matches.size()>0) {
-                    //System.out.println(matches.size());
-                    int matchesSize = matches.size();
-                    for (int m=0;m<matchesSize;m++) {
-                        matchedIndexes.add(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
-                        //System.out.println(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
-                        //System.out.println(matches.get(m).getMatchedExpression().getExpression());
+                    if (matches.size()>0) {
+                        //System.out.println(matches.size());
+                        int matchesSize = matches.size();
+                        for (int m=0;m<matchesSize;m++) {
+                            matchedIndexes.add(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
+                            //System.out.println(expressionToKeywordEntries.get(matches.get(m).getMatchedExpression()));
+                            //System.out.println(matches.get(m).getMatchedExpression().getExpression());
+                        }
+                        System.out.println("OK: ("+entry.topic+" "+entry.subTopic+")");
+                    } else {
+                        System.out.println("ERROR: ("+entry.index+" - "+entry.topic+" "+entry.subTopic+") "+validationParagraph);
                     }
-                    System.out.println("OK: ("+entry.topic+" "+entry.subTopic+")");
-                } else {
-                    System.out.println("ERROR: ("+entry.index+" - "+entry.topic+" "+entry.subTopic+") "+entry.validationParagraph);
                 }
+
             } else {
                 System.out.println("WARN: validateKeywords, no validation paragraph");
             }

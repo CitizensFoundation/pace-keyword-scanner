@@ -1,4 +1,4 @@
-const numberOfSampleHits = 100;
+const numberOfSampleHits = 250;
 const language = "en";
 const allTopics = [];
 const allSubTopics = [];
@@ -41,11 +41,12 @@ const setupTopicsAndSheets = () => {
       for (let n = 8; n < row.cellCount; n++) {
         if (row.getCell(n).text != null && row.getCell(n).text.length>0) {
           keywords += ` ${row.getCell(n).text}`;
-          console.log(row.getCell(n).text)
+          //console.log(row.getCell(n).text)
         }
       }
 
-      const topic = row.getCell(3).value;
+      let topic = row.getCell(3).value;
+      topic = topic.trim();
       allSubTopics.push({
         locale: row.getCell(1).value,
         idealogy: row.getCell(2).value,
@@ -62,11 +63,11 @@ const setupTopicsAndSheets = () => {
       if (allTopics.indexOf(topic)===-1) {
         allTopics.push(topic);
         console.log(topic);
-        const worksheet = xlsWorkbook.addWorksheet(topic);
+        const worksheet = xlsWorkbook.addWorksheet(topic.substring(0,30));
         const topicRow = worksheet.addRow([`${topic}`]);
         topicRow.font = { bold: true, size: 20 };
         topicRow.height = 42.5;
-        worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Notes for potential fixes"]);
+        worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Sentiment?","Notes for potential fixes"]);
       }
       console.log(row.getCell(4).value);
     } else {

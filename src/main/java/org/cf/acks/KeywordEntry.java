@@ -33,8 +33,8 @@ class KeywordEntry {
     public final static boolean SET_END_BOUNDRY = true;
 
     KeywordEntry(String idealogyType, String topic, String subTopic,
-                 Integer numberOfKeywords, String language,
-                 List<String> scanExpressions, int index, String validationParagraph) {
+            Integer numberOfKeywords, String language,
+            List<String> scanExpressions, int index, String validationParagraph) {
         this.idealogyType = idealogyType;
         this.topic = topic;
         this.subTopic = subTopic;
@@ -46,35 +46,38 @@ class KeywordEntry {
     }
 
     public static String transformExpression(int index, String expressionPart) {
+        expressionPart = expressionPart.trim();
+        expressionPart = expressionPart.replaceAll("\\b", "");
         if (expressionPart.startsWith("*")) {
             expressionPart = expressionPart.substring(1);
         } else if (USE_START_WORD_BOUNDRY && expressionPart.endsWith("ai")) {
-            expressionPart = "\\b"+expressionPart;
+            expressionPart = "\\b" + expressionPart;
         }
 
-        expressionPart = expressionPart.replaceAll("-",".");
-        expressionPart = expressionPart.replaceAll(" ",".");
-        expressionPart = expressionPart.replaceAll("\\*",".");
+        // expressionPart = expressionPart.replaceAll("-",".");
+        // expressionPart = expressionPart.replaceAll(" ",".");
+        expressionPart = expressionPart.replaceAll("\\*", ".");
 
         if (SET_END_BOUNDRY && expressionPart.endsWith("ai")) {
-             expressionPart = expressionPart+" ";
+            expressionPart = expressionPart + " ";
         }
 
-        System.out.println(index+": "+expressionPart);
+        System.out.println(index + ": " + expressionPart);
 
         return expressionPart;
     }
 
-
     public static Integer addSingleOrExpression(String expressionString, int keyIndex, List<Expression> scanExpressions,
-        HashMap<String, Integer> usedExpressions, Integer expressionCounter, HashMap<Expression, Integer> expressionToKeywordEntries) {
+            HashMap<String, Integer> usedExpressions, Integer expressionCounter,
+            HashMap<Expression, Integer> expressionToKeywordEntries) {
         String combinedString = "(";
         String[] splitString = expressionString.split("\\|");
-        for (int s=0; s<splitString.length; s++) {
+        for (int s = 0; s < splitString.length; s++) {
             String splitStringItem = splitString[s].trim();
-            //System.out.println(splitStringItem);
+            // System.out.println(splitStringItem);
             if (!usedExpressions.containsKey(splitStringItem)) {
-                Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
+                Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]),
+                        EnumSet.of(ExpressionFlag.QUIET));
                 scanExpressions.add(scanExpression);
                 combinedString += expressionCounter;
                 usedExpressions.put(splitStringItem, expressionCounter);
@@ -83,15 +86,16 @@ class KeywordEntry {
                 combinedString += usedExpressions.get(splitStringItem);
             }
 
-            if (s!=splitString.length-1) {
+            if (s != splitString.length - 1) {
                 combinedString += " | ";
             } else {
                 combinedString += "";
             }
         }
         combinedString += ")";
-        System.out.println(expressionCounter+": "+combinedString);
-        Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION,ExpressionFlag.SINGLEMATCH));
+        System.out.println(expressionCounter + ": " + combinedString);
+        Expression scanExpression = new Expression(combinedString,
+                EnumSet.of(ExpressionFlag.COMBINATION, ExpressionFlag.SINGLEMATCH));
         scanExpressions.add(scanExpression);
         expressionCounter++;
         expressionToKeywordEntries.put(scanExpression, keyIndex);
@@ -99,7 +103,8 @@ class KeywordEntry {
         return expressionCounter;
     }
 
-    public static Database setupExpressionsAndDatabase(List<KeywordEntry> keywordEntries, HashMap<Expression, Integer> expressionToKeywordEntries) {
+    public static Database setupExpressionsAndDatabase(List<KeywordEntry> keywordEntries,
+            HashMap<Expression, Integer> expressionToKeywordEntries) {
         Database keywordHyperDatabase;
 
         try {
@@ -110,13 +115,16 @@ class KeywordEntry {
             HashMap<String, Integer> usedSingleKeywordExpressions = new HashMap<String, Integer>();
             for (int keyIndex = 0; keyIndex < keywordEntriesSize; keyIndex++) {
                 List<String> expressionStrings = keywordEntries.get(keyIndex).scanExpressions;
-                if (expressionStrings.size()==1) {
+                if (expressionStrings.size() == 1) {
                     String expressionString = expressionStrings.get(0);
                     if (expressionString.contains("|")) {
-                        expressionCounter = KeywordEntry.addSingleOrExpression(expressionString, keyIndex, scanExpressions, usedExpressions, expressionCounter, expressionToKeywordEntries);
+                        expressionCounter = KeywordEntry.addSingleOrExpression(expressionString, keyIndex,
+                                scanExpressions, usedExpressions, expressionCounter, expressionToKeywordEntries);
                     } else {
                         if (!usedSingleKeywordExpressions.containsKey(expressionString)) {
-                            Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.SINGLEMATCH));
+                            Expression scanExpression = new Expression(
+                                    transformExpression(expressionCounter, expressionString),
+                                    EnumSet.of(ExpressionFlag.SINGLEMATCH));
                             scanExpressions.add(scanExpression);
                             usedSingleKeywordExpressions.put(expressionString, expressionCounter);
                             expressionCounter++;
@@ -127,15 +135,17 @@ class KeywordEntry {
                     String combinedString = "";
                     for (int eIndex = 0; eIndex < expressionStrings.size(); eIndex++) {
                         String expressionString = expressionStrings.get(eIndex);
-                        //System.out.println(expressionString);
+                        // System.out.println(expressionString);
                         if (expressionString.contains("|")) {
                             combinedString += "(";
                             String[] splitString = expressionString.split("\\|");
-                            for (int s=0; s<splitString.length; s++) {
+                            for (int s = 0; s < splitString.length; s++) {
                                 String splitStringItem = splitString[s].trim();
-                                //System.out.println(splitStringItem);
+                                // System.out.println(splitStringItem);
                                 if (!usedExpressions.containsKey(splitStringItem)) {
-                                    Expression scanExpression = new Expression(transformExpression(expressionCounter, splitString[s]), EnumSet.of(ExpressionFlag.QUIET));
+                                    Expression scanExpression = new Expression(
+                                            transformExpression(expressionCounter, splitString[s]),
+                                            EnumSet.of(ExpressionFlag.QUIET));
                                     scanExpressions.add(scanExpression);
                                     combinedString += expressionCounter;
                                     usedExpressions.put(splitStringItem, expressionCounter);
@@ -144,33 +154,37 @@ class KeywordEntry {
                                     combinedString += usedExpressions.get(splitStringItem);
                                 }
 
-                                if (s!=splitString.length-1) {
+                                if (s != splitString.length - 1) {
                                     combinedString += " | ";
                                 } else {
                                     combinedString += "";
                                 }
                             }
                             combinedString += ")";
-                            if (eIndex!=expressionStrings.size()-1) {
+                            if (eIndex != expressionStrings.size() - 1) {
                                 combinedString += " & ";
                             }
                         } else if (expressionString.startsWith("-")) {
                             expressionString = expressionString.substring(1);
                             if (!usedExpressions.containsKey(expressionString)) {
-                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
+                                Expression scanExpression = new Expression(
+                                        transformExpression(expressionCounter, expressionString),
+                                        EnumSet.of(ExpressionFlag.QUIET));
                                 scanExpressions.add(scanExpression);
                                 combinedString += "!" + expressionCounter;
                                 usedExpressions.put(expressionString, expressionCounter);
                                 expressionCounter++;
                             } else {
-                                combinedString +=  "!" + usedExpressions.get(expressionString);
+                                combinedString += "!" + usedExpressions.get(expressionString);
                             }
-                            if (eIndex!=expressionStrings.size()-1) {
+                            if (eIndex != expressionStrings.size() - 1) {
                                 combinedString += " & ";
                             }
                         } else {
                             if (!usedExpressions.containsKey(expressionString)) {
-                                Expression scanExpression = new Expression(transformExpression(expressionCounter, expressionString), EnumSet.of(ExpressionFlag.QUIET));
+                                Expression scanExpression = new Expression(
+                                        transformExpression(expressionCounter, expressionString),
+                                        EnumSet.of(ExpressionFlag.QUIET));
                                 scanExpressions.add(scanExpression);
                                 combinedString += expressionCounter;
                                 usedExpressions.put(expressionString, expressionCounter);
@@ -178,14 +192,15 @@ class KeywordEntry {
                             } else {
                                 combinedString += usedExpressions.get(expressionString);
                             }
-                            if (eIndex!=expressionStrings.size()-1) {
+                            if (eIndex != expressionStrings.size() - 1) {
                                 combinedString += " & ";
                             }
                         }
                     }
                     combinedString += "";
-                    System.out.println(expressionCounter+": "+combinedString);
-                    Expression scanExpression = new Expression(combinedString,  EnumSet.of(ExpressionFlag.COMBINATION,ExpressionFlag.SINGLEMATCH));
+                    System.out.println(expressionCounter + ": " + combinedString);
+                    Expression scanExpression = new Expression(combinedString,
+                            EnumSet.of(ExpressionFlag.COMBINATION, ExpressionFlag.SINGLEMATCH));
                     scanExpressions.add(scanExpression);
                     expressionCounter++;
                     expressionToKeywordEntries.put(scanExpression, keyIndex);
@@ -202,8 +217,8 @@ class KeywordEntry {
     }
 
     public static Database createPatternDataFromFile(String configFilePath,
-                HashMap<Expression, Integer> expressionToKeywordEntries,
-                ArrayList<KeywordEntry> keywordEntries) {
+            HashMap<Expression, Integer> expressionToKeywordEntries,
+            ArrayList<KeywordEntry> keywordEntries) {
 
         File configFile = new File(configFilePath);
 
@@ -212,33 +227,33 @@ class KeywordEntry {
             Reader in = new FileReader(configFile);
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(in);
             for (CSVRecord record : records) {
-                if (!record.get(3).isEmpty() && !record.get(7).isEmpty() && record.getRecordNumber()>2) {
-                    String language = record.get(0);
-                    String idealogyType = record.get(1);
-                    String topic = record.get(2);
-                    String subTopic = record.get(3);
-                    System.out.println(topic+" "+subTopic);
+                if (!record.get(3).isEmpty() && !record.get(7).isEmpty() && record.getRecordNumber() > 2) {
+                    String language = record.get(0).trim();
+                    String idealogyType = record.get(1).trim();
+                    String topic = record.get(2).trim();
+                    String subTopic = record.get(3).trim();
+                    System.out.println(topic + " " + subTopic);
                     String validationParagraph = record.get(4);
                     List<String> scanExpressions = new ArrayList<String>();
 
-                    for (int i=7; i<record.size(); i++) {
-                        if (record.get(i)!="") {
+                    for (int i = 7; i < record.size(); i++) {
+                        if (record.get(i) != "") {
                             String expressionPart = record.get(i);
                             expressionPart = expressionPart.toLowerCase().trim();
-                            if (expressionPart.length()>1) {
-                               scanExpressions.add(expressionPart);
+                            if (expressionPart.length() > 1) {
+                                scanExpressions.add(expressionPart);
                             }
                         }
                     }
 
-                    if (scanExpressions.size()>0) {
-                        if (idealogyType!="DROP") {
+                    if (scanExpressions.size() > 0) {
+                        if (idealogyType != "DROP") {
                             KeywordEntry keywordEntry = new KeywordEntry(idealogyType, topic,
                                     subTopic, scanExpressions.size(),
                                     language, scanExpressions, index, validationParagraph);
                             keywordEntries.add(keywordEntry);
                         } else {
-                            System.out.println("DROP: "+topic+" "+subTopic);
+                            System.out.println("DROP: " + topic + " " + subTopic);
                         }
                         index++;
                     }

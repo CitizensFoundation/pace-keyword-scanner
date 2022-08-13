@@ -254,6 +254,8 @@ public class WetArchiveProcessor implements Runnable {
                 keywords= keywords.substring(0, keywords.length() - 1);
             }
             keywords += ":"+paragraphNumber;
+            //keywords += "==="+matchedIndexes.size()+"===";
+            //keywords += "!!!"+matches.size()+"!!!";
 
             resultsWriter.write(line+keywords+"\n");
        }
