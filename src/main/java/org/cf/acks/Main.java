@@ -348,7 +348,7 @@ public class Main {
         }
 
         for (KeywordEntry entry: keywordEntries) {
-            if (entry.validationParagraph!="") {
+            if (entry.validationParagraph!="" && entry.validationParagraph.length()>0) {
                 // Split the validation paragraph into sentences.
                 String[] validationParagraphs = entry.validationParagraph.split("\\|");
                 for (String validationParagraph : validationParagraphs) {
@@ -375,7 +375,7 @@ public class Main {
                 }
 
             } else {
-                System.out.println("WARN: validateKeywords, no validation paragraph");
+                System.out.println("WARN: validateKeywords, no validation paragraph for "+entry.topic+" "+entry.subTopic);
             }
         }
     }
