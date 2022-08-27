@@ -51,7 +51,7 @@ const setupTopicsAndSheets = () => {
         locale: row.getCell(1).value,
         idealogy: row.getCell(2).value,
         topic: topic,
-        subTopic: row.getCell(4).value,
+        subTopic: row.getCell(4).value.trim(),
         testParagraph: row.getCell(5).value,
         googleHits: row.getCell(6).value,
         ccHits: row.getCell(7).value,
