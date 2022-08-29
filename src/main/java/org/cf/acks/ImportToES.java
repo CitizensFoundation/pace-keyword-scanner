@@ -48,7 +48,7 @@ import net.openhft.hashing.LongHashFunction;
 
 public class ImportToES implements Runnable {
 
-    private static final String FILTER_BY_IDEALOGY = null;
+    private static final String FILTER_BY_IDEALOGY = "popai";
 
     private static final Logger logger = LogManager.getLogger(ImportToES.class);
 
@@ -322,6 +322,7 @@ public class ImportToES implements Runnable {
 
                     if (keywordEntry!=null) {
                         if (FILTER_BY_IDEALOGY!=null && FILTER_BY_IDEALOGY != keywordEntry.idealogyType) {
+                            System.out.println("Skipping "+keywordEntry.idealogyType);
                             continue;
                         }
                         String urlHash = Long.toString(LongHashFunction.xx().hashChars(url));
