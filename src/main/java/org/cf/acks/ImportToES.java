@@ -321,8 +321,8 @@ public class ImportToES implements Runnable {
                     KeywordEntry keywordEntry = keywordEntries.get(Integer.parseInt(entryId));
 
                     if (keywordEntry!=null) {
-                        if (FILTER_BY_IDEALOGY!=null && FILTER_BY_IDEALOGY != keywordEntry.idealogyType.trim()) {
-                            System.out.println("Skipping "+keywordEntry.idealogyType+" from: "+FILTER_BY_IDEALOGY);
+                        if (FILTER_BY_IDEALOGY!=null && !FILTER_BY_IDEALOGY.equals(keywordEntry.idealogyType.trim())) {
+                            System.out.println("Skipping "+keywordEntry.idealogyType);
                             continue;
                         }
                         String urlHash = Long.toString(LongHashFunction.xx().hashChars(url));
