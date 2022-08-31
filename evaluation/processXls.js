@@ -12,6 +12,8 @@ const xlsOutFileName = process.argv[3];
 
 const xlsWorkbook = new Excel.Workbook();
 
+const FILTER_BY_IDEALOGY = "popai";
+
 const setupTopicsAndSheets = () => {
   const firstSheet = xlsWorkbook.worksheets[0];
 
@@ -37,39 +39,43 @@ const setupTopicsAndSheets = () => {
       row.getCell(3).value != null &&
       row.getCell(4).value != null
     ) {
-      let keywords = "";
-      for (let n = 8; n < row.cellCount; n++) {
-        if (row.getCell(n).text != null && row.getCell(n).text.length>0) {
-          keywords += ` ${row.getCell(n).text}`;
-          //console.log(row.getCell(n).text)
+      if (FILTER_BY_IDEALOGY==null || FILTER_BY_IDEALOGY==row.getCell(2).value) {
+        let keywords = "";
+        for (let n = 8; n < row.cellCount; n++) {
+          if (row.getCell(n).text != null && row.getCell(n).text.length>0) {
+            keywords += ` ${row.getCell(n).text}`;
+            //console.log(row.getCell(n).text)
+          }
         }
-      }
 
-      let topic = row.getCell(3).value;
-      topic = topic.trim();
-      allSubTopics.push({
-        locale: row.getCell(1).value,
-        idealogy: row.getCell(2).value,
-        topic: topic,
-        subTopic: row.getCell(4).value.trim(),
-        testParagraph: row.getCell(5).value,
-        googleHits: row.getCell(6).value,
-        ccHits: row.getCell(7).value,
-        percentOfGoogle: row.getCell(8).value,
-        keywords: keywords,
-        rowNumber: rowNumber
-      });
+        let topic = row.getCell(3).value;
+        topic = topic.trim();
+        allSubTopics.push({
+          locale: row.getCell(1).value,
+          idealogy: row.getCell(2).value,
+          topic: topic,
+          subTopic: row.getCell(4).value.trim(),
+          testParagraph: row.getCell(5).value,
+          googleHits: row.getCell(6).value,
+          ccHits: row.getCell(7).value,
+          percentOfGoogle: row.getCell(8).value,
+          keywords: keywords,
+          rowNumber: rowNumber
+        });
 
-      if (allTopics.indexOf(topic)===-1) {
-        allTopics.push(topic);
-        console.log(topic);
-        const worksheet = xlsWorkbook.addWorksheet(topic.substring(0,30));
-        const topicRow = worksheet.addRow([`${topic}`]);
-        topicRow.font = { bold: true, size: 20 };
-        topicRow.height = 42.5;
-        worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Sentiment?","Notes for potential fixes"]);
+        if (allTopics.indexOf(topic)===-1) {
+          allTopics.push(topic);
+          console.log(topic);
+          const worksheet = xlsWorkbook.addWorksheet(topic.substring(0,30));
+          const topicRow = worksheet.addRow([`${topic}`]);
+          topicRow.font = { bold: true, size: 20 };
+          topicRow.height = 42.5;
+          worksheet.addRow(["Sub Topic","Paragraph","Relevant?","Sentiment?","Notes for potential fixes"]);
+        }
+        console.log(row.getCell(4).value);
+      } else {
+        console.log(`Skipping ${row.getCell(2).value}`);
       }
-      console.log(row.getCell(4).value);
     } else {
       //console.log("Skipping import of row: " + rowNumber);
     }
