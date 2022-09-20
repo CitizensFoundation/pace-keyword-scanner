@@ -10,19 +10,19 @@ touch "$importList"
 truncate -s 0 "$importList"
 
 declare -a filePathsTEST=(
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-05/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2020-05/wet.paths.gz"
 )
 
 declare -a filePaths=(
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2013-20/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2014-52/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2015-48/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2016-50/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2017-51/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2018-51/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2019-51/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-50/wet.paths.gz"
-  "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2021-49/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2013-20/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2014-52/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2015-48/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2016-50/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2017-51/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2018-51/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2019-51/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2020-50/wet.paths.gz"
+  "https://data.commoncrawl.org/crawl-data/CC-MAIN-2021-49/wet.paths.gz"
 )
 
 for Path in "${filePaths[@]}"
@@ -47,7 +47,7 @@ do
   do
     sub='.gz'
     if [[ "$line" =~ .*"$sub".* ]]; then
-      echo "https://commoncrawl.s3.amazonaws.com/$line" >> $downloadList
+      echo "https://data.commoncrawl.org/$line" >> $downloadList
     fi
   done < "$masterfile"
 
