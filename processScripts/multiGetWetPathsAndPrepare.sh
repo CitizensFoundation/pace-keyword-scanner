@@ -37,7 +37,7 @@ do
   masterpath="/home/robert/data/CommonCrawl/Downloads"
   mkdir -p "$masterpath"
   cd "$masterpath"
-  wget $Path
+  wget --retry-connrefused --waitretry=1 --read-timeout=30 --timeout=25 $Path
   url=$Path
   mastergzfile=${url##*/}
   yes y | gunzip $mastergzfile
