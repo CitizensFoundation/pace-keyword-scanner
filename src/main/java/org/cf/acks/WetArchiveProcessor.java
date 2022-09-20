@@ -180,7 +180,7 @@ public class WetArchiveProcessor implements Runnable {
                         System.out.println("Retry "+retryCount+" for: "+archive);
                         logger.info("Retry "+retryCount+" for: "+archive);
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(1100);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
