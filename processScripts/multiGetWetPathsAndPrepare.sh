@@ -9,11 +9,11 @@ importList="/home/robert/data/CommonCrawl/importList"
 touch "$importList"
 truncate -s 0 "$importList"
 
-declare -a filePaths=(
+declare -a filePathsTEST=(
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2020-05/wet.paths.gz"
 )
 
-declare -a filePathsPACE=(
+declare -a filePaths=(
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2013-20/wet.paths.gz"
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2014-52/wet.paths.gz"
   "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2015-48/wet.paths.gz"
