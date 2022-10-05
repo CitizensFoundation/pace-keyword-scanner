@@ -148,6 +148,14 @@ class XlsManager:
 
             rating = row[2]
 
+            if options.get('allowEmptyRatings'):
+                if not rating or rating=="" or pd.isnull(rating):
+                    rating = "x"
+                else:
+                    rating = "1"
+
+            print(f"{rating}")
+
             if isinstance(rating, str):
                 rating = rating.strip().lower()
 
@@ -202,7 +210,7 @@ class XlsManager:
                     #print(sheet)
                     if not self.skip_sheet(sheet, options):
                         for index, row in sheet.iterrows():
-                            if index>1 and not pd.isnull(row[0]) and not pd.isnull(row[1]) and not pd.isnull(row[2]):
+                            if index>1 and not pd.isnull(row[0]) and not pd.isnull(row[1]) and (options.get("allowEmptyRatings")==True or not pd.isnull(row[2])):
                                 self.add_out_data_from_row(row,outData,options)
                 else:
                     first = False

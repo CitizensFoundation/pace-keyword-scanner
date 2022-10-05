@@ -1,3 +1,6 @@
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from simpletransformers.classification import ClassificationModel, ClassificationArgs
 import pandas as pd
 import logging
@@ -85,6 +88,8 @@ class ModelTraining:
             print("Using multi label model")
             num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
+                use_multiprocessing = False,
+                use_multiprocessing_for_evaluation = False,
                 num_train_epochs=num_epochs,
                 reprocess_input_data=True,
                 do_lower_case=True,
@@ -98,9 +103,11 @@ class ModelTraining:
             print("Using binary model")
             num_epochs = 2
             model_args = ClassificationArgs(overwrite_output_dir = True,
-                reprocess_input_data=True,
-                do_lower_case=True,
-                num_train_epochs=num_epochs, wandb_project=wandaProject)
+                                            use_multiprocessing = False,
+                                            use_multiprocessing_for_evaluation = False,
+                                            reprocess_input_data=True,
+                                            do_lower_case=True,
+                                            num_train_epochs=num_epochs, wandb_project=wandaProject)
             model_class = "bert"
             model_type = f"bert-{MODEL_SIZE}-uncased"
             model = ClassificationModel(
@@ -155,7 +162,8 @@ class ModelTraining:
         xlsManager = XlsManager("en")
         xlsManager.setup_all_from_xls()
 
-        trainingOptions = []
+        trainingOptions = [
+        ]
 
         for topic in xlsManager.topics:
             trainingOptions.append({"modelName": topic.replace(' ','').lower(),
@@ -164,6 +172,7 @@ class ModelTraining:
         for options in trainingOptions:
             self.train_model(xlsManager, options)
 
+    #TODO: Remove not used (and broken)
     def fill_out_predictions(self):
         manager = XlsManager("en")
 

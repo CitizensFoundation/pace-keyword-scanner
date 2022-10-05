@@ -1,3 +1,8 @@
+# INSTALLATION
+# conda create -n st python pandas tqdm
+# conda activate st
+# conda install pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
+# pip install simpletransformers wandb numba GPUtil openpyxl
 from simpletransformers.classification import ClassificationModel, ClassificationArgs
 import pandas as pd
 import logging
@@ -33,7 +38,7 @@ class MultiTraining:
          #   {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": [
          #       "Citizen Engagement", "Democratic Innovation"
          #       ], "wandbProject": "civic-relevant" },
-         #   {"modelName": "binary", "wandbProject": "all-exes" },
+            {"modelName": "binary", "wandbProject": "all-exes", "allowEmptyRatings": True},
         ]
 
         #for topic in xlsManager.topics:
@@ -44,9 +49,9 @@ class MultiTraining:
         #    trainingOptions.append({"modelName": f"binaryOnesTopic{topic.replace(' ','').lower()}",
         #        "topic": topic, "onlyOnes": True, "wandbProject": "topic-only-ones"})
 
-        for topic in xlsManager.topics:
-            trainingOptions.append({"modelName": f"binaryOneTwosTopic{topic.replace(' ','').lower()}",
-                "topic": topic, "onlyOneTwo": True, "wandbProject": "topic-only-one-two"})
+        #for topic in xlsManager.topics:
+        #    trainingOptions.append({"modelName": f"binaryOneTwosTopic{topic.replace(' ','').lower()}",
+        #        "topic": topic, "onlyOneTwo": True, "wandbProject": "topic-only-one-two"})
 
         for options in trainingOptions:
             optionsString=json.dumps(options)
