@@ -1,3 +1,4 @@
+import string
 import pandas as pd
 import pathlib
 import os
@@ -20,7 +21,13 @@ class XlsManager:
     keywordsSheet = None
     xCount = 0
     notXCount = 0
+    inconsistentRatingCount = 0
     itemsToRate = []
+    texts = []
+    relevantTexts = []
+    notRelevantTexts = []
+    insconsistencies = []
+
 
     # default constructor
     def __init__(self, language):
@@ -31,6 +38,10 @@ class XlsManager:
         self.outFilesPath = f"{currentPath}/xls/toXls/{self.language}/"
         self.outFileNames = sorted(os.listdir(self.outFilesPath))
         print(self.outFilesPath )
+
+    def remove_punct(self, text):
+        table=str.maketrans('','',string.punctuation)
+        return text.translate(table)
 
     def cleanup_text(self, sentence):
         #return sentence
@@ -134,9 +145,29 @@ class XlsManager:
         else:
           return False
 
-    def add_out_data_from_row(self, row, outData, options):
+    def check_inconsistent_ratings(self, text, rating):
+        if rating=="1":
+            self.relevantTexts.append(text)
+            if text in self.notRelevantTexts:
+                self.inconsistentRatingCount+=1
+                return True
+            else:
+                return False
+        elif rating=="x":
+            self.notRelevantTexts.append(text)
+            if text in self.relevantTexts:
+                self.inconsistentRatingCount+=1
+                return True
+            else:
+                return False
+        else:
+            print(f"ERROR UNKNOWN RATING {rating}")
+
+    def add_out_data_from_row(self, sheetName, rowIndex, row, outData, options):
         subTopic = row[0].strip()
         text = row[1]
+
+        dedupTexts = options.get('dedupTexts')==True
 
         if isinstance(text, str):
             if TO_LOWER:
@@ -145,54 +176,62 @@ class XlsManager:
                 text = row[1].strip()
 
             text = self.cleanup_text(text)
+            #print(f"{text}")
 
             rating = row[2]
 
-            if options.get('allowEmptyRatings'):
-                if not rating or rating=="" or pd.isnull(rating):
+            if text!="x" and options.get('allowEmptyRatings'):
+                if not rating or rating=="" or rating==" " or pd.isnull(rating):
                     rating = "x"
                 else:
                     rating = "1"
 
-            print(f"{rating}")
+                if self.check_inconsistent_ratings(text, rating):
+                    reversedRating = " " if rating=="x" else "x"
+                    self.insconsistencies.append(f"INCONSISTENT RATING FOR: {text[:140]} - {reversedRating} {sheetName} {rowIndex}")
 
-            if isinstance(rating, str):
-                rating = rating.strip().lower()
+            if text!="x" and not dedupTexts or text not in self.texts:
+                self.texts.append(text)
 
-            if options.get("subTopic") and options.get("subTopic")!=subTopic:
-                return
+                if isinstance(rating, str):
+                    rating = rating.strip().lower()
 
-            if options.get('onlyOnes'):
-                if isinstance(rating, int) and rating==1:
-                    outData.append([text, 1])
-                    self.notXCount += 1
-                else:
-                    outData.append([text, 0])
-                    self.xCount += 1
-            elif options.get('onlyOneTwo'):
-                if isinstance(rating, int) and (rating==1 or rating==2):
-                    outData.append([text, 1])
-                    self.notXCount += 1
-                elif rating==3 or rating=="x":
-                    outData.append([text, 0])
-                    self.xCount += 1
-            else:
-                if rating=="x" and not options.get("trainOnlyRelevant"):
-                    self.xCount += 1
-                    outData.append([text, 0])
-                elif not rating=="x":
-                    self.notXCount += 1
-                    if options.get("trainOnlyRelevant"):
-                        if isinstance(rating, int):
-                            rating -= 1
-                            if rating==0 or rating==1 or rating==2:
-                                outData.append([text, rating])
-                            else:
-                                print(f"Wrong rating value {rating}")
-                        else:
-                            print(f"Wrong rating format {rating}")
-                    else:
+                if options.get("subTopic") and options.get("subTopic")!=subTopic:
+                    return
+
+                if options.get('onlyOnes'):
+                    if isinstance(rating, int) and rating==1:
                         outData.append([text, 1])
+                        self.notXCount += 1
+                    else:
+                        outData.append([text, 0])
+                        self.xCount += 1
+                elif options.get('onlyOneTwo'):
+                    if isinstance(rating, int) and (rating==1 or rating==2):
+                        outData.append([text, 1])
+                        self.notXCount += 1
+                    elif rating==3 or rating=="x":
+                        outData.append([text, 0])
+                        self.xCount += 1
+                else:
+                    if rating=="x" and not options.get("trainOnlyRelevant"):
+                        self.xCount += 1
+                        outData.append([text, 0])
+                    elif not rating=="x":
+                        self.notXCount += 1
+                        if options.get("trainOnlyRelevant"):
+                            if isinstance(rating, int):
+                                rating -= 1
+                                if rating==0 or rating==1 or rating==2:
+                                    outData.append([text, rating])
+                                else:
+                                    print(f"Wrong rating value {rating}")
+                            else:
+                                print(f"Wrong rating format {rating}")
+                        else:
+                            outData.append([text, 1])
+            #else:
+             #   print(f"Duplicate text")
         else:
             print(f"WARNING: Found non text element in training data {subTopic} text {row[1]} rating {row[2]}")
 
@@ -211,7 +250,7 @@ class XlsManager:
                     if not self.skip_sheet(sheet, options):
                         for index, row in sheet.iterrows():
                             if index>1 and not pd.isnull(row[0]) and not pd.isnull(row[1]) and (options.get("allowEmptyRatings")==True or not pd.isnull(row[2])):
-                                self.add_out_data_from_row(row,outData,options)
+                                self.add_out_data_from_row(sheet,index,row,outData,options)
                 else:
                     first = False
 
@@ -224,6 +263,10 @@ class XlsManager:
         else:
             print(f"x coded: {self.xCount}")
             print(f"Not x coded: {self.notXCount}")
+            print(f"Inconsistent rating count: {self.inconsistentRatingCount}")
+
+            for inconsistency in sorted(self.insconsistencies):
+                print(inconsistency)
         return outData
 
 

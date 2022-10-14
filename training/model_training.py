@@ -19,6 +19,10 @@ import json
 from xls_manager import XlsManager
 
 MODEL_SIZE = "base"
+MODEL_CLASS = "bert" # "bert"
+MODEL_TYPE = f"{MODEL_CLASS}-{MODEL_SIZE}-uncased" # f"{MODEL_CLASS}-{MODEL_SIZE}-uncased"
+#MODEL_TYPE = "distilbert-base-uncased-finetuned-sst-2-english"
+#MODEL_TYPE = "distilbert-base-uncased"
 WANDB_MODE = "test"
 MODEL_ROUND = "2d"
 
@@ -35,7 +39,7 @@ class ModelTraining:
         gpu_usage()
 
     def train_model(self, xlsManager, options):
-        wandaProject = f"pace-{WANDB_MODE}-{options.get('wandbProject')}-{MODEL_ROUND}"
+        wandaProject = f"popai-{WANDB_MODE}-{options.get('wandbProject')}-{MODEL_ROUND}"
         #wandaProject = "pace-large-only-relevant"
         wandb.init(project=wandaProject, entity="citizensfoundation")
         wandb.run.name = f"{options.get('modelName')}-{wandb.run.id}"
@@ -66,7 +70,7 @@ class ModelTraining:
 
         wandb.log({"Train data len": len(trainingData)})
 
-        splitIndex = int(length*0.80)
+        splitIndex = int(length*0.85)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
@@ -94,24 +98,29 @@ class ModelTraining:
                 reprocess_input_data=True,
                 do_lower_case=True,
                 wandb_project=wandaProject)
-            model_class = "bert"
-            model_type = f"bert-{MODEL_SIZE}-uncased"
             model = ClassificationModel(
-                model_class, model_type, num_labels=3, args=model_args, use_cuda = True
+                MODEL_CLASS, MODEL_TYPE, num_labels=3, args=model_args, use_cuda = True
             )
         else:
             print("Using binary model")
             num_epochs = 2
-            model_args = ClassificationArgs(overwrite_output_dir = True,
+            model_args = ClassificationArgs(
+                                            train_batch_size = 16,
+                                            eval_batch_size = 64,
+                                            warmup_steps = 500,
+                                            weight_decay = 0.01,
+                                            logging_steps = 10,
+                                            learning_rate = 5e-5,
+                                            fp16 = False,
+                                            overwrite_output_dir = True,
                                             use_multiprocessing = False,
                                             use_multiprocessing_for_evaluation = False,
                                             reprocess_input_data=True,
                                             do_lower_case=True,
-                                            num_train_epochs=num_epochs, wandb_project=wandaProject)
-            model_class = "bert"
-            model_type = f"bert-{MODEL_SIZE}-uncased"
+                                            num_train_epochs=num_epochs,
+                                            wandb_project=wandaProject)
             model = ClassificationModel(
-                model_class, model_type, args=model_args, use_cuda = True
+                MODEL_CLASS, MODEL_TYPE, args=model_args, use_cuda = True
             )
 
         # Train the model
@@ -124,7 +133,7 @@ class ModelTraining:
         #print(wrong_predictions)
         print(result)
         wandb.log({"Eval loss": result.get("eval_loss"), "Epochs": num_epochs })
-        wandb.log({"Model class": model_class, "Model type": model_type})
+        wandb.log({"Model class": MODEL_CLASS, "Model type": MODEL_TYPE})
 
         currentPath = pathlib.Path().absolute()
         outputsPath = f"{currentPath}/outputs/"
@@ -171,36 +180,6 @@ class ModelTraining:
 
         for options in trainingOptions:
             self.train_model(xlsManager, options)
-
-    #TODO: Remove not used (and broken)
-    def fill_out_predictions(self):
-        manager = XlsManager("en")
-
-        items = manager.get_items_to_rate()
-
-        model_class = "bert"
-        model_path = "outputs/binary"
-        model = ClassificationModel(
-            model_class, model_type,  use_cuda = True
-        )
-
-        for item in items:
-            predictions, raw_outputs = model.predict([item.text])
-            if prediction==0:
-                item["rating"]="x"
-
-        for topic in manager.topics:
-            model_path = "outputs/{topic.replace(' ','').lower()}"
-            model = ClassificationModel(
-                model_class, model_path, use_cuda = True
-            )
-
-            for item in items:
-                if item.get("topic")==topic and not item.get("rating")=="x":
-                  predictions, raw_outputs = model.predict([item.get("text")])
-                  item["rating"]=prediction[0]
-
-        manager.save_predicted_items()
 
 modelName = sys.argv[1]
 topic = None

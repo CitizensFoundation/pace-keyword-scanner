@@ -56,7 +56,7 @@ class MultiTraining:
         for options in trainingOptions:
             optionsString=json.dumps(options)
             print(optionsString)
-            p = subprocess.Popen(["python", "model_training.py",f"{optionsString}"])
+            p = subprocess.Popen(["python", "model_training_sweep.py",f"{optionsString}"])
             p.wait()
 
 multi = MultiTraining()
