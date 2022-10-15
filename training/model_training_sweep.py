@@ -26,6 +26,8 @@ MODEL_TYPE = f"{MODEL_CLASS}-{MODEL_SIZE}-uncased" # f"{MODEL_CLASS}-{MODEL_SIZE
 WANDB_MODE = "test"
 MODEL_ROUND = "3d"
 
+SWEEP_PROJECT_NAME = "Final PopAI Sweep Six Base"
+
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
 transformers_logger.setLevel(logging.WARNING)
@@ -55,14 +57,14 @@ class ModelTraining:
         def random_seed():
             return 0.45
 
-        foundText = []
-        newTrainingData = []
-        for item in trainingData:
-            if item[0] not in foundText:
-                foundText.append(item[0])
-                newTrainingData.append(item)
+        #foundText = []
+        #newTrainingData = []
+        #for item in trainingData:
+        #    if item[0] not in foundText:
+        #        foundText.append(item[0])
+        #        newTrainingData.append(item)
 
-        trainingData = newTrainingData
+        #trainingData = newTrainingData
 
         length = len(trainingData)
 
@@ -70,7 +72,7 @@ class ModelTraining:
 
         #wandb.log({"Train data len": len(trainingData)})
 
-        splitIndex = int(length*0.87)
+        splitIndex = int(length*0.85)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
@@ -102,7 +104,7 @@ class ModelTraining:
                                                 reprocess_input_data=True,
                                                 do_lower_case=True,
                                                 #num_train_epochs=num_epochs,
-                                                wandb_project="Final PopAI Sweep Two",
+                                                wandb_project=SWEEP_PROJECT_NAME,
                                                 labels_list = [1, 0]
                                                 )
                 model = ClassificationModel(
@@ -117,13 +119,13 @@ class ModelTraining:
             "method": "bayes",  # grid, random
             "metric": {"name": "eval_loss", "goal": "minimize"},
             "parameters": {
-                "num_train_epochs": {"values": [2, 3, 5]},
+                "num_train_epochs": {"values": [2, 3, 5, 10]},
                 "train_batch_size": {"values": [8, 16, 32]},
                 "learning_rate": {"min": 5e-5, "max": 4e-4},
             },
         }
 
-        sweep_id = wandb.sweep(sweep_config, project="Final PopAI Sweep Two")
+        sweep_id = wandb.sweep(sweep_config, project=SWEEP_PROJECT_NAME)
 
         wandb.agent(sweep_id, inner_train)
 

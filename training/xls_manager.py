@@ -6,6 +6,7 @@ import pprint
 from openpyxl import load_workbook
 import sys
 import re
+from imblearn.over_sampling import SMOTE
 
 TO_LOWER = True
 
@@ -176,6 +177,7 @@ class XlsManager:
                 text = row[1].strip()
 
             text = self.cleanup_text(text)
+            text = text.strip()
             #print(f"{text}")
 
             rating = row[2]
@@ -188,7 +190,7 @@ class XlsManager:
 
                 if self.check_inconsistent_ratings(text, rating):
                     reversedRating = " " if rating=="x" else "x"
-                    self.insconsistencies.append(f"INCONSISTENT RATING FOR: {text[:140]} - {reversedRating} {sheetName} {rowIndex}")
+                    self.insconsistencies.append(f"INCONSISTENT RATING FOR: {text[:140]} - {reversedRating} {rowIndex}")
 
             if text!="x" and not dedupTexts or text not in self.texts:
                 self.texts.append(text)
@@ -267,6 +269,30 @@ class XlsManager:
 
             for inconsistency in sorted(self.insconsistencies):
                 print(inconsistency)
+        return outData
+
+    def get_balanced_training_data(self, options):
+        unbalancedOutData = self.get_training_data(options)
+        oneCodedTexsts = []
+        xCodedTexts = []
+        outData = []
+
+        for data in unbalancedOutData:
+            if data[1]==1:
+                oneCodedTexsts.append(data)
+            else:
+                xCodedTexts.append(data)
+
+        oneCodedResampled, xCodedResampled = SMOTE().fit_resample(oneCodedTexsts, xCodedTexts)
+
+        for oneCodedText in oneCodedResampled:
+            outData.append([oneCodedText, 1])
+
+        for xCodedText in xCodedResampled:
+            outData.append([xCodedText, 0])
+
+        print(f"Resampled 0 coded length: {len(xCodedResampled)}")
+        print(f"Resampled 1 coded length: {len(oneCodedResampled)}")
         return outData
 
 

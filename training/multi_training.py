@@ -2,7 +2,7 @@
 # conda create -n st python pandas tqdm
 # conda activate st
 # conda install pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3 -c pytorch
-# pip install simpletransformers wandb numba GPUtil openpyxl
+# pip install simpletransformers wandb numba GPUtil openpyxl imbalanced-learn
 from simpletransformers.classification import ClassificationModel, ClassificationArgs
 import pandas as pd
 import logging

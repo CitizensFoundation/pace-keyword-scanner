@@ -55,14 +55,14 @@ class ModelTraining:
         def random_seed():
             return 0.5
 
-        foundText = []
-        newTrainingData = []
-        for item in trainingData:
-            if item[0] not in foundText:
-                foundText.append(item[0])
-                newTrainingData.append(item)
+        #foundText = []
+        #newTrainingData = []
+        #for item in trainingData:
+        #    if item[0] not in foundText:
+        #        foundText.append(item[0])
+        #        newTrainingData.append(item)
 
-        trainingData = newTrainingData
+        #trainingData = newTrainingData
 
         length = len(trainingData)
 
