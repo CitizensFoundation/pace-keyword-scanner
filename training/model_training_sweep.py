@@ -26,7 +26,7 @@ MODEL_TYPE = f"{MODEL_CLASS}-{MODEL_SIZE}-uncased" # f"{MODEL_CLASS}-{MODEL_SIZE
 WANDB_MODE = "test"
 MODEL_ROUND = "3d"
 
-SWEEP_PROJECT_NAME = "Final PopAI Sweep Six Base"
+SWEEP_PROJECT_NAME = "Final PopAI Sweep Eleven Base"
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
@@ -94,7 +94,7 @@ class ModelTraining:
                 print("Using binary model")
                 wandb.init()
                 model_args = ClassificationArgs(
-                                                #train_batch_size = 16,
+                                                train_batch_size = 32,
                                                 eval_batch_size = 8,
                                                 evaluate_during_training = True,
                                                 manual_seed = 4,
@@ -103,7 +103,7 @@ class ModelTraining:
                                                 use_multiprocessing_for_evaluation = False,
                                                 reprocess_input_data=True,
                                                 do_lower_case=True,
-                                                #num_train_epochs=num_epochs,
+                                                num_train_epochs=2,
                                                 wandb_project=SWEEP_PROJECT_NAME,
                                                 labels_list = [1, 0]
                                                 )
@@ -119,9 +119,7 @@ class ModelTraining:
             "method": "bayes",  # grid, random
             "metric": {"name": "eval_loss", "goal": "minimize"},
             "parameters": {
-                "num_train_epochs": {"values": [2, 3, 5, 10]},
-                "train_batch_size": {"values": [8, 16, 32]},
-                "learning_rate": {"min": 5e-5, "max": 4e-4},
+                "learning_rate": {"min": 1e-5, "max": 9e-5},
             },
         }
 

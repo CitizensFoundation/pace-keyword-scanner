@@ -12,15 +12,16 @@ import gc
 from GPUtil import showUtilization as gpu_usage
 from numba import cuda
 import sys
+import re
 
-from elasticsearch import Elasticsearch, helpers, exceptions
+from opensearchpy import OpenSearch, helpers, exceptions
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
 transformers_logger.setLevel(logging.WARNING)
 
 es_url = os.environ['AC_ANALYTICS_ES_URL'] if os.environ.get('AC_ANALYTICS_ES_URL')!=None else 'localhost:9200'
-es = Elasticsearch(es_url)
+es = OpenSearch(es_url)
 
 class EsPredictions:
     exesModel = None
@@ -30,6 +31,18 @@ class EsPredictions:
     maxBulkUpdateQueueSize = 1000
     maxPredictionQueueSize = 2000
     totalProcessed = 0
+
+    def cleanup_text(self, sentence):
+        #return sentence
+        sentence = re.sub('[^a-zA-Z]', ' ', sentence)
+
+        # Single character removal
+        #sentence = re.sub(r"\s+[a-zA-Z]\s+", ' ', sentence)
+
+        # Removing multiple spaces
+        sentence = re.sub(r'\s+', ' ', sentence)
+
+        return sentence
 
     def updateScore(self, id, score, fieldName="relevanceScore"):
         doc = {
@@ -84,6 +97,9 @@ class EsPredictions:
         id = hit["_id"]
         source = hit["_source"]
         paragraph = source.get("paragraph").lower().strip()
+
+        # Make sure to do same cleanup as in the training
+        paragraph = self.cleanup_text(paragraph).strip()
         topic = source.get("topic")
 
         #print(f"Processing {id} - {topic}")

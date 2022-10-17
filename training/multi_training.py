@@ -38,7 +38,7 @@ class MultiTraining:
          #   {"modelName": "civicrelevant", "trainOnlyRelevant": True, "onlyTopics": [
          #       "Citizen Engagement", "Democratic Innovation"
          #       ], "wandbProject": "civic-relevant" },
-            {"modelName": "binary", "wandbProject": "all-exes", "allowEmptyRatings": True, "dedupTexts": True},
+            {"modelName": "binary", "wandbProject": "all-exes", "allowEmptyRatings": True},
         ]
 
         #for topic in xlsManager.topics:

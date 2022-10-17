@@ -24,7 +24,7 @@ MODEL_TYPE = f"{MODEL_CLASS}-{MODEL_SIZE}-uncased" # f"{MODEL_CLASS}-{MODEL_SIZE
 #MODEL_TYPE = "distilbert-base-uncased-finetuned-sst-2-english"
 #MODEL_TYPE = "distilbert-base-uncased"
 WANDB_MODE = "test"
-MODEL_ROUND = "2d"
+MODEL_ROUND = "7d"
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
@@ -70,7 +70,7 @@ class ModelTraining:
 
         wandb.log({"Train data len": len(trainingData)})
 
-        splitIndex = int(length*0.85)
+        splitIndex = int(length*0.99)
 
         # Preparing train data
         train_data = trainingData[:splitIndex]
@@ -105,13 +105,8 @@ class ModelTraining:
             print("Using binary model")
             num_epochs = 2
             model_args = ClassificationArgs(
-                                            train_batch_size = 16,
-                                            eval_batch_size = 64,
-                                            warmup_steps = 500,
-                                            weight_decay = 0.01,
-                                            logging_steps = 10,
-                                            learning_rate = 5e-5,
-                                            fp16 = False,
+                                            train_batch_size = 32,
+                                            learning_rate = 0.0000706,
                                             overwrite_output_dir = True,
                                             use_multiprocessing = False,
                                             use_multiprocessing_for_evaluation = False,
