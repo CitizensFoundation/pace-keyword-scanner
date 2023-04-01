@@ -42,7 +42,7 @@ public class Main {
     // PRODUCTION
     //private static final String esHostname="search-demos-v1-hujolmcnrbsjb3fh3pfhbvtsbu.us-east-1.es.amazonaws.com";
     //private static final String esHostname="search-popai-nlixyfy37n3b2zipuqzul6hklm.us-east-1.es.amazonaws.com";
-    private static final String esHostname="search-ce-dashboard-qlptm63l4vdccw4pv7tr2bukwy.us-east-1.es.amazonaws.com";
+    private static final String esHostname="search-ce-dashboard-two-ol4e2jvmcgv4fbvzu72r7gfrqi.us-east-1.es.amazonaws.com";
 
     private static final Integer esPort=443;
     private static final String esProtocol="https";
