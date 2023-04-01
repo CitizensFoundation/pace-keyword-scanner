@@ -48,7 +48,7 @@ import net.openhft.hashing.LongHashFunction;
 
 public class ImportToES implements Runnable {
 
-    private static final String FILTER_BY_IDEALOGY = "popai";
+    private static final String FILTER_BY_IDEALOGY = "ce";
 
     private static final Logger logger = LogManager.getLogger(ImportToES.class);
 
